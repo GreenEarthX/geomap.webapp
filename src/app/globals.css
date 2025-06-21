@@ -1,4 +1,6 @@
 @import "tailwindcss";
+@import '@fortawesome/fontawesome-free/css/all.min.css';
+
 
 :root {
   --background: #ffffff;
@@ -23,4 +25,62 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* Compact and zero-spacing Leaflet Measure popup */
+.leaflet-control-measure {
+  font-size: 11px !important;
+  line-height: 1 !important;
+  color: black !important;
+  background-color: white !important;
+  max-width: 350px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  border-radius: 5px !important;
+  padding: 6px !important;
+}
+
+/* Remove spacing inside measurement result container */
+.leaflet-control-measure .leaflet-control-measure-results {
+  padding: 0 !important;
+  margin: 0 !important;
+  line-height: 1 !important;
+}
+
+/* Remove spacing from all inner lines */
+.leaflet-control-measure .leaflet-control-measure-results * {
+  margin: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+  font-size: 11px !important;
+  color: black !important;
+  font-weight: 400 !important;
+}
+
+/* Buttons: compact, blue, spaced */
+.leaflet-control-measure .leaflet-control-measure-interaction button {
+  font-size: 11px !important;
+  padding: 2px 5px !important;
+  line-height: 1 !important;
+  color: #0d6efd !important;
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  margin: 4px 3px 0 0 !important;
+  cursor: pointer;
+}
+
+.leaflet-control-measure .leaflet-control-measure-interaction button:hover {
+  background-color: #e2e6ea;
+}
+
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

@@ -1,0 +1,1622 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.09208,
+            51.97126
+          ],
+          [
+            4.25756,
+            51.89378
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Rotterdam\u2013Rotterdam Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.25756,
+            51.89378
+          ],
+          [
+            4.60214,
+            51.78012
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Rotterdam\u2013Rotterdam Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.60214,
+            51.78012
+          ],
+          [
+            4.63922,
+            51.7104
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Rotterdam\u2013Dordrecht Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.63922,
+            51.7104
+          ],
+          [
+            4.31924,
+            51.502
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Dordrecht\u2013Berg op Zoom Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.31924,
+            51.502
+          ],
+          [
+            4.40164,
+            51.20354
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Berg op Zoom\u2013Antwerpen Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.40164,
+            51.20354
+          ],
+          [
+            4.21291,
+            51.12644
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Antwerpen\u2013Saint-Nicolas Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.21291,
+            51.12644
+          ],
+          [
+            4.72574,
+            51.07171
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Saint-Nicolas\u2013Heist op den Berg Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.72574,
+            51.07171
+          ],
+          [
+            4.88719,
+            51.0678
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Heist op den Berg\u2013Herselt Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.72574,
+            51.07171
+          ],
+          [
+            4.8356,
+            51.20096
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Heist op den Berg\u2013Herentals Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.8356,
+            51.20096
+          ],
+          [
+            5.0773,
+            51.26975
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Herentals\u2013Rentie Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.21291,
+            51.12644
+          ],
+          [
+            3.76718,
+            51.11656
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Saint-Nicolas\u2013Evergem Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            3.76718,
+            51.11656
+          ],
+          [
+            3.80838,
+            51.33157
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Evergem\u2013Terneuzen Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            3.76718,
+            51.11656
+          ],
+          [
+            3.72324,
+            51.04236
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Evergem\u2013Ghent Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            3.76718,
+            51.11656
+          ],
+          [
+            3.01243,
+            50.92732
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Evergem\u2013Routers Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            3.01243,
+            50.92732
+          ],
+          [
+            3.20537,
+            51.32765
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Routers\u2013Zeebruge Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            3.01243,
+            50.92732
+          ],
+          [
+            2.50903,
+            50.64459
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Routers\u2013Morbecque Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.50903,
+            50.64459
+          ],
+          [
+            2.2673,
+            50.60393
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Morbecque\u2013Th\u00e9rouanne Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.50903,
+            50.64459
+          ],
+          [
+            2.99738,
+            50.55043
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Morbecque\u2013S\u00e9clin Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.99738,
+            50.55043
+          ],
+          [
+            3.13525,
+            50.51553
+          ]
+        ]
+      },
+      "properties": {
+        "name": "S\u00e9clin\u2013Ennevelin Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            3.13525,
+            50.51553
+          ],
+          [
+            3.10139,
+            50.38061
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Ennevelin\u2013Waziers Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.99738,
+            50.55043
+          ],
+          [
+            2.83258,
+            50.43685
+          ]
+        ]
+      },
+      "properties": {
+        "name": "S\u00e9clin\u2013Lens Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.83258,
+            50.43685
+          ],
+          [
+            2.72134,
+            50.41761
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Lens\u2013Aix-Noulette Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.21291,
+            51.12644
+          ],
+          [
+            4.23763,
+            50.86802
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Saint-Nicolas\u2013Brussels Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.23763,
+            50.86802
+          ],
+          [
+            4.21998,
+            50.55936
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Brussels\u2013Nivelles Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.21998,
+            50.55936
+          ],
+          [
+            4.16782,
+            50.5341
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Nivelles\u2013Mignaut Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.16782,
+            50.5341
+          ],
+          [
+            4.0456,
+            50.49655
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Mignaut\u2013Gottinies Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.0456,
+            50.49655
+          ],
+          [
+            4.10877,
+            50.32852
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Gottinies\u2013Erquelinnes Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.10877,
+            50.32852
+          ],
+          [
+            3.96732,
+            50.27677
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Erquelinnes\u2013Maubeuge Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.16782,
+            50.5341
+          ],
+          [
+            4.22413,
+            50.38722
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Mignaut\u2013Buvrinnes Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.22413,
+            50.38722
+          ],
+          [
+            4.39167,
+            50.34693
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Buvrinnes\u2013Bomer\u00e9e Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.39167,
+            50.34693
+          ],
+          [
+            4.52871,
+            50.41147
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Bomer\u00e9e\u2013Chatelet Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            7.00776,
+            51.04271
+          ],
+          [
+            6.8297,
+            51.28441
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Leverkusen\u2013Rath Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.8297,
+            51.28441
+          ],
+          [
+            6.77683,
+            51.23671
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Rath\u2013Dusseldorf Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.8297,
+            51.28441
+          ],
+          [
+            6.84913,
+            51.3133
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Rath\u2013Ratingen Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.84913,
+            51.3133
+          ],
+          [
+            6.84834,
+            51.34185
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Ratingen\u2013Lintorf Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.84834,
+            51.34185
+          ],
+          [
+            6.59463,
+            51.33842
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Lintorf\u2013Krefeld Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.59463,
+            51.33842
+          ],
+          [
+            6.60459,
+            51.32426
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Krefeld\u2013Krefeld S Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.59463,
+            51.33842
+          ],
+          [
+            6.59772,
+            51.35579
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Krefeld\u2013Krefeld N Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.84834,
+            51.34185
+          ],
+          [
+            6.89264,
+            51.44619
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Lintorf\u2013Essen Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.89264,
+            51.44619
+          ],
+          [
+            6.76114,
+            51.43592
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Essen\u2013Duisbourg Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.89264,
+            51.44619
+          ],
+          [
+            6.98224,
+            51.56757
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Essen\u2013Gladbeck Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.98224,
+            51.56757
+          ],
+          [
+            7.02841,
+            51.57555
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Gladbeck\u2013Buer Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            7.02841,
+            51.57555
+          ],
+          [
+            7.12272,
+            51.57499
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Buer\u2013Resse Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            7.12272,
+            51.57499
+          ],
+          [
+            7.19836,
+            51.54044
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Resse\u2013Herne Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            7.19836,
+            51.54044
+          ],
+          [
+            7.25535,
+            51.50519
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Herne\u2013Bochum Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            7.02841,
+            51.57555
+          ],
+          [
+            7.10167,
+            51.65744
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Buer\u2013Marle Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            7.10167,
+            51.65744
+          ],
+          [
+            7.30389,
+            51.56299
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Marle\u2013Castrop Rauxel Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.27423,
+            51.0181
+          ],
+          [
+            2.21837,
+            51.02591
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Dunkerque\u2013Dunkerque Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.72629,
+            49.15149
+          ],
+          [
+            7.08824,
+            48.93934
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Carling\u2013Sarre-Union Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.86024,
+            45.67302
+          ],
+          [
+            4.8112,
+            45.37397
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Feyzin\u2013Rousillon Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            5.03056,
+            43.38807
+          ],
+          [
+            4.94571,
+            43.43788
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Lavera\u2013Fos sur mer Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            0.54735,
+            49.47942
+          ],
+          [
+            0.52586,
+            49.49655
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Port-Jerome\u2013Port-Jerome Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.94708,
+            46.25201
+          ],
+          [
+            6.98897,
+            46.24269
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Monthey\u2013Massongex Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            15.20703,
+            37.13516
+          ],
+          [
+            15.18422,
+            37.17105
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Priolo S\u2013Priolo N Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            12.14045,
+            51.04633
+          ],
+          [
+            12.38703,
+            51.20069
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Zeitz\u2013Boehlen Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            12.38703,
+            51.20069
+          ],
+          [
+            11.95075,
+            51.25329
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Boehlen\u2013Reichardtswerben Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            11.95075,
+            51.25329
+          ],
+          [
+            12.02422,
+            51.32326
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Reichardtswerben\u2013Leuna Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            11.95075,
+            51.25329
+          ],
+          [
+            11.98515,
+            51.39007
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Reichardtswerben\u2013Schkopau Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            12.02422,
+            51.32326
+          ],
+          [
+            12.3133,
+            51.62653
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Leuna\u2013Bitterfeld Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            12.3133,
+            51.62653
+          ],
+          [
+            12.20278,
+            51.89618
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Bitterfeld\u2013Rodleben Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -1.11819,
+            54.58488
+          ],
+          [
+            -1.18004,
+            54.6122
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Lazenby\u2013Seal sands Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -1.18004,
+            54.6122
+          ],
+          [
+            -1.26455,
+            54.61297
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Seal sands\u2013Billingham Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -1.12085,
+            54.57798
+          ],
+          [
+            -1.1902,
+            54.59628
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Lazenby\u2013Seal sands Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -1.1902,
+            54.59628
+          ],
+          [
+            -1.21452,
+            54.58831
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Seal sands\u2013Seal sands Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -1.21452,
+            54.58831
+          ],
+          [
+            -1.25417,
+            54.59726
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Seal sands\u2013Seal sands Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -1.25417,
+            54.59726
+          ],
+          [
+            -1.28216,
+            54.59368
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Seal sands\u2013Billingham Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.10166,
+            51.95502
+          ],
+          [
+            4.13634,
+            51.95163
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Europoort\u2013Brielle Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.13634,
+            51.95163
+          ],
+          [
+            4.18166,
+            51.93385
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Brielle\u2013Wezerhaven Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.18166,
+            51.93385
+          ],
+          [
+            4.25822,
+            51.89171
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Wezerhaven\u2013Rozenburg Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.25822,
+            51.89171
+          ],
+          [
+            4.38078,
+            51.85652
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Rozenburg\u2013Portugaal Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.38078,
+            51.85652
+          ],
+          [
+            4.46936,
+            51.87739
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Portugaal\u2013Charlois Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.46936,
+            51.87739
+          ],
+          [
+            4.54249,
+            51.8371
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Charlois\u2013Heerjansdam Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.54249,
+            51.8371
+          ],
+          [
+            4.65502,
+            51.82136
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Heerjansdam\u2013Zwijndrecht Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            12.2489,
+            45.42855
+          ],
+          [
+            12.2301,
+            45.43482
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Porto Marghera\u2013Porto Marghera Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            11.81399,
+            58.07973
+          ],
+          [
+            11.83176,
+            58.09074
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Stenungsund\u2013Stenungsund Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            8.1209,
+            53.56546
+          ],
+          [
+            8.05622,
+            53.62373
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Wilhemshaven\u2013Wilhemshaven N Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            3.77992,
+            51.33843
+          ],
+          [
+            3.84979,
+            51.27261
+          ]
+        ]
+      },
+      "properties": {
+        "name": "Terneuzen\u2013Sluiskil Pipeline",
+        "length": "Unknown",
+        "diameter": "Unknown"
+      }
+    }
+  ]
+}

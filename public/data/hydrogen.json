@@ -1,0 +1,4697 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.67263437,
+          57.41710676
+        ]
+      },
+      "properties": {
+        "name": "Oskarshamn electrolyser",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.7",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "115.6981132",
+        "commissioning": "1992",
+        "location": "Oskarshamn",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.00251676,
+          53.54591627
+        ]
+      },
+      "properties": {
+        "name": "Hamburg Hafen City HRS",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.6",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "99.16981132",
+        "commissioning": "2011",
+        "location": "Hamburg",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.9684468,
+          53.3649417
+        ]
+      },
+      "properties": {
+        "name": "Hybridkraftwerk Prenzlau - Hybrid Power Plant Enertrag, Prenzlau",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.5",
+        "end_use": "Power generation",
+        "sector": "Not Available",
+        "consumption": "82.64150943",
+        "commissioning": "2011",
+        "location": "Prenzlau",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -22.4317498,
+          63.844239
+        ]
+      },
+      "properties": {
+        "name": "George Olah CO2 to methanol plant",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "6.0",
+        "end_use": "Methanol",
+        "sector": "Not Available",
+        "consumption": "991.6981132",
+        "commissioning": "2012",
+        "location": "Grindavik",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.75410143,
+          60.61199171
+        ]
+      },
+      "properties": {
+        "name": "Sandviken ely",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "4.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "661.1320755",
+        "commissioning": "2012",
+        "location": "Sandviken",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.6764179,
+          52.8518701
+        ]
+      },
+      "properties": {
+        "name": "Werlte eMethane",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "6.3",
+        "end_use": "E-fuels",
+        "sector": "Not Available",
+        "consumption": "1041.283019",
+        "commissioning": "2013",
+        "location": "Werlte",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.23511242,
+          53.20031054
+        ]
+      },
+      "properties": {
+        "name": "WindGas Falkenhagen",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2013",
+        "location": "Falkenhagen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          23.03300682,
+          63.84634054
+        ]
+      },
+      "properties": {
+        "name": "Woikoski - Kokkola",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "9.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "1487.54717",
+        "commissioning": "2014",
+        "location": "Kokkola",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          11.31719371,
+          46.47409854
+        ]
+      },
+      "properties": {
+        "name": "Bolzano HRS",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "247.9245283",
+        "commissioning": "2014",
+        "location": "Bolzano-Bozen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.52429883,
+          52.36999214
+        ]
+      },
+      "properties": {
+        "name": "H2BER (Berlin airport)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "82.64150943",
+        "commissioning": "2014",
+        "location": "Berlin",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.114359234,
+          57.16059318
+        ]
+      },
+      "properties": {
+        "name": "Aberdeen Kittybrewster HRS",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2015",
+        "location": "Aberdeen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.956095406,
+          55.44852239
+        ]
+      },
+      "properties": {
+        "name": "Strandm\u00f8llen A/S - Ejby",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "82.64150943",
+        "commissioning": "2015",
+        "location": "Ejby",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.5065562,
+          50.0318698
+        ]
+      },
+      "properties": {
+        "name": "Windgas Hasfurt (Ha\u00dffurt)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.25",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "206.6037736",
+        "commissioning": "2016",
+        "location": "Ha\u00dffurt",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.312347,
+          41.363128
+        ]
+      },
+      "properties": {
+        "name": "INGRID",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.2",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "198.3396226",
+        "commissioning": "2016",
+        "location": "Troia",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.2710237,
+          49.9999952
+        ]
+      },
+      "properties": {
+        "name": "Energiepark Mainz",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "6.0",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "991.6981132",
+        "commissioning": "2017",
+        "location": "Mainz",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.950046941,
+          53.51426977
+        ]
+      },
+      "properties": {
+        "name": "H&R \u00d6lwerke Schindler Hamburg-Neuhof",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2017",
+        "location": "Hamburg-Neuhof",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.37333,
+          63.34327247
+        ]
+      },
+      "properties": {
+        "name": "ASKO Midt-Norge HRS",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.7",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "115.6981132",
+        "commissioning": "2017",
+        "location": "Trondheim",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.788356039,
+          59.1649151
+        ]
+      },
+      "properties": {
+        "name": "Surf'n'Turf",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.67",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "110.7396226",
+        "commissioning": "2017",
+        "location": "Eday",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.723969506,
+          51.49141758
+        ]
+      },
+      "properties": {
+        "name": "Carbon2Chem",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2018",
+        "location": "Duisburg",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -21.39797194,
+          64.02068661
+        ]
+      },
+      "properties": {
+        "name": "Hellisheidi ON Power ely",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.7",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "115.6981132",
+        "commissioning": "2018",
+        "location": "Hellisheidi",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.65825567,
+          48.03574259
+        ]
+      },
+      "properties": {
+        "name": "Underground Sun Conversion",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.5",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "82.64150943",
+        "commissioning": "2018",
+        "location": "Pilsbach",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          14.286198,
+          48.3059078
+        ]
+      },
+      "properties": {
+        "name": "H2FUTURE",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "6.0",
+        "end_use": "Industrial heat",
+        "sector": "Not Available",
+        "consumption": "991.6981132",
+        "commissioning": "2019",
+        "location": "Linz",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.6087847,
+          49.1996961
+        ]
+      },
+      "properties": {
+        "name": "Energiepark Pirmasens-Winzeln",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2019",
+        "location": "Pirmasens",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.173721521,
+          53.89396747
+        ]
+      },
+      "properties": {
+        "name": "Wind to Gas Sudermarsch",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.4",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "396.6792453",
+        "commissioning": "2019",
+        "location": "Brunsbuttel (Brunsb\u00fcttel)",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.706263394,
+          47.53818163
+        ]
+      },
+      "properties": {
+        "name": "H2-Wyhlen (Phase 1) - (Power-to-Gas Baden-W\u00fcrttemberg)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2019",
+        "location": "Grenzach-Wyhlen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          1.1415922,
+          49.8808904
+        ]
+      },
+      "properties": {
+        "name": "Syndicat mixte des transports Artois-Gohelle (SMT AG)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "82.64150943",
+        "commissioning": "2019",
+        "location": "Bethune",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.3638691121,
+          43.29273242
+        ]
+      },
+      "properties": {
+        "name": "Pau HRS",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.45",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "74.37735849",
+        "commissioning": "2019",
+        "location": "Pau",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.1780374,
+          51.264018
+        ]
+      },
+      "properties": {
+        "name": "H2W - Wasserstoffmobilit\u00e4t f\u00fcr Wuppertal",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2020",
+        "location": "Wuppertal",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.979575,
+          47.368553
+        ]
+      },
+      "properties": {
+        "name": "Hydrospider G\u00f6sgen (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2020",
+        "location": "Niederg\u00f6sgen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.825703613,
+          56.62621994
+        ]
+      },
+      "properties": {
+        "name": "HyBALANCE",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "247.9245283",
+        "commissioning": "2020",
+        "location": "Hobro",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.3478232,
+          54.7267886
+        ]
+      },
+      "properties": {
+        "name": "Windgas Haurup",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Residential heat",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2020",
+        "location": "Haurup",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.401743,
+          49.2644733
+        ]
+      },
+      "properties": {
+        "name": "H2orizon",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.8",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "132.2264151",
+        "commissioning": "2020",
+        "location": "Lampoldshausen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.3593147,
+          52.1503721
+        ]
+      },
+      "properties": {
+        "name": "GrInHy2.0",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.72",
+        "end_use": "Steel",
+        "sector": "Not Available",
+        "consumption": "119.0037736",
+        "commissioning": "2020",
+        "location": "Salzgitter",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          27.14101196,
+          60.52674111
+        ]
+      },
+      "properties": {
+        "name": "STR Tecoil\u200b - Hamina (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.7",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "115.6981132",
+        "commissioning": "2020",
+        "location": "Hamina",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.2877425,
+          53.0038078
+        ]
+      },
+      "properties": {
+        "name": "HyDeploy",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.5",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "82.64150943",
+        "commissioning": "2020",
+        "location": "Keele",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.947789911,
+          43.43696983
+        ]
+      },
+      "properties": {
+        "name": "Jupiter 1000 (ALK)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.5",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "82.64150943",
+        "commissioning": "2020",
+        "location": "Fos sur Mer",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.945595,
+          43.4380714
+        ]
+      },
+      "properties": {
+        "name": "Jupiter 1000 (PEM)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.5",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "82.64150943",
+        "commissioning": "2020",
+        "location": "Fos sur Mer",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.980581616,
+          50.86056156
+        ]
+      },
+      "properties": {
+        "name": "REFHYNE (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2021",
+        "location": "Wesseling",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.1460134,
+          65.5831352
+        ]
+      },
+      "properties": {
+        "name": "HYBRIT pilot (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "4.5",
+        "end_use": "Steel",
+        "sector": "Not Available",
+        "consumption": "743.7735849",
+        "commissioning": "2021",
+        "location": "Lulea",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -1.840964262,
+          52.46135759
+        ]
+      },
+      "properties": {
+        "name": "Birmingham Tyseley Energy Park HRS",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "3.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "495.8490566",
+        "commissioning": "2021",
+        "location": "Birmingham",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.40665988,
+          52.15234346
+        ]
+      },
+      "properties": {
+        "name": "WindH2 Windwasserstoff Salzgitter",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2021",
+        "location": "Salzgitter",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.28287493,
+          53.90402911
+        ]
+      },
+      "properties": {
+        "name": "APEX - Laage (Phase 1) - doing hydrogen APEX",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2021",
+        "location": "Laage",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.6764179,
+          52.8528701
+        ]
+      },
+      "properties": {
+        "name": "Fairfuel Atmosfair \u2013 PtL in Werlte",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.25",
+        "end_use": "E-fuels",
+        "sector": "Not Available",
+        "consumption": "206.6037736",
+        "commissioning": "2021",
+        "location": "Werlte",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.588219866,
+          47.80416095
+        ]
+      },
+      "properties": {
+        "name": "AuxHyGen/Auxr H2 (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2021",
+        "location": "Auxerre",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.3071685,
+          48.7427584
+        ]
+      },
+      "properties": {
+        "name": "Green Hydrogen Esslingen (P2G2P)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Power generation",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2021",
+        "location": "Esslingen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.39739267,
+          51.2430063
+        ]
+      },
+      "properties": {
+        "name": "HRS Compagnie Maritime Belge",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2021",
+        "location": "Antwerp",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.8694863,
+          53.1028443
+        ]
+      },
+      "properties": {
+        "name": "Hystock",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2021",
+        "location": "Veendam",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          11.98703211,
+          51.28281632
+        ]
+      },
+      "properties": {
+        "name": "E-CO2MET",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "E-fuels",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2021",
+        "location": "Leuna",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.710966068,
+          47.99299356
+        ]
+      },
+      "properties": {
+        "name": "Hycaunais",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2021",
+        "location": "Saint-Florentin",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.0005556,
+          46.9744444
+        ]
+      },
+      "properties": {
+        "name": "Lhyfe Bouin (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.75",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "123.9622642",
+        "commissioning": "2021",
+        "location": "Bouin",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -4.0609726,
+          38.66974147
+        ]
+      },
+      "properties": {
+        "name": "H2F (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "20.0",
+        "end_use": "Ammonia",
+        "sector": "Not Available",
+        "consumption": "3305.660377",
+        "commissioning": "2022",
+        "location": "Puertollano",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.0027278,
+          50.0373241
+        ]
+      },
+      "properties": {
+        "name": "WUN H2 - Energy Park Wunsiedel",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "9.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "1487.54717",
+        "commissioning": "2022",
+        "location": "Wunsiedel",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.6305157,
+          59.12122228
+        ]
+      },
+      "properties": {
+        "name": "Heroya Industrial Park",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "5.5",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "909.0566038",
+        "commissioning": "2022",
+        "location": "Porsgrunn",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.113741733,
+          53.4962103
+        ]
+      },
+      "properties": {
+        "name": "HRS Bremerv\u00f6rde - trains",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "3.89",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "642.9509434",
+        "commissioning": "2022",
+        "location": "Bremervorde (Bremerv\u00f6rde)",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          1.946659641,
+          41.28482082
+        ]
+      },
+      "properties": {
+        "name": "Zona Franca de Barcelona (HRS) (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2022",
+        "location": "Barcelona",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          2.866784383,
+          39.70346726
+        ]
+      },
+      "properties": {
+        "name": "Green Hysland/Power to Green Hydrogen Mallorca (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2022",
+        "location": "Lloseta",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.4020894,
+          47.4068827
+        ]
+      },
+      "properties": {
+        "name": "PtG Switzerland Dietikon",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "E-fuels",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2022",
+        "location": "Dietikon",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.0947959,
+          52.6474242
+        ]
+      },
+      "properties": {
+        "name": "Green H2 hub Haren",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2022",
+        "location": "Haren",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.4550501,
+          55.6255437
+        ]
+      },
+      "properties": {
+        "name": "H2RES",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2022",
+        "location": "Avedore",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.32816181,
+          47.40058001
+        ]
+      },
+      "properties": {
+        "name": "Wasserstoffproduktion Ostschweiz AG",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2022",
+        "location": "St. Gallen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.292133564,
+          53.0019687
+        ]
+      },
+      "properties": {
+        "name": "Hydrogenpilot Oosterwolde (SinneWetterstof Hydrogen Pilot Project)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.4",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "231.3962264",
+        "commissioning": "2022",
+        "location": "Oosterwolde",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          23.51624629,
+          38.0668785
+        ]
+      },
+      "properties": {
+        "name": "Linde Mandra",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2022",
+        "location": "Mandra",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.65015716,
+          47.26419732
+        ]
+      },
+      "properties": {
+        "name": "SEALHYFE",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Power generation",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2022",
+        "location": "Le Croisic",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.6307821196,
+          52.06817589
+        ]
+      },
+      "properties": {
+        "name": "Cranfield Airport Octopus Energy",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.9",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "148.754717",
+        "commissioning": "2022",
+        "location": "Cranfield",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.29973593,
+          60.54537038
+        ]
+      },
+      "properties": {
+        "name": "H2 for Ovako steel mill",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "20.0",
+        "end_use": "Industrial heat",
+        "sector": "Not Available",
+        "consumption": "3305.660377",
+        "commissioning": "2023",
+        "location": "Hofors",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.837467533,
+          48.79126545
+        ]
+      },
+      "properties": {
+        "name": "Lhyfe - Schwaebisch - HyFIVE",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2023",
+        "location": "Schwaebisch",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.2587633218,
+          39.96497328
+        ]
+      },
+      "properties": {
+        "name": "Pamesa - eCombustible",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "8.0",
+        "end_use": "Industrial heat",
+        "sector": "Not Available",
+        "consumption": "1322.264151",
+        "commissioning": "2023",
+        "location": "Castellon",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.972544213,
+          56.64291412
+        ]
+      },
+      "properties": {
+        "name": "GreenHy Scale (Phase 1) GHS test",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "6.0",
+        "end_use": "Methanol",
+        "sector": "Not Available",
+        "consumption": "991.6981132",
+        "commissioning": "2023",
+        "location": "Spoettrup (Sp\u00f8ttrup)",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.878858422,
+          54.92880052
+        ]
+      },
+      "properties": {
+        "name": "Nature Energy Glansanger",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "6.0",
+        "end_use": "Methanol",
+        "sector": "Not Available",
+        "consumption": "991.6981132",
+        "commissioning": "2023",
+        "location": "Glansager",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.678655801,
+          47.91200576
+        ]
+      },
+      "properties": {
+        "name": "Lhyfe Buleon Brittany",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2023",
+        "location": "Buleon",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          1.564101997,
+          43.79705438
+        ]
+      },
+      "properties": {
+        "name": "Lhyfe Occitanie",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2023",
+        "location": "Bessieres",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          11.323817,
+          47.2537082
+        ]
+      },
+      "properties": {
+        "name": "MPREIS Hydrogen (within \"Demo4Grid\")",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "3.2",
+        "end_use": "Industrial heat",
+        "sector": "Not Available",
+        "consumption": "528.9056604",
+        "commissioning": "2023",
+        "location": "V\u00f6ls",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.750480013,
+          53.84462699
+        ]
+      },
+      "properties": {
+        "name": "H2Move - Cuxhaven",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.6",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "429.7358491",
+        "commissioning": "2023",
+        "location": "Cuxhaven",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.108144765,
+          43.32807726
+        ]
+      },
+      "properties": {
+        "name": "Basque Hydrogen Corridor/BH2C - Muskiz refinery (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2023",
+        "location": "Muskiz",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          29.15052865,
+          70.79904505
+        ]
+      },
+      "properties": {
+        "name": "HAEOLUS",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Power generation",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2023",
+        "location": "Berlevag",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.037327986,
+          51.96648874
+        ]
+      },
+      "properties": {
+        "name": "MultiPLHY Demonstrator",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2023",
+        "location": "Maasvlakte (Rotterdam)",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.848898852,
+          45.7028198
+        ]
+      },
+      "properties": {
+        "name": "SymphonHy",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2023",
+        "location": "Saint Fons",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.193732928,
+          46.88248957
+        ]
+      },
+      "properties": {
+        "name": "Groupe E Schiffenen",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2023",
+        "location": "Schiffenen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.571174784,
+          53.51952299
+        ]
+      },
+      "properties": {
+        "name": "Green Gas for Bremerhaven (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2023",
+        "location": "Bremerhaven",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          20.716891,
+          46.496454
+        ]
+      },
+      "properties": {
+        "name": "Aquamarine",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2023",
+        "location": "Kardoskut",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.55381783,
+          47.99027408
+        ]
+      },
+      "properties": {
+        "name": "Underground Sun Storage 2030",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2023",
+        "location": "Gampern",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.5881617,
+          46.7813377
+        ]
+      },
+      "properties": {
+        "name": "Renewable Gasfield",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2023",
+        "location": "Gabersdorf",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -6.423077951,
+          54.97966689
+        ]
+      },
+      "properties": {
+        "name": "County Antrim  PtH",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2023",
+        "location": "Dunloy",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -1.2469005,
+          52.7588668
+        ]
+      },
+      "properties": {
+        "name": "Intelligent Energies - Demo",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2023",
+        "location": "Loughborough",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.210961431,
+          46.33891199
+        ]
+      },
+      "properties": {
+        "name": "HyPSTER",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2023",
+        "location": "Bresse Vallons",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.622507807,
+          52.19859755
+        ]
+      },
+      "properties": {
+        "name": "ELY at Bioenergiepark",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2023",
+        "location": "Saerbeck",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.449288673,
+          59.76273207
+        ]
+      },
+      "properties": {
+        "name": "Stord Hydrogen",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.9",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "148.754717",
+        "commissioning": "2023",
+        "location": "Stord",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -1.951988203,
+          50.77051273
+        ]
+      },
+      "properties": {
+        "name": "Dorset Green H2",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.87",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "143.7962264",
+        "commissioning": "2023",
+        "location": "Poole",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          1.371189608,
+          43.63660651
+        ]
+      },
+      "properties": {
+        "name": "Hyport - Toulouse airport",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.7",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "115.6981132",
+        "commissioning": "2023",
+        "location": "Toulouse",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.947627641,
+          46.29872625
+        ]
+      },
+      "properties": {
+        "name": "Gaznat Innovation Lab",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.5",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "82.64150943",
+        "commissioning": "2023",
+        "location": "Aigle",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.860497113,
+          54.82177054
+        ]
+      },
+      "properties": {
+        "name": "eFarm Nordfriesland",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "82.64150943",
+        "commissioning": "2023",
+        "location": "Bosbull",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.488408833,
+          40.43538037
+        ]
+      },
+      "properties": {
+        "name": "Exolum HRS",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.42",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "69.41886792",
+        "commissioning": "2023",
+        "location": "Torrejon de Ardoz",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.438975203,
+          55.05479498
+        ]
+      },
+      "properties": {
+        "name": "European Energy - Kass\u00f8 (phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "50.0",
+        "end_use": "Methanol",
+        "sector": "Not Available",
+        "consumption": "8264.150943",
+        "commissioning": "2024",
+        "location": "Aabenraa",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.624997689,
+          59.12817625
+        ]
+      },
+      "properties": {
+        "name": "SKREI/HEGRA (Her\u00f8ya Green Ammonia) (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "24.0",
+        "end_use": "Ammonia",
+        "sector": "Not Available",
+        "consumption": "3966.792453",
+        "commissioning": "2024",
+        "location": "Porsgrunn",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.00507035,
+          51.3285704
+        ]
+      },
+      "properties": {
+        "name": "Linde at Leuna Chemical Complex",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "24.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "3966.792453",
+        "commissioning": "2024",
+        "location": "Leuna",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.798929467,
+          51.52710841
+        ]
+      },
+      "properties": {
+        "name": "Trailblazer (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "20.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "3305.660377",
+        "commissioning": "2024",
+        "location": "Oberhausen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.7562169,
+          55.565268
+        ]
+      },
+      "properties": {
+        "name": "HySynergy (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "20.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "3305.660377",
+        "commissioning": "2024",
+        "location": "Fredericia",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          22.12187365,
+          61.31928824
+        ]
+      },
+      "properties": {
+        "name": "P2X Harjavalta (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "20.0",
+        "end_use": "E-fuels",
+        "sector": "Not Available",
+        "consumption": "3305.660377",
+        "commissioning": "2024",
+        "location": "Harjavalta",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          23.04533095,
+          63.85128979
+        ]
+      },
+      "properties": {
+        "name": "Hycamite Kokkola",
+        "status": "Operating",
+        "type": "Methane splitting",
+        "capacity": "8.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "2102.610261",
+        "commissioning": "2024",
+        "location": "Kokkola",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.300694326,
+          52.48200035
+        ]
+      },
+      "properties": {
+        "name": "GET H2 Nukleus (Pilot - ALK)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "Power generation",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2024",
+        "location": "Lingen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.152295859,
+          56.47574423
+        ]
+      },
+      "properties": {
+        "name": "Reddap (REnewable Distributed & Dynamic Ammonia Plant)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "Ammonia",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2024",
+        "location": "Lemwig",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.893862,
+          47.280767
+        ]
+      },
+      "properties": {
+        "name": "MOL Szazhalombatta",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2024",
+        "location": "Sz\u00e1zhalombatta",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.2101376,
+          39.3899806
+        ]
+      },
+      "properties": {
+        "name": "Vitale",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2024",
+        "location": "Alcazar de San Juan",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.849487969,
+          48.80195098
+        ]
+      },
+      "properties": {
+        "name": "Schw\u00e4bisch Gm\u00fcnd (HyFive)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2024",
+        "location": "Schw\u00e4bisch Gm\u00fcnd",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.4653441,
+          48.1239168
+        ]
+      },
+      "properties": {
+        "name": "UpHy I and II (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2024",
+        "location": "Schwechat",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          11.64644983,
+          52.0774171
+        ]
+      },
+      "properties": {
+        "name": "Enertrag Magdeburg",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2024",
+        "location": "Magdeburg",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.533782706,
+          50.09511703
+        ]
+      },
+      "properties": {
+        "name": "PtL Ineratec Frankfurt",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "E-fuels",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2024",
+        "location": "Frankfurt",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          11.40698709,
+          55.49711501
+        ]
+      },
+      "properties": {
+        "name": "Kragerup Gods PtX",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "6.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "991.6981132",
+        "commissioning": "2024",
+        "location": "Ruds-Vedby",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          17.24319833,
+          50.92760108
+        ]
+      },
+      "properties": {
+        "name": "Gaj Olawski HRS",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2024",
+        "location": "Gaj Olawski",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.982587536,
+          57.3629663
+        ]
+      },
+      "properties": {
+        "name": "Gron Brint",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2024",
+        "location": "Hj\u00f8rring",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          11.98362176,
+          48.66475034
+        ]
+      },
+      "properties": {
+        "name": "Hy2B Hydrogen Pfeffenhausen - Green Hydrogen from Bavaria",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2024",
+        "location": "Pfeffenhausen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.305111889,
+          52.48429562
+        ]
+      },
+      "properties": {
+        "name": "GET H2 Nukleus (Phase 0) (PEM) - HyIron",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "4.0",
+        "end_use": "Power generation",
+        "sector": "Not Available",
+        "consumption": "661.1320755",
+        "commissioning": "2024",
+        "location": "Lingen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.51178369,
+          55.45818461
+        ]
+      },
+      "properties": {
+        "name": "European Energy - Maade/M\u00e5de/Esbjerg (Phase 1)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "3.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "495.8490566",
+        "commissioning": "2024",
+        "location": "Maade/M\u00e5de/Esbjerg",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.873058,
+          62.082088
+        ]
+      },
+      "properties": {
+        "name": "Hellesylt Hydrogen Hub",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "3.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "495.8490566",
+        "commissioning": "2024",
+        "location": "Hellesylt",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.068503641,
+          47.40381898
+        ]
+      },
+      "properties": {
+        "name": "HZI PtH Buchs",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "3.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "495.8490566",
+        "commissioning": "2024",
+        "location": "Buchs",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.90004663,
+          56.83046418
+        ]
+      },
+      "properties": {
+        "name": "Strandmollen Ljungby",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "3.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "495.8490566",
+        "commissioning": "2024",
+        "location": "Ljungby",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          16.42343238,
+          48.1816373
+        ]
+      },
+      "properties": {
+        "name": "Wien Energie -  Simmering",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "3.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "495.8490566",
+        "commissioning": "2024",
+        "location": "Vienna",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.092933409,
+          52.0298704
+        ]
+      },
+      "properties": {
+        "name": "HySolar HRS",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2024",
+        "location": "Nieuwegein",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.445148403,
+          46.83742592
+        ]
+      },
+      "properties": {
+        "name": "Axpo Green Hydrogen Domat/Ems/Reichenau",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2024",
+        "location": "Domat/Ems",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.830954932,
+          51.62730922
+        ]
+      },
+      "properties": {
+        "name": "Protium Project Pioneer 2",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2024",
+        "location": "NaN",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -4.02263,
+          39.8581
+        ]
+      },
+      "properties": {
+        "name": "Toledo Fusion Fuel - TOLSA H2 GREEN",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.4",
+        "end_use": "Industrial heat",
+        "sector": "Not Available",
+        "consumption": "396.6792453",
+        "commissioning": "2024",
+        "location": "Toledo",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.26131046,
+          55.47660994
+        ]
+      },
+      "properties": {
+        "name": "ESTECH Odense",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2024",
+        "location": "Sonderso",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.8500268,
+          46.6167284
+        ]
+      },
+      "properties": {
+        "name": "H2 Pioneer - Villach",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2024",
+        "location": "Villach",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.557828824,
+          53.59306543
+        ]
+      },
+      "properties": {
+        "name": "HY City Bremerhaven (HRS) (part of the eFarm network)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2024",
+        "location": "Bremerhaven",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.545337694,
+          50.02343497
+        ]
+      },
+      "properties": {
+        "name": "Conseil 1",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2024",
+        "location": "NaN",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.234589513,
+          52.63798153
+        ]
+      },
+      "properties": {
+        "name": "Klimaneutrale Wasserstoffmobilit\u00e4t in Nienburg - Climate neutral hzdrogen mobility in Nieburg",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2024",
+        "location": "Nieburg",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -5.902503878,
+          39.15980484
+        ]
+      },
+      "properties": {
+        "name": "Turn2x",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2024",
+        "location": "Miajadas",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -4.447977563,
+          48.3862492
+        ]
+      },
+      "properties": {
+        "name": "VHyGO (Brest)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "247.9245283",
+        "commissioning": "2024",
+        "location": "Brest",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.153457569,
+          47.30254436
+        ]
+      },
+      "properties": {
+        "name": "VHyGO (Saint-Nazaire)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "247.9245283",
+        "commissioning": "2024",
+        "location": "Saint-Nazaire",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.037912781,
+          53.41655414
+        ]
+      },
+      "properties": {
+        "name": "KRUH2 (\"Krummhoern H2\" or \"Realbetrieb KRUH2\")",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.3",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "214.8679245",
+        "commissioning": "2024",
+        "location": "Krummhorn",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          20.7024755,
+          47.89347035
+        ]
+      },
+      "properties": {
+        "name": "BUKKABR\u00c1NY PtG",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Bukk\u00e1br\u00e1nyi",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.0414701,
+          47.3215806
+        ]
+      },
+      "properties": {
+        "name": "Dijon Metropole Smart Energy Nord",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Dijon",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.1404855,
+          50.2307994
+        ]
+      },
+      "properties": {
+        "name": "Smart Quart (Kaisersesch)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Kaisersesch",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -8.9768885,
+          39.0230782
+        ]
+      },
+      "properties": {
+        "name": "FLEXnCONFU (Ribatejo)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Power generation",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Carregado",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.971242431,
+          58.13860163
+        ]
+      },
+      "properties": {
+        "name": "Glencore Nikkelverk",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Kristiansand",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.55424612,
+          52.31658064
+        ]
+      },
+      "properties": {
+        "name": "Braunschweig\u00a0Research\u00a0Airport",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Braunschweig",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          17.63183743,
+          48.43139432
+        ]
+      },
+      "properties": {
+        "name": "Green Hydrogen for mobility EMPARK",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Jaslovske Bohunice",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -1.008857986,
+          41.62566996
+        ]
+      },
+      "properties": {
+        "name": "HRS El Cisne Zaragoza",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Zaragoza",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          15.46017718,
+          47.05927603
+        ]
+      },
+      "properties": {
+        "name": "Mobility of the Future (within \"Innovation Liquid Energy\")",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Graz",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.534607382,
+          52.2379891
+        ]
+      },
+      "properties": {
+        "name": "PosHYdon",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "NaN",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.896006443,
+          47.58441802
+        ]
+      },
+      "properties": {
+        "name": "H2 NFC / H2NFC",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Danjoutin",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          24.90039849,
+          59.43649775
+        ]
+      },
+      "properties": {
+        "name": "Utilitas ELY (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Talinn",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.081712984,
+          48.53801841
+        ]
+      },
+      "properties": {
+        "name": "H2goesRail ely pilot",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Tubingen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.715196757,
+          47.65876686
+        ]
+      },
+      "properties": {
+        "name": "Hygo Vannes",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Industrial heat",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Vannes",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.525034103,
+          59.27465476
+        ]
+      },
+      "properties": {
+        "name": "Hypilot Hystar",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Ammonia",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2024",
+        "location": "Rogaland",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.98274002,
+          58.44255891
+        ]
+      },
+      "properties": {
+        "name": "Kaupanes Hydrogen, Dalane at Egersund",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.9",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "148.754717",
+        "commissioning": "2024",
+        "location": "Egersund",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.528121637,
+          56.66499472
+        ]
+      },
+      "properties": {
+        "name": "Arbikie Distillery",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "0.9",
+        "end_use": "Industrial heat",
+        "sector": "Not Available",
+        "consumption": "148.754717",
+        "commissioning": "2024",
+        "location": "Montrose",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          1.105889183,
+          49.90460396
+        ]
+      },
+      "properties": {
+        "name": "VHyGO (Dieppe)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "0.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "82.64150943",
+        "commissioning": "2024",
+        "location": "Dieppe",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          28.09673118,
+          61.06356097
+        ]
+      },
+      "properties": {
+        "name": "Solar foods (Phase 0)",
+        "status": "Operating",
+        "type": "Water electrolysis",
+        "capacity": "0.5",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "82.64150943",
+        "commissioning": "2024",
+        "location": "Lappeenranta",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.848996124,
+          51.27213819
+        ]
+      },
+      "properties": {
+        "name": "Yara Sluiskil CCS",
+        "status": "Construction",
+        "type": "SMR+CCS",
+        "capacity": "300.0",
+        "end_use": "Ammonia",
+        "sector": "Not Available",
+        "consumption": "78847.88479",
+        "commissioning": "2025",
+        "location": "Sluiskil",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.99333939,
+          51.96077635
+        ]
+      },
+      "properties": {
+        "name": "Holland Hydrogen (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "200.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "33056.60377",
+        "commissioning": "2025",
+        "location": "Maasvlakte (Rotterdam)",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -8.812321053,
+          37.95938872
+        ]
+      },
+      "properties": {
+        "name": "GALP Sines/Grey2Green I (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "100.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "16528.30189",
+        "commissioning": "2025",
+        "location": "Sines",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.303512224,
+          52.48283788
+        ]
+      },
+      "properties": {
+        "name": "GET H2 Nukleus (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "86.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "14214.33962",
+        "commissioning": "2025",
+        "location": "Lingen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.422351174,
+          49.52065429
+        ]
+      },
+      "properties": {
+        "name": "Hy4Chem",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "54.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "8925.283019",
+        "commissioning": "2025",
+        "location": "Ludwigshafen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          11.8605186,
+          51.3847515
+        ]
+      },
+      "properties": {
+        "name": "Bad Lauchst\u00e4dt energy park",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "30.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "4958.490566",
+        "commissioning": "2025",
+        "location": "Bad Lauchstadt",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.045860954,
+          43.00647723
+        ]
+      },
+      "properties": {
+        "name": "Hyd'Occ - Port-La-nouvelle (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "20.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "3305.660377",
+        "commissioning": "2025",
+        "location": "Port-La-Nouvelle",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.041352451,
+          58.15965633
+        ]
+      },
+      "properties": {
+        "name": "Hydrogen Hub Agder (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "20.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "3305.660377",
+        "commissioning": "2025",
+        "location": "Kristiansand",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.285651903,
+          56.80198974
+        ]
+      },
+      "properties": {
+        "name": "Green Hydrogen 1/HyRo Scotland",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "15.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "2479.245283",
+        "commissioning": "2025",
+        "location": "Lanark",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.021602439,
+          45.38966665
+        ]
+      },
+      "properties": {
+        "name": "Lhyfe Le Cheylas",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2025",
+        "location": "Le Cheylas",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.486788466,
+          53.33221044
+        ]
+      },
+      "properties": {
+        "name": "Lhyfe - Brake",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2025",
+        "location": "Brake",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.6661833,
+          53.12930975
+        ]
+      },
+      "properties": {
+        "name": "HyBit",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "10.0",
+        "end_use": "Steel",
+        "sector": "Not Available",
+        "consumption": "1652.830189",
+        "commissioning": "2025",
+        "location": "Bremen-Mittelsburen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.841838103,
+          50.71857904
+        ]
+      },
+      "properties": {
+        "name": "Hunfeld-Michelsrombach Project (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "6.6",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "1090.867925",
+        "commissioning": "2025",
+        "location": "Hunfeld",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.00392679,
+          51.95067317
+        ]
+      },
+      "properties": {
+        "name": "AmpHytrite",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "6.25",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "1033.018868",
+        "commissioning": "2025",
+        "location": "Maasvlakte (Rotterdam)",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -3.023724945,
+          56.17615891
+        ]
+      },
+      "properties": {
+        "name": "H100 Fife Project - Levenmouth",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "Residential heat",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2025",
+        "location": "Methil",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          8.731756808,
+          47.18043039
+        ]
+      },
+      "properties": {
+        "name": "Hydrogen H\u00f6fe Freienbach (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2025",
+        "location": "Freienbach",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.708143189,
+          47.53893323
+        ]
+      },
+      "properties": {
+        "name": "H2-Wyhlen (Phase 2)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2025",
+        "location": "Grenzach-Wyhlen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.6939975162,
+          47.2586854
+        ]
+      },
+      "properties": {
+        "name": "Hy\u2019Touraine",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2025",
+        "location": "Sorigny",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.75119008,
+          51.90438547
+        ]
+      },
+      "properties": {
+        "name": "Luckau ELY",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2025",
+        "location": "Luckau",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          1.968975563,
+          49.80770719
+        ]
+      },
+      "properties": {
+        "name": "Lhyfe Croixrault",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2025",
+        "location": "Croixrault",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          23.788949,
+          46.567153
+        ]
+      },
+      "properties": {
+        "name": "Nervia",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "5.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "826.4150943",
+        "commissioning": "2025",
+        "location": "Turda",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          11.4626899,
+          53.4872448
+        ]
+      },
+      "properties": {
+        "name": "Decentralized energy supply for Lubesse",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "4.0",
+        "end_use": "Power generation",
+        "sector": "Not Available",
+        "consumption": "661.1320755",
+        "commissioning": "2025",
+        "location": "Lubesse",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.474965288,
+          41.76593716
+        ]
+      },
+      "properties": {
+        "name": "Redexis - Soria (H2 Duero)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2025",
+        "location": "Soria",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -4.18592498,
+          55.39387007
+        ]
+      },
+      "properties": {
+        "name": "KGH2P (Knockshinnoch Green Hydrogen Hub Project)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2025",
+        "location": "New Cumnock",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          5.062206571,
+          52.87427242
+        ]
+      },
+      "properties": {
+        "name": "Duwaal Initiative (Wind to Wheel/Hydrogen Mill)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2025",
+        "location": "Wieringerwerf",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          2.4368745,
+          48.77887899
+        ]
+      },
+      "properties": {
+        "name": "H2 Creteil",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2025",
+        "location": "Creteil",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.710461987,
+          52.6830967
+        ]
+      },
+      "properties": {
+        "name": "Hollandse Kust Noord-Offshore",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2025",
+        "location": "NaN",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          18.22737121,
+          52.3028341
+        ]
+      },
+      "properties": {
+        "name": "ZE PAK Konin (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2025",
+        "location": "Konin",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.788165,
+          51.188809
+        ]
+      },
+      "properties": {
+        "name": "Terranova hydrogen project (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.5",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "413.2075472",
+        "commissioning": "2025",
+        "location": "Zelzate",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          1.758556902,
+          52.47411497
+        ]
+      },
+      "properties": {
+        "name": "Lowestoft PowerPark hydrogen",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2025",
+        "location": "Lowestoft",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.033647272,
+          46.60981284
+        ]
+      },
+      "properties": {
+        "name": "Gruyere H2 Power Bulle",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2025",
+        "location": "Bulle",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          14.96107466,
+          51.13493505
+        ]
+      },
+      "properties": {
+        "name": "Fraunhofer Hydrogen Lab Gorlitz (G\u00f6rlitz)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "NaN",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2025",
+        "location": "Gorlitz (G\u00f6rlitz)",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          9.305167763,
+          48.85703376
+        ]
+      },
+      "properties": {
+        "name": "Hy.Waiblingen (part of the efarm / H2RIVERS project)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2025",
+        "location": "Waiblingen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          12.15061771,
+          50.30906013
+        ]
+      },
+      "properties": {
+        "name": "Farma Trojmezi Energo Park",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.4",
+        "end_use": "Blending",
+        "sector": "Not Available",
+        "consumption": "231.3962264",
+        "commissioning": "2025",
+        "location": "Hranice",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.4348116387,
+          43.31188689
+        ]
+      },
+      "properties": {
+        "name": "Biofractory Pau",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.3",
+        "end_use": "Methanol",
+        "sector": "Not Available",
+        "consumption": "214.8679245",
+        "commissioning": "2025",
+        "location": "Lescar",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -8.818918981,
+          37.95009712
+        ]
+      },
+      "properties": {
+        "name": "Keme Energy - Sines (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.26",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "208.2566038",
+        "commissioning": "2025",
+        "location": "Sines",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          26.33213547,
+          60.3757028
+        ]
+      },
+      "properties": {
+        "name": "Fortum Loviisa",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2025",
+        "location": "Loviisa",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          21.72567233,
+          65.86769828
+        ]
+      },
+      "properties": {
+        "name": "H2 Green Steel (H2GS)  (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "740.0",
+        "end_use": "Steel",
+        "sector": "Not Available",
+        "consumption": "122309.434",
+        "commissioning": "2026",
+        "location": "Boden",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.287408711,
+          51.87179978
+        ]
+      },
+      "properties": {
+        "name": "Air Products  Rotterdam",
+        "status": "Construction",
+        "type": "SMR+CCS",
+        "capacity": "410.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "107758.7759",
+        "commissioning": "2026",
+        "location": "Rotterdam",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          4.251068868,
+          51.88909488
+        ]
+      },
+      "properties": {
+        "name": "Air Liquide  Rotterdam",
+        "status": "Construction",
+        "type": "SMR+CCS",
+        "capacity": "410.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "107758.7759",
+        "commissioning": "2026",
+        "location": "Rotterdam",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          0.6005385939,
+          49.505435
+        ]
+      },
+      "properties": {
+        "name": "Normand'Hy",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "200.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "33056.60377",
+        "commissioning": "2026",
+        "location": "Port-Jerome",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          10.40420831,
+          52.15432163
+        ]
+      },
+      "properties": {
+        "name": "Salzgitter Low CO2 Steelmaking (SALCOS)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "100.0",
+        "end_use": "Steel",
+        "sector": "Not Available",
+        "consumption": "16528.30189",
+        "commissioning": "2026",
+        "location": "Salzgitter",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.303148163,
+          52.48401623
+        ]
+      },
+      "properties": {
+        "name": "GET H2 Nukleus (Phase 2)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "100.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "16528.30189",
+        "commissioning": "2026",
+        "location": "Lingen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          3.207935396,
+          51.30948748
+        ]
+      },
+      "properties": {
+        "name": "Hyoffwind (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "25.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "4132.075472",
+        "commissioning": "2026",
+        "location": "Zeebrugge",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -0.003074774832,
+          39.9566449
+        ]
+      },
+      "properties": {
+        "name": "Castellon gH2",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "25.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "4132.075472",
+        "commissioning": "2026",
+        "location": "Castell\u00f3n de la Plana",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -53.7784043,
+          5.6687327
+        ]
+      },
+      "properties": {
+        "name": "Centrale \u00c9lectrique de l\u2019Ouest Guyanais (CEOG)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "16.0",
+        "end_use": "Power generation",
+        "sector": "Not Available",
+        "consumption": "2644.528302",
+        "commissioning": "2026",
+        "location": "French Guiana",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          25.16954443,
+          60.21839102
+        ]
+      },
+      "properties": {
+        "name": "3H2 \u2013 Helsinki Hydrogen Hub",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "3.0",
+        "end_use": "Residential heat",
+        "sector": "Not Available",
+        "consumption": "495.8490566",
+        "commissioning": "2026",
+        "location": "Vuossari",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -2.066253922,
+          57.11553466
+        ]
+      },
+      "properties": {
+        "name": "Aberdeen Hydrogen Hub (Phase 1)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.4",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "396.6792453",
+        "commissioning": "2026",
+        "location": "Aberdeen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          21.16421171,
+          55.65256032
+        ]
+      },
+      "properties": {
+        "name": "Klaipeda HRS",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "2.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "330.5660377",
+        "commissioning": "2026",
+        "location": "Klaipeda",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          14.54360793,
+          46.05765923
+        ]
+      },
+      "properties": {
+        "name": "Electrolysis plant Ljublana",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "1.0",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "165.2830189",
+        "commissioning": "2026",
+        "location": "Ljublana",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          -9.448599617,
+          38.71781564
+        ]
+      },
+      "properties": {
+        "name": "PRF/Cascais Proxima",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "0.9",
+        "end_use": "Mobility",
+        "sector": "Not Available",
+        "consumption": "148.754717",
+        "commissioning": "2026",
+        "location": "Cascais",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.235108024,
+          53.35411685
+        ]
+      },
+      "properties": {
+        "name": "Clean Hydrogen Coastline - EWE East Frisia",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "280.0",
+        "end_use": "Other industry",
+        "sector": "Not Available",
+        "consumption": "46279.24528",
+        "commissioning": "2027",
+        "location": "Emden",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          7.30387584,
+          52.48004288
+        ]
+      },
+      "properties": {
+        "name": "GET H2 Nukleus (Phase 3)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "100.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "16528.30189",
+        "commissioning": "2027",
+        "location": "Lingen",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          6.991765445,
+          50.86246568
+        ]
+      },
+      "properties": {
+        "name": "REFHYNE (Phase 2)",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "100.0",
+        "end_use": "Refining",
+        "sector": "Not Available",
+        "consumption": "16528.30189",
+        "commissioning": "2027",
+        "location": "Wesseling",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          13.9440905,
+          66.8166262
+        ]
+      },
+      "properties": {
+        "name": "Neptun Glomfjord Green Ammonia",
+        "status": "Construction",
+        "type": "Water electrolysis",
+        "capacity": "20.0",
+        "end_use": "Ammonia",
+        "sector": "Not Available",
+        "consumption": "3305.660377",
+        "commissioning": "2027",
+        "location": "Glomfjord",
+        "description": "No description",
+        "website": "https://example.com"
+      }
+    }
+  ]
+}
