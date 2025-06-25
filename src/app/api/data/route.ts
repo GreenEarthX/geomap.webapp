@@ -1,14 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getLatestMapDatasets } from '@/services/mapDatasetService';
+import { NextResponse } from 'next/server';
+import { getMapData } from '@/services/getMapData';
 
-export async function GET(_req: NextRequest) {
+export async function GET() {
   try {
-    const datasets = await getLatestMapDatasets();
-    return NextResponse.json(datasets);
+    const data = await getMapData();
+    return NextResponse.json(data);
   } catch (err) {
-    return NextResponse.json(
-      { error: (err as Error).message || 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to load data' }, { status: 500 });
   }
 }
