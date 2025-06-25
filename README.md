@@ -16,17 +16,7 @@ cd geomap-gex
 npm install
 ```
 
-### 3. Create .env.local
-Copy .env.example in you local .env.local 
-```bash
-DB_HOST=your_db_host
-DB_PORT=your_db_port
-DB_USERNAME=your_db_username
-DB_PASSWORD=your_db_password
-DB_NAME=your_db_name
-```
-
-### 4. Start the dev server
+### 3. Start the dev server
 ```bash
 npm run dev
 ```
