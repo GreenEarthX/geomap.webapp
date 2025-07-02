@@ -70,6 +70,28 @@ const selectStyle: React.CSSProperties = {
   backgroundSize: '8px 5px',
 };
 
+const FIND_ME_BUTTON_STYLE: React.CSSProperties = {
+  position: 'fixed',
+  bottom: '80px',
+  right: '20px',
+  zIndex: 1000,
+  background: 'white',
+  color: '#333',
+  border: 'none',
+  borderRadius: '50%',
+  width: '40px',
+  height: '40px',
+  padding: '0',
+  fontSize: '20px',
+  cursor: 'pointer',
+  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  transition: 'all 0.3s ease',
+  transform: 'translateY(0)',
+};
+
 const getUniqueValues = (features: Feature[], key: keyof Feature['properties']) => {
   return Array.from(
     new Set(
@@ -101,6 +123,27 @@ const LeafletMap = () => {
   ];
 
   const mapRef = useRef<L.Map | null>(null);
+
+  const handleFindMe = () => {
+    if (navigator.geolocation && mapRef.current) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          mapRef.current?.setView([latitude, longitude], 12);
+          L.marker([latitude, longitude])
+            .addTo(mapRef.current!)
+            .bindPopup('Your Location')
+            .openPopup();
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          alert('Unable to retrieve your location. Please ensure location services are enabled.');
+        }
+      );
+    } else {
+      alert('Geolocation is not supported by your browser.');
+    }
+  };
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -598,6 +641,16 @@ const LeafletMap = () => {
       >
         <span>Plant List</span>
         <i className="fa fa-arrow-right" />
+      </button>
+
+      <button
+        onClick={handleFindMe}
+        style={FIND_ME_BUTTON_STYLE}
+        title="Find My Location"
+        onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
+        onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
+      >
+        <i className="fa fa-crosshairs" />
       </button>
     </>
   );
