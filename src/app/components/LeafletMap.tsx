@@ -2,15 +2,11 @@
 
 import { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
-
-// CSS
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.awesome-markers/dist/leaflet.awesome-markers.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import 'leaflet-measure/dist/leaflet-measure.css';
-
-// Plugins
 import 'leaflet.awesome-markers';
 import 'leaflet.markercluster';
 import 'leaflet-measure';
@@ -18,79 +14,25 @@ import 'leaflet-measure';
 export interface Feature {
   type: 'Feature';
   geometry: {
-    type: 'Point' | 'LineString';
-    coordinates: any;
+    type: 'Point';
+    coordinates: [number, number];
   };
   properties: {
     id?: number;
+    internal_id?: string;
     name?: string;
     status?: string;
     type?: string;
-    capacity?: string | number;
     capacity_mw?: number;
     end_use?: string;
-    sector?: string;
-    consumption?: string | number;
     consumption_tpy?: number;
-    commissioning?: string;
-    location?: string;
-    description?: string;
-    website?: string;
     start_year?: number;
-    last_researched?: string;
     city?: string;
     country?: string;
     process?: string;
-    technology?: string;
-    coordinates?: string;
-    pipeline_nr?: number;
-    segment?: string;
-    start?: string;
-    stop?: string;
-    length?: string;
-    diameter?: string;
-    approx_location_start?: string;
-    approx_location_stop?: string;
-    country_id?: number | null;
+    secondary_product?: string;
   };
 }
-
-const selectStyle: React.CSSProperties = {
-  padding: '6px 10px',
-  fontSize: 14,
-  border: '1px solid #ccc',
-  borderRadius: 4,
-  appearance: 'none',
-  backgroundColor: 'rgba(255, 255, 255, 0.7)',
-  color: '#000',
-  backdropFilter: 'blur(10px)',
-  backgroundImage: `url("data:image/svg+xml,%3Csvg width='8' height='5' viewBox='0 0 8 5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23666'/%3E%3C/svg%3E")`,
-  backgroundRepeat: 'no-repeat',
-  backgroundPosition: 'right 10px center',
-  backgroundSize: '8px 5px',
-};
-
-const FIND_ME_BUTTON_STYLE: React.CSSProperties = {
-  position: 'fixed',
-  bottom: '80px',
-  right: '20px',
-  zIndex: 1000,
-  background: 'white',
-  color: '#333',
-  border: 'none',
-  borderRadius: '50%',
-  width: '40px',
-  height: '40px',
-  padding: '0',
-  fontSize: '20px',
-  cursor: 'pointer',
-  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'all 0.3s ease',
-  transform: 'translateY(0)',
-};
 
 const getUniqueValues = (features: Feature[], key: keyof Feature['properties']) => {
   return Array.from(
@@ -106,31 +48,56 @@ const LeafletMap = () => {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [endUse, setEndUse] = useState('');
+  const [plantType, setPlantType] = useState('');
   const [selectedPlantName, setSelectedPlantName] = useState('');
-  const [selectedLocation, setSelectedLocation] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState('');
   const [hydrogenData, setHydrogenData] = useState<Feature[]>([]);
-  const [windData, setWindData] = useState<Feature[]>([]);
-  const [solarData, setSolarData] = useState<Feature[]>([]);
-  const [storageData, setStorageData] = useState<Feature[]>([]);
-  const [pipelineData, setPipelineData] = useState<Feature[]>([]);
-
-  const allFeatures = [
-    ...hydrogenData,
-    ...solarData,
-    ...windData,
-    ...storageData,
-    ...pipelineData,
-  ];
+  const [statusTypes, setStatusTypes] = useState<{ sector: string; current_status: string }[]>([]);
+  const [legendVisible, setLegendVisible] = useState(true); // Visible by default for web
+  const [legendPinned, setLegendPinned] = useState(false);
+  const [filtersVisible, setFiltersVisible] = useState(true); // Toggle for mobile filters
 
   const mapRef = useRef<L.Map | null>(null);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  const statusColorMap: Record<string, string> = {
+    cancelled: 'red',
+    concept: 'green',
+    decommisioned: 'darkgrey',
+    demo: 'purple',
+    'feasibility study': 'cadetblue',
+    feed: 'orange',
+    fid: 'darkred',
+    'fid/construction': 'darkpurple',
+    operational: 'darkgreen',
+    'other/unknown': 'grey',
+    'under construction': 'blue',
+  };
 
   const handleFindMe = () => {
     if (navigator.geolocation && mapRef.current) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          mapRef.current?.setView([latitude, longitude], 12);
-          L.marker([latitude, longitude])
+          mapRef.current?.flyTo([latitude, longitude], 18, {
+            duration: 0.5,
+            easeLinearity: 0.25,
+          });
+
+          mapRef.current?.eachLayer(layer => {
+            if (layer instanceof L.Marker && layer.getPopup()?.getContent() === 'Your Location') {
+              mapRef.current?.removeLayer(layer);
+            }
+          });
+
+          L.marker([latitude, longitude], {
+            icon: L.AwesomeMarkers.icon({
+              markerColor: 'blue',
+              iconColor: 'white',
+              icon: 'user',
+              prefix: 'fa',
+            }),
+          })
             .addTo(mapRef.current!)
             .bindPopup('Your Location')
             .openPopup();
@@ -145,25 +112,59 @@ const LeafletMap = () => {
     }
   };
 
+  const filtered = hydrogenData.filter(f => {
+    return (
+      (search === '' ||
+        Object.values(f.properties).some(
+          v => typeof v === 'string' && v.toLowerCase().includes(search.toLowerCase())
+        )) &&
+      (status === '' || f.properties.status === status) &&
+      (endUse === '' || f.properties.end_use?.toLowerCase().includes(endUse.toLowerCase())) &&
+      (plantType === '' || f.properties.type === plantType) &&
+      (selectedCountry === '' || f.properties.country === selectedCountry)
+    );
+  });
+
+  const plantNames = getUniqueValues(filtered, 'name');
+  const countries = getUniqueValues(hydrogenData, 'country');
+  const statuses = getUniqueValues(hydrogenData, 'status');
+  const endUses = getUniqueValues(hydrogenData, 'end_use');
+  const plantTypes = getUniqueValues(hydrogenData, 'type');
+
   useEffect(() => {
     if (!mapRef.current) return;
 
     const feature = hydrogenData.find(
       f =>
         (selectedPlantName && f.properties.name === selectedPlantName) ||
-        (selectedLocation && f.properties.city === selectedLocation)
+        (selectedCountry && f.properties.country === selectedCountry)
     );
 
-    if (feature) {
+    if (feature && feature.geometry.coordinates?.[0] && feature.geometry.coordinates?.[1]) {
       const [lng, lat] = feature.geometry.coordinates;
       mapRef.current.setView([lat, lng], 12);
     }
-  }, [selectedPlantName, selectedLocation, hydrogenData]);
+  }, [selectedPlantName, selectedCountry, hydrogenData]);
+
+  useEffect(() => {
+    if (!mapRef.current || !search.trim()) return;
+
+    const match = filtered.find(f =>
+      Object.values(f.properties).some(
+        v => typeof v === 'string' && v.toLowerCase().includes(search.toLowerCase())
+      )
+    );
+
+    if (match && match.geometry.coordinates?.[0] && match.geometry.coordinates?.[1]) {
+      const [lng, lat] = match.geometry.coordinates;
+      mapRef.current.setView([lat, lng], 12);
+    }
+  }, [search, filtered]);
 
   useEffect(() => {
     if (document.getElementById('map')?.children.length) return;
 
-    mapRef.current = L.map('map').setView([51.07289, 10.67139], 6);
+    mapRef.current = L.map('map').setView([51.07289, 10.67139], 5);
 
     const baseLayers = {
       Light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -188,77 +189,67 @@ const LeafletMap = () => {
 
     baseLayers['Light'].addTo(mapRef.current!);
 
-    const hydrogenCluster = L.markerClusterGroup().addTo(mapRef.current!);
-    const windCluster = L.markerClusterGroup().addTo(mapRef.current!);
-    const solarCluster = L.markerClusterGroup().addTo(mapRef.current!);
+    const productionCluster = L.markerClusterGroup().addTo(mapRef.current!);
     const storageCluster = L.markerClusterGroup().addTo(mapRef.current!);
-    const pipelineLayer = L.featureGroup().addTo(mapRef.current!);
 
-    const windIcon = L.AwesomeMarkers.icon({
-      markerColor: 'green',
-      iconColor: 'white',
-      icon: 'wind',
-      prefix: 'fa',
-    });
-    const solarIcon = L.AwesomeMarkers.icon({
-      markerColor: 'green',
-      iconColor: 'white',
-      icon: 'solar-panel',
-      prefix: 'fa',
-    });
-    const storageIcon = L.AwesomeMarkers.icon({
-      markerColor: 'purple',
-      iconColor: 'white',
-      icon: 'database',
-      prefix: 'fa',
-    });
-    const pipelineIcon = L.AwesomeMarkers.icon({
-      markerColor: 'red',
-      iconColor: 'white',
-      icon: 'minus',
-      prefix: 'fa',
-    });
-
-    const getHydrogenIcon = (status: string | undefined | null) => {
-      let color = 'gray';
-      const lower = typeof status === 'string' ? status.toLowerCase() : '';
-
-      if (['operation', 'operating'].includes(lower)) color = 'green';
-      else if (lower === 'construction') color = 'orange';
-      else if (lower === 'planned') color = 'blue';
-
+    const getHydrogenIcon = (status: string | undefined | null, type: string | undefined | null) => {
+      const statusKey = status ? status.toLowerCase() : 'other/unknown';
+      const color = statusColorMap[statusKey] || statusColorMap['other/unknown'];
+      const iconType = type?.toLowerCase() === 'production' ? 'bolt' : 'cube';
       return L.AwesomeMarkers.icon({
         markerColor: color,
         iconColor: 'white',
-        icon: 'industry',
+        icon: iconType,
         prefix: 'fa',
       });
     };
 
-    const fetchAndAddMarkerFromJson = async (
-      data: any,
-      layer: L.MarkerClusterGroup | L.FeatureGroup,
-      type: string
-    ) => {
+    const fetchAndAddMarkerFromJson = async (data: any) => {
       if (!data || !Array.isArray(data.features)) {
-        console.warn(`Missing or invalid data for ${type}`);
+        console.warn('Missing or invalid data for hydrogen');
         return;
       }
 
       data.features.forEach((feature: Feature) => {
-        const coords = feature.geometry.coordinates;
+        const coords = feature.geometry?.coordinates;
         const props = feature.properties;
 
-        let icon = pipelineIcon;
-        if (type === 'hydrogen') icon = getHydrogenIcon(props.status);
-        else if (type === 'wind') icon = windIcon;
-        else if (type === 'solar') icon = solarIcon;
-        else if (type === 'storage') icon = storageIcon;
+        // Skip if coordinates are null, undefined, empty, or invalid (0, NaN)
+        if (
+          !coords ||
+          !Array.isArray(coords) ||
+          coords.length !== 2 ||
+          typeof coords[0] !== 'number' ||
+          typeof coords[1] !== 'number' ||
+          coords[0] === 0 ||
+          coords[1] === 0 ||
+          isNaN(coords[0]) ||
+          isNaN(coords[1])
+        ) {
+          console.warn('Skipping feature with invalid or missing coordinates:', {
+            feature,
+            reason:
+              !coords
+                ? 'Coordinates are null or undefined'
+                : !Array.isArray(coords)
+                ? 'Coordinates is not an array'
+                : coords.length !== 2
+                ? 'Coordinates array length is not 2'
+                : typeof coords[0] !== 'number' || isNaN(coords[0])
+                ? 'Longitude is not a valid number'
+                : typeof coords[1] !== 'number' || isNaN(coords[1])
+                ? 'Latitude is not a valid number'
+                : 'Coordinates are zero (0,0)',
+          });
+          return;
+        }
 
-        let popupHtml = '';
-        if (type === 'hydrogen') {
-          popupHtml = `
+        const icon = getHydrogenIcon(props.status, props.type);
+
+        const popupHtml = `
+          <div class="max-w-xs p-2 text-sm">
             <b>Project Name:</b> ${props.name || 'N/A'}<br>
+            <b>Type:</b> ${props.type || 'N/A'}<br>
             <b>Status:</b> ${props.status || 'N/A'}<br>
             <b>Start Year:</b> ${props.start_year || 'N/A'}<br>
             <b>Capacity:</b> ${props.capacity_mw || 'N/A'} MW<br>
@@ -268,112 +259,33 @@ const LeafletMap = () => {
             <b>City:</b> ${props.city || 'N/A'}<br>
             <b>Country:</b> ${props.country || 'N/A'}<br>
             ${
-              props.id
-                ? `<button onclick="window.location.href='/plant-form/hydrogen/${props.id}'" style="margin-top: 10px; padding: 5px 10px; background: #006cb5; color: white; border: none; border-radius: 4px; cursor: pointer;">Verify</button>`
-                : '<span style="color: red; font-size: 12px;">No ID available</span>'
+              props.internal_id
+                ? `<button onclick="window.location.href='/plant-form/hydrogen/${props.internal_id}'" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">Verify</button>`
+                : '<span class="text-red-500 text-xs">No ID available</span>'
             }
-          `;
-        } else if (type === 'solar') {
-          popupHtml = `
-            <b>Project Name:</b> ${props.name || 'N/A'}<br>
-            <b>Capacity:</b> ${props.capacity_mw || 'N/A'} MW<br>
-            <b>Status:</b> ${props.status || 'N/A'}<br>
-            <b>Start Year:</b> ${props.start_year || 'N/A'}<br>
-            <b>Last Researched:</b> ${props.last_researched || 'N/A'}<br>
-            ${
-              props.id
-                ? `<button onclick="window.location.href='/plant-form/solar/${props.id}'" style="margin-top: 10px; padding: 5px 10px; background: #006cb5; color: white; border: none; border-radius: 4px; cursor: pointer;">Verify</button>`
-                : '<span style="color: red; font-size: 12px;">No ID available</span>'
-            }
-          `;
-        } else if (type === 'wind') {
-          popupHtml = `
-            <b>Project Name:</b> ${props.name || 'N/A'}<br>
-            <b>Capacity:</b> ${props.capacity_mw || 'N/A'} MW<br>
-            <b>Status:</b> ${props.status || 'N/A'}<br>
-            <b>Start Year:</b> ${props.start_year || 'N/A'}<br>
-            <b>Last Researched:</b> ${props.last_researched || 'N/A'}<br>
-            ${
-              props.id
-                ? `<button onclick="window.location.href='/plant-form/wind/${props.id}'" style="margin-top: 10px; padding: 5px 10px; background: #006cb5; color: white; border: none; border-radius: 4px; cursor: pointer;">Verify</button>`
-                : '<span style="color: red; font-size: 12px;">No ID available</span>'
-            }
-          `;
-        } else if (type === 'storage') {
-          popupHtml = `
-            <b>Project Name:</b> ${props.name || 'N/A'}<br>
-            <b>Technology:</b> ${props.technology || 'N/A'}<br>
-            <b>Location:</b> ${props.location || 'N/A'}<br>
-            <b>Start Year:</b> ${props.start_year || 'N/A'}<br>
-            ${
-              props.id
-                ? `<button onclick="window.location.href='/plant-form/storage/${props.id}'" style="margin-top: 10px; padding: 5px 10px; background: #006cb5; color: white; border: none; border-radius: 4px; cursor: pointer;">Verify</button>`
-                : '<span style="color: red; font-size: 12px;">No ID available</span>'
-            }
-          `;
-        } else if (type === 'pipeline') {
-          popupHtml = `
-            <b>Pipeline #:</b> ${props.pipeline_nr || 'N/A'}<br>
-            <b>Segment:</b> ${props.segment || 'N/A'}<br>
-            <b>Start:</b> ${props.start || 'N/A'}<br>
-            <b>Stop:</b> ${props.stop || 'N/A'}<br>
-            <b>Start Location:</b> ${props.approx_location_start || 'N/A'}<br>
-            <b>Stop Location:</b> ${props.approx_location_stop || 'N/A'}<br>
-            ${
-              props.id
-                ? `<button onclick="window.location.href='/plant-form/pipeline/${props.id}'" style="margin-top: 10px; padding: 5px 10px; background: #006cb5; color: white; border: none; border-radius: 4px; cursor: pointer;">Verify</button>`
-                : '<span style="color: red; font-size: 12px;">No ID available</span>'
-            }
-          `;
-        }
+          </div>
+        `;
 
-        if (type === 'pipeline' && feature.geometry.type?.toLowerCase() === 'linestring') {
-          let latlngs: [number, number][] = [];
-
-          if (
-            Array.isArray(coords) &&
-            coords.length === 2 &&
-            coords.every(c => Array.isArray(c) && typeof c[0] === 'number' && typeof c[1] === 'number' && (c[0] !== 0 || c[1] !== 0))
-          ) {
-            latlngs = coords.map(([lng, lat]: [number, number]) => [lat, lng]);
-          } else if (props.start && props.stop) {
-            const parseCoord = (str: string): [number, number] | null => {
-              const parts = str.split(',').map(s => parseFloat(s.trim()));
-              return parts.length === 2 && parts.every(p => !isNaN(p)) ? [parts[0], parts[1]] : null;
-            };
-
-            const startCoord = parseCoord(props.start);
-            const stopCoord = parseCoord(props.stop);
-
-            if (startCoord && stopCoord) {
-              latlngs = [startCoord, stopCoord];
+        const marker = L.marker([coords[1], coords[0]], { icon })
+          .bindTooltip(props.name || 'Unnamed', { sticky: true })
+          .bindPopup(popupHtml)
+          .on('click', () => {
+            const params = new URLSearchParams();
+            if (props.name) {
+              params.set('plantName', props.name);
             }
-          }
+            window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
+            if (mapRef.current) {
+              mapRef.current.setView([coords[1], coords[0]], 12);
+            }
+          });
 
-          if (latlngs.length === 2) {
-            L.polyline(latlngs, {
-              color: 'red',
-              weight: 4,
-            })
-              .bindPopup(popupHtml)
-              .addTo(layer);
-          } else {
-            console.warn('Skipping invalid pipeline segment:', feature);
-          }
-        } else if (feature.geometry.type === 'Point') {
-          if (
-            Array.isArray(coords) &&
-            coords.length === 2 &&
-            typeof coords[0] === 'number' &&
-            typeof coords[1] === 'number'
-          ) {
-            const marker = L.marker([coords[1], coords[0]], { icon })
-              .bindTooltip(props.name || 'Unnamed', { sticky: true })
-              .bindPopup(popupHtml);
-            (layer as L.MarkerClusterGroup).addLayer(marker);
-          } else {
-            console.warn('Invalid Point coordinates:', feature);
-          }
+        if (props.type?.toLowerCase() === 'production') {
+          productionCluster.addLayer(marker);
+        } else if (props.type?.toLowerCase() === 'storage') {
+          storageCluster.addLayer(marker);
+        } else {
+          productionCluster.addLayer(marker);
         }
       });
     };
@@ -382,18 +294,14 @@ const LeafletMap = () => {
       try {
         const response = await fetch('/api/data');
         const datasets = await response.json();
-
         setHydrogenData(datasets.hydrogen.features || []);
-        setWindData(datasets.wind.features || []);
-        setSolarData(datasets.solar.features || []);
-        setStorageData(datasets.storage.features || []);
-        setPipelineData(datasets.pipelines.features || []);
+        await fetchAndAddMarkerFromJson(datasets.hydrogen);
 
-        await fetchAndAddMarkerFromJson(datasets.hydrogen, hydrogenCluster, 'hydrogen');
-        await fetchAndAddMarkerFromJson(datasets.wind, windCluster, 'wind');
-        await fetchAndAddMarkerFromJson(datasets.solar, solarCluster, 'solar');
-        await fetchAndAddMarkerFromJson(datasets.storage, storageCluster, 'storage');
-        await fetchAndAddMarkerFromJson(datasets.pipelines, pipelineLayer, 'pipeline');
+        const statusResponse = await fetch('/api/statuses');
+        const statusData = await statusResponse.json();
+        if (statusData.statuses) {
+          setStatusTypes(statusData.statuses);
+        }
       } catch (error) {
         console.error('Error loading datasets:', error);
       }
@@ -405,13 +313,10 @@ const LeafletMap = () => {
       .layers(
         baseLayers,
         {
-          'Hydrogen Plants': hydrogenCluster,
-          'Wind Plants': windCluster,
-          'Solar Plants': solarCluster,
-          'Storage Facilities': storageCluster,
-          Pipelines: pipelineLayer,
+          'Production Plants': productionCluster,
+          'Storage Plants': storageCluster,
         },
-        { collapsed: false, position: 'topright' }
+        { collapsed: true, position: 'topright' }
       )
       .addTo(mapRef.current!);
 
@@ -432,100 +337,90 @@ const LeafletMap = () => {
         );
       },
     });
+
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
   }, []);
-
-  const filtered = hydrogenData.filter(f => {
-    return (
-      (search === '' ||
-        Object.values(f.properties).some(
-          v => typeof v === 'string' && v.toLowerCase().includes(search.toLowerCase())
-        )) &&
-      (status === '' || f.properties.status === status) &&
-      (endUse === '' || f.properties.end_use === endUse)
-    );
-  });
-
-  const plantNames = getUniqueValues(hydrogenData, 'name');
-  const locations = getUniqueValues(hydrogenData, 'city');
-  const statuses = getUniqueValues(hydrogenData, 'status');
-  const endUses = getUniqueValues(hydrogenData, 'end_use');
-
-  const handleClick = (feature: Feature) => {
-    if (mapRef.current) {
-      mapRef.current.setView([feature.geometry.coordinates[1], feature.geometry.coordinates[0]], 12);
-    }
-  };
 
   const handlePlantNameChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedPlantName(e.target.value);
-    setSelectedLocation('');
+    setSelectedCountry('');
     setStatus('');
     setEndUse('');
+    setPlantType('');
   };
 
-  const handleLocationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedLocation(e.target.value);
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedCountry(e.target.value);
     setSelectedPlantName('');
     setStatus('');
     setEndUse('');
+    setPlantType('');
   };
 
   useEffect(() => {
-    if (!mapRef.current || !search.trim()) return;
-
-    const match = allFeatures.find(f =>
-      Object.values(f.properties).some(
-        v => typeof v === 'string' && v.toLowerCase().includes(search.toLowerCase())
-      )
-    );
-
-    if (match) {
-      const [lng, lat] = match.geometry.coordinates;
-      mapRef.current.setView([lat, lng], 12);
+    if (selectedPlantName && !plantNames.includes(selectedPlantName)) {
+      setSelectedPlantName('');
     }
-  }, [search, allFeatures]);
+  }, [plantNames, selectedPlantName]);
+
+  const toggleLegendPin = () => {
+    setLegendPinned(prev => !prev);
+    setLegendVisible(true); // Show legend when pinning
+  };
+
+  const toggleFilters = () => {
+    setFiltersVisible(prev => !prev);
+  };
+
+  // Hide filters on mobile when clicking/tapping outside
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      if (filtersVisible && filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFiltersVisible(false);
+      }
+    };
+
+    document.addEventListener('click', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
+    return () => {
+      document.removeEventListener('click', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
+    };
+  }, [filtersVisible]);
 
   return (
-    <>
-      <div id="map" style={{ height: '100vh', width: '100%' }}></div>
+    <div className="relative w-full h-screen">
+      <div id="map" className="w-full h-full z-0"></div>
 
+      {/* Filter Toggle Button (Mobile Only) */}
+      <button
+        onClick={toggleFilters}
+        className="sm:hidden fixed top-4 right-16 z-[600] bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-md hover:bg-blue-700"
+      >
+        <i className={`fas fa-${filtersVisible ? 'times' : 'filter'}`} />
+      </button>
+
+      {/* Filter Controls */}
       <div
-        style={{
-          position: 'fixed',
-          top: 20,
-          left: '50%',
-          transform: 'translateX(-50%)',
-          zIndex: 10000,
-          display: 'flex',
-          gap: 10,
-          padding: 10,
-          backgroundColor: 'rgba(255, 255, 255, 0.7)',
-          backdropFilter: 'blur(10px)',
-          borderRadius: 8,
-          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-          alignItems: 'center',
-          width: '90%',
-          maxWidth: '1000px',
-          color: '#000',
-        }}
+        ref={filterRef}
+        className={`fixed top-0 left-1/2 -translate-x-1/2 w-10/12 max-w-3xl z-[500] flex flex-col sm:flex-row gap-2 p-2 bg-[rgba(255,255,255,0.7)] text-black rounded-b-lg shadow-md transition-all duration-300 ease-in-out ${
+          filtersVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 sm:translate-y-0 sm:opacity-100'
+        }`}
       >
         <input
           type="text"
           placeholder="Search..."
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{
-            padding: '6px 12px',
-            fontSize: 14,
-            border: '1px solid #ccc',
-            borderRadius: 4,
-            flex: '1',
-          }}
+          className="flex-1 p-1.5 text-sm border border-gray-300 rounded bg-[rgba(255,255,255,0.7)] text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <select
           value={selectedPlantName ?? ''}
           onChange={handlePlantNameChange}
-          style={{ ...selectStyle, width: 150 }}
+          className="p-1.5 text-sm border border-gray-300 rounded bg-[rgba(255,255,255,0.7)] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-32"
         >
           <option value="">Plant Name</option>
           {plantNames.map(name => (
@@ -535,21 +430,21 @@ const LeafletMap = () => {
           ))}
         </select>
         <select
-          value={selectedLocation ?? ''}
-          onChange={handleLocationChange}
-          style={{ ...selectStyle, width: 150 }}
+          value={selectedCountry ?? ''}
+          onChange={handleCountryChange}
+          className="p-1.5 text-sm border border-gray-300 rounded bg-[rgba(255,255,255,0.7)] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-32"
         >
-          <option value="">Location</option>
-          {locations.map(loc => (
-            <option key={loc} value={loc}>
-              {loc}
+          <option value="">Country</option>
+          {countries.map(country => (
+            <option key={country} value={country}>
+              {country}
             </option>
           ))}
         </select>
         <select
           value={status ?? ''}
           onChange={e => setStatus(e.target.value)}
-          style={{ ...selectStyle, width: 100 }}
+          className="p-1.5 text-sm border border-gray-300 rounded bg-[rgba(255,255,255,0.7)] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-24"
         >
           <option value="">Status</option>
           {statuses.map(statusOption => (
@@ -561,7 +456,7 @@ const LeafletMap = () => {
         <select
           value={endUse ?? ''}
           onChange={e => setEndUse(e.target.value)}
-          style={{ ...selectStyle, width: 100 }}
+          className="p-1.5 text-sm border border-gray-300 rounded bg-[rgba(255,255,255,0.7)] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-24"
         >
           <option value="">End Use</option>
           {endUses.map(endUseOption => (
@@ -570,89 +465,74 @@ const LeafletMap = () => {
             </option>
           ))}
         </select>
+        <select
+          value={plantType ?? ''}
+          onChange={e => setPlantType(e.target.value)}
+          className="p-1.5 text-sm border border-gray-300 rounded bg-[rgba(255,255,255,0.7)] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-24"
+        >
+          <option value="">Plant Type</option>
+          {plantTypes.map(typeOption => (
+            <option key={typeOption} value={typeOption}>
+              {typeOption}
+            </option>
+          ))}
+        </select>
       </div>
 
+      {/* Legend */}
       <div
-        style={{
-          position: 'fixed',
-          bottom: 20,
-          left: 50,
-          width: 220,
-          border: '2px solid grey',
-          backgroundColor: 'white',
-          padding: 10,
-          borderRadius: 5,
-          zIndex: 9999,
-          fontSize: 14,
-          color: 'black',
-          fontWeight: 'normal',
-        }}
+        className={`fixed bottom-4 left-4 w-48 p-3 bg-white border-2 border-gray-300 rounded shadow-md z-[600] text-black text-xs transition-all duration-300 ${
+          legendPinned || legendVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+        }`}
+        onMouseEnter={() => setLegendVisible(true)}
+        onMouseLeave={() => !legendPinned && setLegendVisible(false)}
+        onTouchStart={() => setLegendVisible(true)}
+        onTouchEnd={() => !legendPinned && setLegendVisible(false)}
       >
-        <strong>Legend</strong>
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: 5 }}>
-          <i className="fa fa-industry" style={{ color: 'green', marginRight: 5 }}></i>Hydrogen - Operating
+        <div className="flex justify-between items-center text-black">
+          <strong>Legend</strong>
+          <button
+            onClick={toggleLegendPin}
+            className={`text-sm ${legendPinned ? 'text-blue-600' : 'text-black'}`}
+            title={legendPinned ? 'Unpin Legend' : 'Pin Legend'}
+          >
+            <i className={`fa fa-thumbtack ${legendPinned ? 'rotate-45' : ''}`} />
+          </button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: 5 }}>
-          <i className="fa fa-industry" style={{ color: 'orange', marginRight: 5 }}></i>Hydrogen - Construction
+        <div className="mt-2 text-black">
+          {statusTypes.map(({ sector, current_status }) => (
+            <div key={`${sector}-${current_status}`} className="flex items-center mt-1">
+              <i
+                className={`fa fa-${sector.toLowerCase() === 'production' ? 'bolt' : 'cube'}`}
+                style={{ color: statusColorMap[current_status.toLowerCase()] || statusColorMap['other/unknown'], marginRight: 5 }}
+              ></i>
+              {sector} - {current_status}
+            </div>
+          ))}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: 5 }}>
-          <i className="fa fa-industry" style={{ color: 'blue', marginRight: 5 }}></i>Hydrogen - Planned
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: 5 }}>
-          <i className="fa fa-wind" style={{ color: 'green', marginRight: 5 }}></i>Wind Plant
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: 5 }}>
-          <i className="fa fa-solar-panel" style={{ color: 'green', marginRight: 5 }}></i>Solar Plant
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: 5 }}>
-          <i className="fa fa-database" style={{ color: 'purple', marginRight: 5 }}></i>Storage Facility
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', marginTop: 5 }}>
-          <div style={{ width: 18, height: 4, backgroundColor: 'red', marginRight: 5 }}></div>Pipeline
-        </div>
-        <div style={{ marginTop: 10, fontSize: 12, fontStyle: 'italic' }}>
+        <div className="mt-2 text-xs italic text-black">
           Use the measuring tool on the left to calculate distances
         </div>
       </div>
 
+      {/* Plant List Button */}
       <button
-        onClick={() => window.location.href = '/plant-list'}
-        style={{
-          position: 'fixed',
-          top: '50%',
-          right: 20,
-          transform: 'translateY(-50%)',
-          zIndex: 10000,
-          background: 'rgba(0, 108, 181, 0.8)',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '50px',
-          padding: '10px 16px',
-          fontSize: 14,
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          transition: 'background 0.3s ease',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0, 108, 181, 1)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0, 108, 181, 0.8)')}
+        onClick={() => window.location.href = '/plant-widget'}
+        className="fixed top-1/2 right-4 -translate-y-1/2 z-[600] bg-blue-600/80 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm hover:bg-blue-600 transition-colors"
       >
         <span>Plant List</span>
         <i className="fa fa-arrow-right" />
       </button>
 
+      {/* Find Me Button */}
       <button
         onClick={handleFindMe}
-        style={FIND_ME_BUTTON_STYLE}
+        className="fixed bottom-20 right-4 z-[600] bg-white text-blue-600 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-lg transition-transform hover:scale-105"
         title="Find My Location"
-        onMouseEnter={e => (e.currentTarget.style.transform = 'translateY(-2px)')}
-        onMouseLeave={e => (e.currentTarget.style.transform = 'translateY(0)')}
       >
-        <i className="fa fa-crosshairs" />
+        <i className="fas fa-location-arrow" />
       </button>
-    </>
+    </div>
   );
 };
 
