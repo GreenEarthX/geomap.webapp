@@ -7,8 +7,9 @@ A Next.js app for visualizing renewable energy infrastructure using interactive 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/GreenEarthX/geomap-gex.git
-cd geomap-gex
+git clone https://github.com/GreenEarthX/geomap.webapp.git
+cd geomap.webapp
+
 ```
 ### 2. Install dependencies
 
