@@ -4,23 +4,45 @@ import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 
-// Dynamically import LeafletMap with SSR disabled
+// Load LeafletMap with SSR disabled
 const LeafletMap = dynamic(() => import('./components/LeafletMap'), {
   ssr: false,
 });
 
 export default function MapWrapper() {
+  const [isClient, setIsClient] = useState(false);
   const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowMap(true), 1000); // You can adjust this
+    setIsClient(true); // ensures we are on the client
+    const timer = setTimeout(() => setShowMap(true), 1000);
     return () => clearTimeout(timer);
   }, []);
+
+  if (!isClient) return null; // prevent server-side render entirely
 
   return showMap ? <LeafletMap /> : <LoadingScreen />;
 }
 
 function LoadingScreen() {
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @keyframes animMarker {
+        0% { transform: rotate(45deg) translate(5px, 5px); }
+        100% { transform: rotate(45deg) translate(-5px, -5px); }
+      }
+      @keyframes animShadow {
+        0% { transform: scale(0.5); }
+        100% { transform: scale(1); }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   return (
     <div style={styles.container}>
       <div style={styles.content}>
@@ -43,28 +65,6 @@ function LoadingScreen() {
   );
 }
 
-// Inject keyframes dynamically for animation
-const markerAnim = `
-  @keyframes animMarker {
-    0% { transform: rotate(45deg) translate(5px, 5px); }
-    100% { transform: rotate(45deg) translate(-5px, -5px); }
-  }
-`;
-
-const shadowAnim = `
-  @keyframes animShadow {
-    0% { transform: scale(0.5); }
-    100% { transform: scale(1); }
-  }
-`;
-
-if (typeof window !== 'undefined') {
-  const styleTag = document.createElement('style');
-  styleTag.innerHTML = markerAnim + shadowAnim;
-  document.head.appendChild(styleTag);
-}
-
-// Inline styles
 const styles = {
   container: {
     height: '100vh',

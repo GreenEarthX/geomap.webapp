@@ -115,5 +115,18 @@ export interface Feature {
     consumption_tpy: number;
     city: string;
     country: string;
+    pipeline_name?: string;
+    capacity_kt_y?: number | null;
+    announced_size?: { unit: string; value: number; vessels?: number; capacity_per_vessel?: number };
+    trade_type?: string;
+    partners?: string;
+    investment?: { costs_musd: string };
+    segment_id?: string;
+    segment_order?: number;
+    start_location?: string;
+    stop_location?: string;
+    pipeline_number?: string;
+    infrastructure_type?: string;
+    total_segments?: number;
   };
 }

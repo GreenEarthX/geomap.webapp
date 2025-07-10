@@ -84,3 +84,40 @@ html, body {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+
+/*legend*/
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* Tailwind slate-300 */
+  border-radius: 4px;
+}
+
+.custom-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: #94a3b8; /* Tailwind slate-400 */
+}
+
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+
+
+/*Wrapper*/
+@keyframes animMarker {
+  0% { transform: rotate(45deg) translate(5px, 5px); }
+  100% { transform: rotate(45deg) translate(-5px, -5px); }
+}
+
+@keyframes animShadow {
+  0% { transform: scale(0.5); }
+  100% { transform: scale(1); }
+}
