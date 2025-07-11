@@ -14,8 +14,8 @@ export default async function PortFormPage({ params }: PortFormPageProps) {
 
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-    logger.info('Fetching port data from:', { url: `${apiUrl}/api/data/ports` });
-    const response = await fetch(`${apiUrl}/api/data/ports`, {
+    logger.info('Fetching port data from:', { url: `${apiUrl}/api/ports` });
+    const response = await fetch(`${apiUrl}/api/ports`, {
       cache: 'no-store',
     });
 

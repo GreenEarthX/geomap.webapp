@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 
 // Load LeafletMap with SSR disabled
-const LeafletMap = dynamic(() => import('./components/LeafletMap'), {
+const LeafletMap = dynamic(() => import('./components/LeafletMap2'), {
   ssr: false,
 });
 
