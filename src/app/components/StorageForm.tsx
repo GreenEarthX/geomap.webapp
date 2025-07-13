@@ -52,6 +52,27 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
     'email',
     'website_url',
   ];
+  
+  const cleanStakeholders = (stakeholders: any): string[] => {
+      if (!Array.isArray(stakeholders)) return [];
+
+      // This checks if the array is nested (e.g., [['a', 'b']]) and flattens it.
+      if (stakeholders.length > 0 && Array.isArray(stakeholders[0])) {
+          return stakeholders.flat();
+      }
+      
+      // This handles cases where the data might be a stringified array like ['["a", "b"]']
+      if (stakeholders.length === 1 && typeof stakeholders[0] === 'string') {
+          try {
+              const parsed = JSON.parse(stakeholders[0]);
+              if (Array.isArray(parsed)) return parsed;
+          } catch (e) {
+              // Not a JSON string, so we fall through and return the original array
+          }
+      }
+
+      return stakeholders; // Return the array as is if it's already clean
+  };
 
   const initialFormData: Partial<StorageItem> & {
     storage_mass_kt_per_year?: string;
@@ -62,7 +83,7 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
     project_name: initialFeature?.project_name ?? '',
     project_type: initialFeature?.project_type ?? '',
     owner: initialFeature?.owner ?? '',
-    stakeholders: initialFeature?.stakeholders ?? [],
+    stakeholders: cleanStakeholders(initialFeature?.stakeholders),
     contact_name: initialFeature?.contact_name ?? '',
     email: initialFeature?.email ?? '',
     country: initialFeature?.country ?? '',
@@ -85,6 +106,9 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
   const [formData, setFormData] = useState<Partial<StorageItem> & {
     storage_mass_kt_per_year?: string;
   }>(initialFormData);
+
+
+  
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

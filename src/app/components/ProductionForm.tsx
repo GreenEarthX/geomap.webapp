@@ -58,6 +58,27 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     'website_url',
   ];
 
+  const cleanArrayField = (fieldData: any): string[] => {
+      if (!Array.isArray(fieldData)) return [];
+
+      // This checks if the array is nested (e.g., [['a', 'b']]) and flattens it.
+      if (fieldData.length > 0 && Array.isArray(fieldData[0])) {
+          return fieldData.flat();
+      }
+      
+      // This handles cases where the data might be a stringified array like ['["a", "b"]']
+      if (fieldData.length === 1 && typeof fieldData[0] === 'string') {
+          try {
+              const parsed = JSON.parse(fieldData[0]);
+              if (Array.isArray(parsed)) return parsed;
+          } catch (e) {
+              // Not a JSON string, so we fall through and return the original array
+          }
+      }
+
+      return fieldData; // Return the array as is if it's already clean
+  };
+
   const initialFormData: Partial<ProductionItem> & { capacity?: string; investment_capex?: string } = {
     id: initialFeature?.id ?? '',
     internal_id: initialFeature?.internal_id ?? id ?? '',
@@ -65,7 +86,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     type: initialFeature?.type ?? 'Production',
     project_name: initialFeature?.project_name ?? '',
     owner: initialFeature?.owner ?? '',
-    stakeholders: initialFeature?.stakeholders ?? [],
+    stakeholders: cleanArrayField(initialFeature?.stakeholders),
     contact_name: initialFeature?.contact_name ?? '',
     email: initialFeature?.email ?? '',
     country: initialFeature?.country ?? '',
@@ -84,7 +105,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     capacity: initialFeature?.capacity_value && initialFeature?.capacity_unit 
       ? `${initialFeature.capacity_value} ${initialFeature.capacity_unit}` 
       : '',
-    end_use: initialFeature?.end_use ?? [],
+    end_use: cleanArrayField(initialFeature?.end_use),
     investment_capex: initialFeature?.investment_capex ?? '',
     latitude: initialFeature?.latitude ?? 0,
     longitude: initialFeature?.longitude ?? 0,

@@ -65,9 +65,10 @@ export async function POST(req: NextRequest) {
           tab,
           line,
           sector,
-          created_at
+          created_at,
+          active
         )
-        VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
+        VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP,0)
         RETURNING id
         `,
         [internal_id, data, file_link, tab || 'Storage', line, sector || 'Storage']

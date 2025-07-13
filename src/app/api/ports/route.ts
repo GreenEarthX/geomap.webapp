@@ -135,48 +135,73 @@ export async function GET() {
 }
 
 
+// src/app/api/ports/route.ts
+
+// ... (keep the imports and the GET function as they are) ...
+
 export async function POST(req: NextRequest) {
   try {
     const { internal_id, data } = await req.json();
 
-    // Fetch original port record to copy file_link, tab, line, and sector
-    const originalQuery = `
-      SELECT file_link, tab, line, sector
+    if (!internal_id || !data) {
+        return NextResponse.json({ error: 'Missing internal_id or data payload.' }, { status: 400 });
+    }
+
+    // --- Step 1: Fetch the required metadata from the latest existing record ---
+    const previousRecordQuery = `
+      SELECT file_link, tab, line
       FROM project_map
-      WHERE internal_id = $1 AND sector = 'Port'
+      WHERE internal_id = $1
       ORDER BY created_at DESC
-      LIMIT 1
+      LIMIT 1;
     `;
-    const originalResult = await Pool.query(originalQuery, [internal_id]);
+    const previousRecordResult = await Pool.query(previousRecordQuery, [internal_id]);
 
+    // --- Step 2: Handle the case where the original project doesn't exist ---
+    // This is an update, so an original record must exist to copy from.
+    if (previousRecordResult.rows.length === 0) {
+      return NextResponse.json(
+        { error: `Cannot update project: Original project with internal_id '${internal_id}' not found.` },
+        { status: 404 }
+      );
+    }
 
-    const { file_link, tab, line, sector } = originalResult.rows[0];
+    const { file_link, tab, line } = previousRecordResult.rows[0];
 
-    // Ensure line_number is included in data
-    const dataWithLineNumber = {
-      ...data,
-      line_number: data.line_number ?? line ?? null,
-    };
-
-    // Insert new row with same internal_id and updated data
+    // --- Step 3: Insert the new record using the old metadata and new data ---
     const insertQuery = `
-      INSERT INTO project_map (internal_id, data, file_link, tab, line, sector, created_at)
-      VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
-      RETURNING id
+      INSERT INTO project_map (
+        internal_id,
+        data,
+        sector,
+        active,
+        file_link,
+        tab,
+        line
+      )
+      VALUES ($1, $2, 'Port', 0, $3, $4, $5)
+      RETURNING id;
     `;
-    const insertResult = await Pool.query(insertQuery, [
-      internal_id,
-      JSON.stringify(dataWithLineNumber),
-      file_link,
-      tab,
-      line,
-      sector,
-    ]);
 
+    const values = [
+        internal_id,
+        JSON.stringify(data),
+        file_link, //  Use value from the previous record
+        tab,       //  Use value from the previous record
+        line,      //  Use value from the previous record
+    ];
 
+    const result = await Pool.query(insertQuery, values);
 
-    return NextResponse.json({ message: 'Port data saved successfully', id: insertResult.rows[0].id }, { status: 201 });
+    return NextResponse.json(
+      { message: 'Port data saved successfully', id: result.rows[0].id },
+      { status: 201 }
+    );
+
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to save port data' }, { status: 500 });
+    console.error('Error in POST /api/ports:', error);
+    // Provide a more specific error message if possible
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: `Failed to save port data: ${errorMessage}` }, { status: 500 });
   }
 }
