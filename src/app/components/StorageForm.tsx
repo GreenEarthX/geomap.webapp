@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ProductionItem } from '@/lib/types2';
+import { StorageItem } from '@/lib/types2';
 
 interface FieldConfig {
-  name: keyof ProductionItem | 'capacity' | 'investment_capex';
+  name: keyof StorageItem | 'storage_mass_kt_per_year';
   label: string;
   type: string;
   placeholder: string;
@@ -14,15 +14,15 @@ interface FieldConfig {
 
 interface SectionConfig {
   title: string;
-  fields: (keyof ProductionItem | 'capacity' | 'investment_capex')[];
+  fields: (keyof StorageItem | 'storage_mass_kt_per_year')[];
 }
 
-interface ProductionFormProps {
-  initialFeature: ProductionItem | null;
+interface StorageFormProps {
+  initialFeature: StorageItem | null;
   initialError: string | null;
 }
 
-const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) => {
+const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -30,40 +30,37 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     'General Information': true,
     'Location': true,
     'Project Details': true,
-    'Capacity': true,
+    'Storage Capacity': true,
     'Contact Information': true,
   });
 
   // Field order matching generatePopupHtml
-  const fieldOrder: (keyof ProductionItem | 'capacity' | 'investment_capex')[] = [
-    'name',
+  const fieldOrder: (keyof StorageItem | 'storage_mass_kt_per_year')[] = [
     'project_name',
-    'owner',
     'project_type',
-    'primary_product',
-    'secondary_product',
+    'owner',
+    'stakeholders',
     'country',
     'city',
     'street',
     'zip',
-    'technology',
     'status',
     'date_online',
-    'capacity',
-    'end_use',
-    'stakeholders',
-    'investment_capex',
+    'primary_product',
+    'storage_mass_kt_per_year',
     'contact_name',
     'email',
     'website_url',
   ];
 
-  const initialFormData: Partial<ProductionItem> & { capacity?: string; investment_capex?: string } = {
+  const initialFormData: Partial<StorageItem> & {
+    storage_mass_kt_per_year?: string;
+  } = {
     id: initialFeature?.id ?? '',
     internal_id: initialFeature?.internal_id ?? id ?? '',
-    name: initialFeature?.name ?? 'Placeholder Feature',
-    type: initialFeature?.type ?? 'Production',
+    type: initialFeature?.type ?? 'Storage',
     project_name: initialFeature?.project_name ?? '',
+    project_type: initialFeature?.project_type ?? '',
     owner: initialFeature?.owner ?? '',
     stakeholders: initialFeature?.stakeholders ?? [],
     contact_name: initialFeature?.contact_name ?? '',
@@ -75,41 +72,37 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     website_url: initialFeature?.website_url ?? '',
     status: initialFeature?.status ?? '',
     date_online: initialFeature?.date_online ?? '',
-    project_type: initialFeature?.project_type ?? '',
     primary_product: initialFeature?.primary_product ?? '',
-    secondary_product: initialFeature?.secondary_product ?? '',
-    technology: initialFeature?.technology ?? '',
-    capacity_unit: initialFeature?.capacity_unit ?? '',
-    capacity_value: initialFeature?.capacity_value ?? 0,
-    capacity: initialFeature?.capacity_value && initialFeature?.capacity_unit 
-      ? `${initialFeature.capacity_value} ${initialFeature.capacity_unit}` 
+    storage_mass_kt_per_year_unit: initialFeature?.storage_mass_kt_per_year_unit ?? '',
+    storage_mass_kt_per_year_value: initialFeature?.storage_mass_kt_per_year_value ?? 0,
+    storage_mass_kt_per_year: initialFeature?.storage_mass_kt_per_year_value && initialFeature?.storage_mass_kt_per_year_unit
+      ? `${initialFeature.storage_mass_kt_per_year_value} ${initialFeature.storage_mass_kt_per_year_unit}`
       : '',
-    end_use: initialFeature?.end_use ?? [],
-    investment_capex: initialFeature?.investment_capex ?? '',
     latitude: initialFeature?.latitude ?? 0,
     longitude: initialFeature?.longitude ?? 0,
   };
 
-  const [formData, setFormData] = useState<Partial<ProductionItem> & { capacity?: string; investment_capex?: string }>(initialFormData);
+  const [formData, setFormData] = useState<Partial<StorageItem> & {
+    storage_mass_kt_per_year?: string;
+  }>(initialFormData);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name === 'capacity' || name === 'investment_capex') {
+    if (name === 'storage_mass_kt_per_year') {
       const [parsedValue, ...unitParts] = value.trim().split(' ');
       const parsedUnit = unitParts.join(' ');
       const parsedNumber = parseFloat(parsedValue) || 0;
       setFormData((prev) => ({
         ...prev,
-        [`${name}_value`]: name === 'capacity' ? parsedNumber : prev.capacity_value,
-        [`${name}_unit`]: name === 'capacity' ? parsedUnit || prev.capacity_unit || '' : '',
+        storage_mass_kt_per_year_value: parsedNumber,
+        storage_mass_kt_per_year_unit: parsedUnit || prev.storage_mass_kt_per_year_unit || '',
         [name]: value,
-        ...(name === 'investment_capex' ? { investment_capex: value } : {}),
       }));
     } else {
       const parsedValue =
         ['latitude', 'longitude'].includes(name)
           ? parseFloat(value) || 0
-          : name === 'end_use' || name === 'stakeholders'
+          : name === 'stakeholders'
           ? value.split(',').map((v) => v.trim()).filter(Boolean)
           : value;
       setFormData((prev) => ({ ...prev, [name]: parsedValue }));
@@ -122,8 +115,8 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
 
     // Map formData to project_map.data JSONB structure
     const dataPayload = {
-      plant_name: formData.name || null,
       project_name: formData.project_name || null,
+      project_type: formData.project_type || null,
       owner: formData.owner || null,
       stakeholders: formData.stakeholders?.length ? formData.stakeholders : null,
       contact_name: formData.contact_name || null,
@@ -141,20 +134,19 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
           longitude: String(formData.longitude || 0),
         },
       },
-      project_type: formData.project_type || null,
       primary_product: formData.primary_product || null,
-      secondary_product: formData.secondary_product || null,
-      technology: formData.technology || null,
-      capacity: {
-        unit: formData.capacity_unit || null,
-        value: formData.capacity_value || null,
+      capacities: {
+        storage: {
+          mass_kt_per_year: {
+            unit: formData.storage_mass_kt_per_year_unit || null,
+            value: formData.storage_mass_kt_per_year_value || null,
+          },
+        },
       },
-      end_use: formData.end_use?.length ? formData.end_use : null,
-      investment_capex: formData.investment_capex || null,
     };
 
     try {
-      const response = await fetch('/api/production', {
+      const response = await fetch('/api/storage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -164,7 +156,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to save Production data: ${response.statusText}`);
+        throw new Error(`Failed to save Storage data: ${response.statusText}`);
       }
 
       const notification = document.createElement('div');
@@ -180,7 +172,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
       // Reset form to initial state
       setFormData(initialFormData);
     } catch (error) {
-      console.error('Error saving Production data:', error);
+      console.error('Error saving Storage data:', error);
       const notification = document.createElement('div');
       notification.className =
         'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-md shadow-lg animate-fade-in-out';
@@ -199,23 +191,18 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
 
   const renderFields = () => {
     const fields: FieldConfig[] = [
-      { name: 'name', label: 'Plant Name', type: 'text', placeholder: 'Enter plant name' },
       { name: 'project_name', label: 'Project Name', type: 'text', placeholder: 'Enter project name' },
-      { name: 'owner', label: 'Owner', type: 'text', placeholder: 'Enter owner' },
       { name: 'project_type', label: 'Project Type', type: 'text', placeholder: 'Enter project type' },
-      { name: 'primary_product', label: 'Primary Product', type: 'text', placeholder: 'Enter primary product' },
-      { name: 'secondary_product', label: 'Secondary Product', type: 'text', placeholder: 'Enter secondary product' },
+      { name: 'owner', label: 'Owner', type: 'text', placeholder: 'Enter owner' },
+      { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },
       { name: 'country', label: 'Country', type: 'text', placeholder: 'Country location' },
       { name: 'city', label: 'City', type: 'text', placeholder: 'City location' },
       { name: 'street', label: 'Street', type: 'text', placeholder: 'Enter street' },
       { name: 'zip', label: 'Zip Code', type: 'text', placeholder: 'Enter zip code' },
-      { name: 'technology', label: 'Technology', type: 'text', placeholder: 'Production technology' },
       { name: 'status', label: 'Status', type: 'text', placeholder: 'e.g. Feasibility study' },
       { name: 'date_online', label: 'Date Online', type: 'text', placeholder: 'Enter date online' },
-      { name: 'capacity', label: 'Capacity', type: 'text', placeholder: 'e.g. 100 MW', isCombined: true },
-      { name: 'end_use', label: 'End Use', type: 'text', placeholder: 'e.g. Power, CH4 grid injection' },
-      { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },
-      { name: 'investment_capex', label: 'Investment (CAPEX)', type: 'text', placeholder: 'e.g. 100 USD', isCombined: true },
+      { name: 'primary_product', label: 'Primary Product', type: 'text', placeholder: 'Enter primary product' },
+      { name: 'storage_mass_kt_per_year', label: 'Storage Mass kt/year', type: 'text', placeholder: 'e.g. 72 kt H2/year', isCombined: true },
       { name: 'contact_name', label: 'Contact Name', type: 'text', placeholder: 'Enter contact name' },
       { name: 'email', label: 'Email', type: 'email', placeholder: 'Enter email' },
       { name: 'website_url', label: 'Website', type: 'text', placeholder: 'Enter website URL' },
@@ -224,7 +211,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     const sections: SectionConfig[] = [
       {
         title: 'General Information',
-        fields: ['name', 'project_name', 'owner', 'project_type', 'primary_product', 'secondary_product'],
+        fields: ['project_name', 'project_type', 'owner', 'stakeholders'],
       },
       {
         title: 'Location',
@@ -232,15 +219,15 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
       },
       {
         title: 'Project Details',
-        fields: ['technology', 'status', 'date_online'],
+        fields: ['status', 'date_online', 'primary_product'],
       },
       {
-        title: 'Capacity',
-        fields: ['capacity', 'end_use', 'investment_capex'],
+        title: 'Storage Capacity',
+        fields: ['storage_mass_kt_per_year'],
       },
       {
         title: 'Contact Information',
-        fields: ['stakeholders', 'contact_name', 'email', 'website_url'],
+        fields: ['contact_name', 'email', 'website_url'],
       },
     ];
 
@@ -280,12 +267,10 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
                         type={field.type}
                         name={field.name}
                         value={
-                          field.name === 'end_use' || field.name === 'stakeholders'
+                          field.name === 'stakeholders'
                             ? (formData[field.name] as string[] | null)?.join(', ') ?? ''
-                            : field.name === 'capacity'
-                            ? formData.capacity ?? ''
-                            : field.name === 'investment_capex'
-                            ? formData.investment_capex ?? ''
+                            : field.name === 'storage_mass_kt_per_year'
+                            ? formData.storage_mass_kt_per_year ?? ''
                             : String(formData[field.name] ?? '')
                         }
                         onChange={handleInputChange}
@@ -381,10 +366,10 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-blue-800">
-              {formData.name || 'Production Feature Details'}
+              {formData.project_name || 'Storage Feature Details'}
             </h2>
             <p className="text-gray-500 capitalize text-sm sm:text-base">
-              Production Project
+              Storage Project
             </p>
           </div>
           <button
@@ -516,4 +501,4 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
   );
 };
 
-export default ProductionForm;
+export default StorageForm;

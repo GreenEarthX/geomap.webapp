@@ -34,7 +34,7 @@ export async function getPortData(): Promise<GeoJSONFeatureCollection> {
         END AS longitude,
         sector AS type
       FROM project_map
-      WHERE sector = 'Port'
+      WHERE sector = 'Port' AND active = 1;
     `);
 
     const formatFeature = (item: PortItem): GeoJSONFeatureCollection['features'][0] => ({
@@ -46,6 +46,7 @@ export async function getPortData(): Promise<GeoJSONFeatureCollection> {
       properties: {
         id: item.id,
         internal_id: item.internal_id ?? null,
+        line_number: item.line_number ?? null,
         ref_id: item.ref_id ?? null,
         name: item.project_name ?? null,
         city: item.city ?? null,
@@ -62,8 +63,8 @@ export async function getPortData(): Promise<GeoJSONFeatureCollection> {
         data_source: item.data_source ?? null,
         technology_type: item.technology_type ?? null,
         announced_size: item.announced_size ?? null,
-        references: item.references ?? null,
-        status_dates: item.status_dates ?? null,
+        //references: item.references ?? null,
+        //status_dates: item.status_dates ?? null,
       } as PortItem,
     });
 
@@ -98,6 +99,7 @@ export async function getPortData(): Promise<GeoJSONFeatureCollection> {
       return {
         id: row.id,
         internal_id: row.internal_id || null,
+        line_number: null, // Added to satisfy PortItem interface
         ref_id: row.ref_id || null,
         name: row.project_name || null,
         city: row.city || null,

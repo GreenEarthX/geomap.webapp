@@ -1,5 +1,35 @@
 import pool from '@/lib/db';
-import { CCUSItem, GeoJSONFeatureCollection } from '@/lib/types2';
+import { CCUSItem, GeoJSONFeatureCollection, CCUSReference } from '@/lib/types2';
+
+// Interface for raw query results
+interface RawCCUSItem {
+  id: string;
+  internal_id: string | null;
+  name: string | null;
+  project_name: string | null;
+  owner: string | null;
+  stakeholders: string | null; // String from database
+  contact: string | null;
+  email: string | null;
+  country: string | null;
+  zip_code: string | null;
+  city: string | null;
+  street: string | null;
+  website: string | null;
+  project_status: string | null;
+  operation_date: string | null;
+  project_type: string | null;
+  product: string | null;
+  technology_fate: string | null;
+  end_use_sector: string | null; // String from database
+  capacity_unit: string | null;
+  capacity_value: number | null;
+  investment_capex: string | null;
+  references: CCUSReference[] | null;
+  latitude: number | null;
+  longitude: number | null;
+  type: string;
+}
 
 export async function getCCUSData(): Promise<GeoJSONFeatureCollection> {
   const client = await pool.connect();
@@ -10,51 +40,29 @@ export async function getCCUSData(): Promise<GeoJSONFeatureCollection> {
         id,
         internal_id,
         data->>'plant_name' AS name,
-        data->>'city' AS city,
-        data->>'country' AS country,
-        data->>'region' AS region,
-        data->>'street' AS street,
-        data->>'email' AS email,
-        data->>'owner' AS owner,
-        data->>'contact' AS contact,
-        data->>'website' AS website,
-        data->>'product' AS product,
-        data->>'zip_code' AS zip_code,
-        data->>'project_id' AS project_id,
-        data->>'data_source' AS data_source,
-        data->>'last_updated' AS last_updated,
         data->>'project_name' AS project_name,
-        data->>'project_type' AS project_type,
+        data->>'owner' AS owner,
         data->>'stakeholders' AS stakeholders,
-        data->>'end_use_sector' AS end_use_sector,
-        data->>'technology_fate' AS technology_fate,
-        data->>'investment_capex' AS investment_capex,
-        data->>'part_of_ccus_hub' AS part_of_ccus_hub,
-        data->'status_date'->>'fid_date' AS fid_date,
-        data->'status_date'->>'project_phase' AS project_phase,
-        data->'status_date'->>'operation_date' AS operation_date,
-        CASE 
-          WHEN data->'status_date'->>'operation_date' ~ '^[0-9]+$' 
-          THEN (data->'status_date'->>'operation_date')::integer
-          ELSE NULL
-        END AS start_year,
+        data->>'contact' AS contact,
+        data->>'email' AS email,
+        data->>'country' AS country,
+        data->>'zip_code' AS zip_code,
+        data->>'city' AS city,
+        data->>'street' AS street,
+        data->>'website' AS website,
         data->'status_date'->>'project_status' AS project_status,
-        data->'status_date'->>'project_status' AS status,
-        data->'status_date'->>'suspension_date' AS suspension_date,
-        data->'status_date'->>'announcement_date' AS announcement_date,
+        data->'status_date'->>'operation_date' AS operation_date,
+        data->>'project_type' AS project_type,
+        data->>'product' AS product,
+        data->>'technology_fate' AS technology_fate,
+        data->>'end_use_sector' AS end_use_sector,
         data->'capacity'->>'unit' AS capacity_unit,
-        data->'capacity'->'announced'->>'unit' AS capacity_announced_unit,
         CASE 
-          WHEN data->'capacity'->'announced'->>'value' ~ '^[0-9]+(\\.[0-9]+)?$' 
-          THEN (data->'capacity'->'announced'->>'value')::double precision
+          WHEN data->'capacity'->>'value' ~ '^[0-9]+(\\.[0-9]+)?$' 
+          THEN (data->'capacity'->>'value')::double precision
           ELSE NULL
-        END AS capacity_announced_value,
-        data->'capacity'->'estimated'->>'unit' AS capacity_estimated_unit,
-        CASE 
-          WHEN data->'capacity'->'estimated'->>'value' ~ '^[0-9]+(\\.[0-9]+)?$' 
-          THEN (data->'capacity'->'estimated'->>'value')::double precision
-          ELSE NULL
-        END AS capacity_estimated_value,
+        END AS capacity_value,
+        data->>'investment_capex' AS investment_capex,
         COALESCE((
           SELECT array_agg(
             jsonb_build_object(
@@ -78,27 +86,19 @@ export async function getCCUSData(): Promise<GeoJSONFeatureCollection> {
         CASE 
           WHEN data->'coordinates'->>'latitude' ~ '^[0-9\\.-]+$' 
           THEN (data->'coordinates'->>'latitude')::double precision
-          WHEN data->'status'->'coordinates'->>'latitude' ~ '^[0-9\\.-]+$' 
-          THEN (data->'status'->'coordinates'->>'latitude')::double precision
-          WHEN data->'status_date'->'coordinates'->>'latitude' ~ '^[0-9\\.-]+$' 
-          THEN (data->'status_date'->'coordinates'->>'latitude')::double precision
           ELSE NULL
         END AS latitude,
         CASE 
           WHEN data->'coordinates'->>'longitude' ~ '^[0-9\\.-]+$' 
           THEN (data->'coordinates'->>'longitude')::double precision
-          WHEN data->'status'->'coordinates'->>'longitude' ~ '^[0-9\\.-]+$' 
-          THEN (data->'status'->'coordinates'->>'longitude')::double precision
-          WHEN data->'status_date'->'coordinates'->>'longitude' ~ '^[0-9\\.-]+$' 
-          THEN (data->'status_date'->'coordinates'->>'longitude')::double precision
           ELSE NULL
         END AS longitude,
         sector AS type
       FROM project_map
-      WHERE sector = 'CCUS'
+      WHERE sector = 'CCUS' AND active = 1;
     `);
 
-    const formatFeature = (item: CCUSItem): GeoJSONFeatureCollection['features'][0] => ({
+    const formatFeature = (item: RawCCUSItem): GeoJSONFeatureCollection['features'][0] => ({
       type: 'Feature',
       geometry: {
         type: 'Point',
@@ -108,55 +108,41 @@ export async function getCCUSData(): Promise<GeoJSONFeatureCollection> {
         id: item.id,
         internal_id: item.internal_id,
         name: item.name ?? 'Unknown Feature',
-        city: item.city ?? '',
-        country: item.country ?? '',
-        region: item.region ?? '',
-        street: item.street ?? '',
-        email: item.email ?? '',
-        owner: item.owner ?? '',
-        contact: item.contact ?? '',
-        website: item.website ?? '',
-        product: item.product ?? '',
-        zip_code: item.zip_code ?? '',
-        project_id: item.project_id ?? '',
-        data_source: item.data_source ?? '',
-        last_updated: item.last_updated ?? '',
         project_name: item.project_name ?? '',
-        project_type: item.project_type ?? '',
-        stakeholders: item.stakeholders ?? '',
-        end_use_sector: item.end_use_sector ?? '',
-        technology_fate: item.technology_fate ?? '',
-        investment_capex: item.investment_capex ?? '',
-        part_of_ccus_hub: item.part_of_ccus_hub ?? '',
-        fid_date: item.fid_date ?? '',
-        project_phase: item.project_phase ?? '',
-        operation_date: item.operation_date ?? '',
+        owner: item.owner ?? '',
+        stakeholders: item.stakeholders ? item.stakeholders.split(',').map((s: string) => s.trim()) : [],
+        contact: item.contact ?? '',
+        email: item.email ?? '',
+        country: item.country ?? '',
+        zip_code: item.zip_code ?? '',
+        city: item.city ?? '',
+        street: item.street ?? '',
+        website: item.website ?? '',
         project_status: item.project_status ?? '',
-        status: item.status ?? '',
-        start_year: item.start_year,
-        suspension_date: item.suspension_date ?? '',
-        announcement_date: item.announcement_date ?? '',
+        operation_date: item.operation_date ?? '',
+        project_type: item.project_type ?? '',
+        product: item.product ?? '',
+        technology_fate: item.technology_fate ?? '',
+        end_use_sector: item.end_use_sector ? item.end_use_sector.split(',').map((e: string) => e.trim()) : [],
         capacity_unit: item.capacity_unit ?? '',
-        capacity_announced_unit: item.capacity_announced_unit ?? '',
-        capacity_announced_value: item.capacity_announced_value,
-        capacity_estimated_unit: item.capacity_estimated_unit ?? '',
-        capacity_estimated_value: item.capacity_estimated_value,
-        references: Array.isArray(item.references) ? item.references : [],
+        capacity_value: item.capacity_value ?? null,
+        investment_capex: item.investment_capex ?? '',
+        references: item.references ?? [],
         latitude: item.latitude,
         longitude: item.longitude,
         type: item.type,
       } as CCUSItem,
     });
 
-    const toGeoJSON = (rows: CCUSItem[]): GeoJSONFeatureCollection => ({
+    const toGeoJSON = (rows: RawCCUSItem[]): GeoJSONFeatureCollection => ({
       type: 'FeatureCollection',
       features: rows
-        .filter((r: CCUSItem) => r.latitude !== null && r.longitude !== null)
-        .map((r: CCUSItem) => formatFeature(r)),
+        .filter((r: RawCCUSItem) => r.latitude !== null && r.longitude !== null)
+        .map((r: RawCCUSItem) => formatFeature(r)),
     });
 
-    const rows: CCUSItem[] = result.rows;
-    console.log(`[INFO] Missing coordinates - CCUS: ${rows.filter((r: CCUSItem) => r.latitude === null || r.longitude === null).length}`);
+    const rows: RawCCUSItem[] = result.rows;
+    console.log(`[INFO] Missing coordinates - CCUS: ${rows.filter((r: RawCCUSItem) => r.latitude === null || r.longitude === null).length}`);
 
     return toGeoJSON(rows);
   } catch (err: unknown) {

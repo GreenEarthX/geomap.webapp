@@ -1,4 +1,5 @@
-import PortForm, { Feature } from '@/app/components/PortForm';
+import { PortItem } from '@/lib/types2';
+import PortForm from '@/app/components/PortForm';
 import { logger } from '@/lib/logger';
 
 interface PortFormPageProps {
@@ -9,7 +10,7 @@ export default async function PortFormPage({ params }: PortFormPageProps) {
   const { id } = await params;
   logger.info('PortFormPage params', { id });
 
-  let initialFeature: Feature | null = null;
+  let initialFeature: PortItem | null = null;
   let initialError: string | null = null;
 
   try {
@@ -25,16 +26,16 @@ export default async function PortFormPage({ params }: PortFormPageProps) {
 
     const data = await response.json();
     logger.info('Fetched port data:', {
-      portIds: data.ports?.features.map((f: Feature) => f.properties.internal_id) || [],
+      portIds: data.ports?.features.map((f: { properties: PortItem }) => f.properties.internal_id) || [],
     });
 
-    const feature = data.ports?.features.find((f: Feature) => f.properties.internal_id === id);
+    const feature = data.ports?.features.find((f: { properties: PortItem }) => f.properties.internal_id === id);
 
     if (!feature) {
       logger.warn(`No port found with internal_id: ${id}`);
       initialError = `Port with ID "${id}" not found. Please check the ID or try another port.`;
     } else {
-      initialFeature = feature;
+      initialFeature = feature.properties;
     }
   } catch (error) {
     logger.error('Error fetching port data:', error);

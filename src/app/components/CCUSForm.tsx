@@ -2,10 +2,10 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ProductionItem } from '@/lib/types2';
+import { CCUSItem, CCUSReference } from '@/lib/types2';
 
 interface FieldConfig {
-  name: keyof ProductionItem | 'capacity' | 'investment_capex';
+  name: keyof CCUSItem | 'capacity';
   label: string;
   type: string;
   placeholder: string;
@@ -14,15 +14,15 @@ interface FieldConfig {
 
 interface SectionConfig {
   title: string;
-  fields: (keyof ProductionItem | 'capacity' | 'investment_capex')[];
+  fields: (keyof CCUSItem | 'capacity')[];
 }
 
-interface ProductionFormProps {
-  initialFeature: ProductionItem | null;
+interface CCUSFormProps {
+  initialFeature: CCUSItem | null;
   initialError: string | null;
 }
 
-const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) => {
+const CCUSForm = ({ initialFeature, initialError }: CCUSFormProps) => {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -34,83 +34,82 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     'Contact Information': true,
   });
 
-  // Field order matching generatePopupHtml
-  const fieldOrder: (keyof ProductionItem | 'capacity' | 'investment_capex')[] = [
+  const fieldOrder: (keyof CCUSItem | 'capacity')[] = [
     'name',
     'project_name',
     'owner',
     'project_type',
-    'primary_product',
-    'secondary_product',
+    'product',
     'country',
     'city',
     'street',
-    'zip',
-    'technology',
-    'status',
-    'date_online',
+    'zip_code',
+    'technology_fate',
+    'project_status',
+    'operation_date',
     'capacity',
-    'end_use',
+    'end_use_sector',
     'stakeholders',
     'investment_capex',
-    'contact_name',
+    'contact',
     'email',
-    'website_url',
+    'website',
   ];
 
-  const initialFormData: Partial<ProductionItem> & { capacity?: string; investment_capex?: string } = {
+  const initialFormData: Partial<CCUSItem> & { capacity?: string } = {
     id: initialFeature?.id ?? '',
     internal_id: initialFeature?.internal_id ?? id ?? '',
     name: initialFeature?.name ?? 'Placeholder Feature',
-    type: initialFeature?.type ?? 'Production',
+    type: initialFeature?.type ?? 'CCUS',
     project_name: initialFeature?.project_name ?? '',
     owner: initialFeature?.owner ?? '',
     stakeholders: initialFeature?.stakeholders ?? [],
-    contact_name: initialFeature?.contact_name ?? '',
+    contact: initialFeature?.contact ?? '',
     email: initialFeature?.email ?? '',
     country: initialFeature?.country ?? '',
-    zip: initialFeature?.zip ?? '',
+    zip_code: initialFeature?.zip_code ?? '',
     city: initialFeature?.city ?? '',
     street: initialFeature?.street ?? '',
-    website_url: initialFeature?.website_url ?? '',
-    status: initialFeature?.status ?? '',
-    date_online: initialFeature?.date_online ?? '',
+    website: initialFeature?.website ?? '',
+    project_status: initialFeature?.project_status ?? '',
+    operation_date: initialFeature?.operation_date ?? '',
     project_type: initialFeature?.project_type ?? '',
-    primary_product: initialFeature?.primary_product ?? '',
-    secondary_product: initialFeature?.secondary_product ?? '',
-    technology: initialFeature?.technology ?? '',
+    product: initialFeature?.product ?? '',
+    technology_fate: initialFeature?.technology_fate ?? '',
+    end_use_sector: initialFeature?.end_use_sector ?? [],
     capacity_unit: initialFeature?.capacity_unit ?? '',
     capacity_value: initialFeature?.capacity_value ?? 0,
-    capacity: initialFeature?.capacity_value && initialFeature?.capacity_unit 
-      ? `${initialFeature.capacity_value} ${initialFeature.capacity_unit}` 
+    capacity: initialFeature?.capacity_value && initialFeature?.capacity_unit
+      ? `${initialFeature.capacity_value} ${initialFeature.capacity_unit}`
       : '',
-    end_use: initialFeature?.end_use ?? [],
     investment_capex: initialFeature?.investment_capex ?? '',
+    references: initialFeature?.references ?? [],
     latitude: initialFeature?.latitude ?? 0,
     longitude: initialFeature?.longitude ?? 0,
   };
 
-  const [formData, setFormData] = useState<Partial<ProductionItem> & { capacity?: string; investment_capex?: string }>(initialFormData);
+  const [formData, setFormData] = useState<Partial<CCUSItem> & { capacity?: string }>(initialFormData);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name === 'capacity' || name === 'investment_capex') {
+    if (name === 'capacity') {
       const [parsedValue, ...unitParts] = value.trim().split(' ');
       const parsedUnit = unitParts.join(' ');
       const parsedNumber = parseFloat(parsedValue) || 0;
       setFormData((prev) => ({
         ...prev,
-        [`${name}_value`]: name === 'capacity' ? parsedNumber : prev.capacity_value,
-        [`${name}_unit`]: name === 'capacity' ? parsedUnit || prev.capacity_unit || '' : '',
-        [name]: value,
-        ...(name === 'investment_capex' ? { investment_capex: value } : {}),
+        capacity_value: parsedNumber,
+        capacity_unit: parsedUnit || prev.capacity_unit || '',
+        capacity: value,
       }));
     } else {
       const parsedValue =
         ['latitude', 'longitude'].includes(name)
           ? parseFloat(value) || 0
-          : name === 'end_use' || name === 'stakeholders'
+          : name === 'end_use_sector' || name === 'stakeholders'
           ? value.split(',').map((v) => v.trim()).filter(Boolean)
+          : name === 'references'
+          ? value.split(',').map((v) => ({ ref: v.trim(), link: null } as CCUSReference)).filter((r) => r.ref)
           : value;
       setFormData((prev) => ({ ...prev, [name]: parsedValue }));
     }
@@ -120,41 +119,42 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     e.preventDefault();
     setIsEditing(false);
 
-    // Map formData to project_map.data JSONB structure
     const dataPayload = {
       plant_name: formData.name || null,
       project_name: formData.project_name || null,
       owner: formData.owner || null,
       stakeholders: formData.stakeholders?.length ? formData.stakeholders : null,
-      contact_name: formData.contact_name || null,
+      contact: formData.contact || null,
       email: formData.email || null,
       country: formData.country || null,
-      zip: formData.zip || null,
+      zip_code: formData.zip_code || null,
       city: formData.city || null,
       street: formData.street || null,
-      website_url: formData.website_url || null,
-      status: {
-        current_status: formData.status || null,
-        date_online: formData.date_online || null,
-        coordinates: {
-          latitude: String(formData.latitude || 0),
-          longitude: String(formData.longitude || 0),
-        },
+      website: formData.website || null,
+      status_date: {
+        project_status: formData.project_status || null,
+        operation_date: formData.operation_date || null,
       },
       project_type: formData.project_type || null,
-      primary_product: formData.primary_product || null,
-      secondary_product: formData.secondary_product || null,
-      technology: formData.technology || null,
+      product: formData.product || null,
+      technology_fate: formData.technology_fate || null,
+      end_use_sector: formData.end_use_sector?.length ? formData.end_use_sector : null,
       capacity: {
         unit: formData.capacity_unit || null,
         value: formData.capacity_value || null,
       },
-      end_use: formData.end_use?.length ? formData.end_use : null,
       investment_capex: formData.investment_capex || null,
+      references: formData.references?.length
+        ? formData.references.map((r) => ({ ref: r.ref, link: r.link }))
+        : null,
+      coordinates: {
+        latitude: String(formData.latitude || 0),
+        longitude: String(formData.longitude || 0),
+      },
     };
 
     try {
-      const response = await fetch('/api/production', {
+      const response = await fetch('/api/ccus', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -164,7 +164,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to save Production data: ${response.statusText}`);
+        throw new Error(`Failed to save CCUS data: ${response.statusText}`);
       }
 
       const notification = document.createElement('div');
@@ -177,10 +177,9 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
         setTimeout(() => notification.remove(), 300);
       }, 3000);
 
-      // Reset form to initial state
       setFormData(initialFormData);
     } catch (error) {
-      console.error('Error saving Production data:', error);
+      console.error('Error saving CCUS data:', error);
       const notification = document.createElement('div');
       notification.className =
         'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-md shadow-lg animate-fade-in-out';
@@ -203,44 +202,43 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
       { name: 'project_name', label: 'Project Name', type: 'text', placeholder: 'Enter project name' },
       { name: 'owner', label: 'Owner', type: 'text', placeholder: 'Enter owner' },
       { name: 'project_type', label: 'Project Type', type: 'text', placeholder: 'Enter project type' },
-      { name: 'primary_product', label: 'Primary Product', type: 'text', placeholder: 'Enter primary product' },
-      { name: 'secondary_product', label: 'Secondary Product', type: 'text', placeholder: 'Enter secondary product' },
+      { name: 'product', label: 'Product', type: 'text', placeholder: 'Enter product' },
       { name: 'country', label: 'Country', type: 'text', placeholder: 'Country location' },
       { name: 'city', label: 'City', type: 'text', placeholder: 'City location' },
       { name: 'street', label: 'Street', type: 'text', placeholder: 'Enter street' },
-      { name: 'zip', label: 'Zip Code', type: 'text', placeholder: 'Enter zip code' },
-      { name: 'technology', label: 'Technology', type: 'text', placeholder: 'Production technology' },
-      { name: 'status', label: 'Status', type: 'text', placeholder: 'e.g. Feasibility study' },
-      { name: 'date_online', label: 'Date Online', type: 'text', placeholder: 'Enter date online' },
-      { name: 'capacity', label: 'Capacity', type: 'text', placeholder: 'e.g. 100 MW', isCombined: true },
-      { name: 'end_use', label: 'End Use', type: 'text', placeholder: 'e.g. Power, CH4 grid injection' },
+      { name: 'zip_code', label: 'Zip Code', type: 'text', placeholder: 'Enter zip code' },
+      { name: 'technology_fate', label: 'Technology (Fate of Carbon)', type: 'text', placeholder: 'e.g. Dedicated storage' },
+      { name: 'project_status', label: 'Status', type: 'text', placeholder: 'e.g. Operational' },
+      { name: 'operation_date', label: 'Operation Date', type: 'text', placeholder: 'Enter operation date' },
+      { name: 'capacity', label: 'Capacity', type: 'text', placeholder: 'e.g. 10 Mt CO2/yr', isCombined: true },
+      { name: 'end_use_sector', label: 'End Use Sector', type: 'text', placeholder: 'e.g. Power and heat, Cement' },
       { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },
-      { name: 'investment_capex', label: 'Investment (CAPEX)', type: 'text', placeholder: 'e.g. 100 USD', isCombined: true },
-      { name: 'contact_name', label: 'Contact Name', type: 'text', placeholder: 'Enter contact name' },
+      { name: 'investment_capex', label: 'Investment (CAPEX)', type: 'text', placeholder: 'e.g. 100 USD' },
+      { name: 'contact', label: 'Contact Name', type: 'text', placeholder: 'Enter contact name' },
       { name: 'email', label: 'Email', type: 'email', placeholder: 'Enter email' },
-      { name: 'website_url', label: 'Website', type: 'text', placeholder: 'Enter website URL' },
+      { name: 'website', label: 'Website', type: 'text', placeholder: 'Enter website URL' },
     ];
 
     const sections: SectionConfig[] = [
       {
         title: 'General Information',
-        fields: ['name', 'project_name', 'owner', 'project_type', 'primary_product', 'secondary_product'],
+        fields: ['name', 'project_name', 'owner', 'project_type', 'product'],
       },
       {
         title: 'Location',
-        fields: ['country', 'city', 'street', 'zip'],
+        fields: ['country', 'city', 'street', 'zip_code'],
       },
       {
         title: 'Project Details',
-        fields: ['technology', 'status', 'date_online'],
+        fields: ['technology_fate', 'project_status', 'operation_date'],
       },
       {
         title: 'Capacity',
-        fields: ['capacity', 'end_use', 'investment_capex'],
+        fields: ['capacity', 'end_use_sector', 'investment_capex'],
       },
       {
         title: 'Contact Information',
-        fields: ['stakeholders', 'contact_name', 'email', 'website_url'],
+        fields: ['stakeholders', 'contact', 'email', 'website'],
       },
     ];
 
@@ -280,12 +278,10 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
                         type={field.type}
                         name={field.name}
                         value={
-                          field.name === 'end_use' || field.name === 'stakeholders'
+                          field.name === 'end_use_sector' || field.name === 'stakeholders'
                             ? (formData[field.name] as string[] | null)?.join(', ') ?? ''
                             : field.name === 'capacity'
                             ? formData.capacity ?? ''
-                            : field.name === 'investment_capex'
-                            ? formData.investment_capex ?? ''
                             : String(formData[field.name] ?? '')
                         }
                         onChange={handleInputChange}
@@ -381,10 +377,10 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-blue-800">
-              {formData.name || 'Production Feature Details'}
+              {formData.name || 'CCUS Feature Details'}
             </h2>
             <p className="text-gray-500 capitalize text-sm sm:text-base">
-              Production Project
+              CCUS Project
             </p>
           </div>
           <button
@@ -516,4 +512,4 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
   );
 };
 
-export default ProductionForm;
+export default CCUSForm;

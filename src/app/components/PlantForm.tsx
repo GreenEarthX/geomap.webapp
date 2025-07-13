@@ -2,118 +2,247 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { ProductionItem, StorageItem, CCUSItem } from '@/lib/types2';
 
-export interface Feature {
-  type: 'Feature';
-  geometry: {
-    type: 'Point' ;
-    coordinates: [number, number];
-  };
-  properties: {
-    id?: number;
-    internal_id?: string;
-    name?: string;
-    status?: string;
-    type?: string;
-    capacity_mw?: number;
-    end_use?: string;
-    consumption_tpy?: number;
-    start_year?: number;
-    city?: string;
-    country?: string;
-    process?: string;
-  };
-}
+type FeatureType = ProductionItem | StorageItem | CCUSItem;
 
 interface PlantFormProps {
-  initialFeature: Feature | null;
+  initialFeature: FeatureType | null;
   initialError: string | null;
 }
 
 interface FieldConfig {
-  name: keyof Feature['properties'];
+  name: string;
   label: string;
   type: string;
   placeholder: string;
 }
 
 const PlantForm = ({ initialFeature, initialError }: PlantFormProps) => {
-  const { id } = useParams<{ id: string }>();
+  const { id, type } = useParams<{ id: string; type: string }>();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
 
-  const resolvedType = initialFeature?.properties?.type ?? 'Hydrogen';
-  const feature: Feature = initialFeature || {
-    type: 'Feature',
-    geometry: {
-      type: 'Point',
-      coordinates: [0, 0],
-    },
-    properties: {
-      internal_id: id || '',
-      name: 'Placeholder Feature',
-      type: resolvedType,
-      status: '',
-      start_year: 0,
-      capacity_mw: 0,
-      process: '',
-      end_use: '',
-      consumption_tpy: 0,
-      city: '',
-      country: '',
-    },
-  };
+  const resolvedType = type || initialFeature?.type || 'Production';
+  const sector = resolvedType.toLowerCase();
 
-  const initialFormData: Partial<Feature['properties']> = {
-    internal_id: feature.properties.internal_id ?? id,
-    name: feature.properties.name ?? 'Placeholder Feature',
-    type: feature.properties.type ?? 'Hydrogen',
-    status: feature.properties.status ?? '',
-    start_year: feature.properties.start_year ?? 0,
-    capacity_mw: feature.properties.capacity_mw ?? 0,
-    process: feature.properties.process ?? '',
-    end_use: feature.properties.end_use ?? '',
-    consumption_tpy: feature.properties.consumption_tpy ?? 0,
-    city: feature.properties.city ?? '',
-    country: feature.properties.country ?? '',
-  };
+  const initialFormData: Partial<FeatureType> =
+    sector === 'production'
+      ? {
+          internal_id: initialFeature?.internal_id ?? id ?? '',
+          name: initialFeature?.project_name ?? 'Placeholder Feature',
+          type: initialFeature?.type ?? resolvedType,
+          status: initialFeature?.project_status ?? '',
+          date_online: initialFeature?.date_online ?? '',
+          city: initialFeature?.city ?? '',
+          country: initialFeature?.country ?? '',
+          capacity_value: (initialFeature as ProductionItem | undefined)?.capacity_value ?? 0,
+          technology: (initialFeature as ProductionItem | undefined)?.technology ?? '',
+          end_use: (initialFeature as ProductionItem | undefined)?.end_use ?? [],
+          stakeholders: (initialFeature as ProductionItem | undefined)?.stakeholders ?? [],
+        }
+      : sector === 'storage'
+      ? {
+          internal_id: initialFeature?.internal_id ?? id ?? '',
+          project_name: initialFeature?.project_name ?? 'Placeholder Feature',
+          type: initialFeature?.type ?? resolvedType,
+          status: initialFeature?.project_status ?? '',
+          date_online: initialFeature?.date_online ?? '',
+          city: initialFeature?.city ?? '',
+          country: initialFeature?.country ?? '',
+          storage_mass_kt_per_year_value: (initialFeature as StorageItem | undefined)?.storage_mass_kt_per_year_value ?? 0,
+          storage_mass_kt_per_year_unit: (initialFeature as StorageItem | undefined)?.storage_mass_kt_per_year_unit ?? '',
+          stakeholders: (initialFeature as StorageItem | undefined)?.stakeholders ?? [],
+        }
+      : sector === 'ccus'
+      ? {
+          internal_id: initialFeature?.internal_id ?? id ?? '',
+          name: initialFeature?.project_name ?? 'Placeholder Feature',
+          type: initialFeature?.type ?? resolvedType,
+          project_status: initialFeature?.project_status ?? '',
+          operation_date: initialFeature?.operation_date ?? '',
+          city: initialFeature?.city ?? '',
+          country: initialFeature?.country ?? '',
+          capacity_value: (initialFeature as CCUSItem | undefined)?.capacity_value ?? 0,
+          technology_fate: (initialFeature as CCUSItem | undefined)?.technology_fate ?? '',
+          end_use_sector: (initialFeature as CCUSItem | undefined)?.end_use_sector ?? [],
+          stakeholders: (initialFeature as CCUSItem | undefined)?.stakeholders ?? [],
+        }
+      : {
+          internal_id: id ?? '',
+          project_name: 'Placeholder Feature',
+          type: resolvedType,
+          status: '',
+          date_online: '',
+          city: '',
+          country: '',
+        };
 
-  const [formData, setFormData] = useState<Partial<Feature['properties']>>(initialFormData);
+  const [formData, setFormData] = useState<Partial<FeatureType>>(initialFormData);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    const parsedValue = ['start_year', 'capacity_mw', 'consumption_tpy'].includes(name)
-      ? parseFloat(value) || 0
-      : value;
+    const parsedValue =
+      ['capacity_value', 'storage_mass_kt_per_year_value'].includes(name)
+        ? parseFloat(value) || 0
+        : ['end_use', 'stakeholders'].includes(name) && sector !== 'ccus'
+        ? value.split(',').map((v) => v.trim()).filter(Boolean)
+        : name === 'end_use_sector' && sector === 'ccus'
+        ? value.split(',').map((v) => v.trim()).filter(Boolean)
+        : name === 'stakeholders' && sector === 'ccus'
+        ? value
+        : value;
     setFormData((prev) => ({ ...prev, [name]: parsedValue }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsEditing(false);
-    const notification = document.createElement('div');
-    notification.className =
-      'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-lg animate-fade-in-out';
-    notification.textContent = 'Changes saved successfully!';
-    document.body.appendChild(notification);
-    setTimeout(() => {
-      notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
+
+    try {
+      const endpoint = `/api/${sector}`;
+      const dataPayload = {
+        ...formData,
+        // Map form fields to database JSON structure
+        data: {
+          plant_name: (formData as ProductionItem | CCUSItem).name ?? formData.project_name,
+          project_name: formData.project_name ?? (formData as ProductionItem | CCUSItem).name,
+          status: {
+            current_status: formData.project_status,
+            date_online: formData.date_online ?? formData.operation_date,
+          },
+          coordinates: {
+            latitude: formData.latitude ?? 0,
+            longitude: formData.longitude ?? 0,
+          },
+          city: formData.city,
+          country: formData.country,
+          ...(sector === 'production' && {
+            capacity: {
+              value: (formData as ProductionItem).capacity_value,
+              unit: (formData as ProductionItem).capacity_unit ?? '',
+            },
+            technology: (formData as ProductionItem).technology,
+            end_use: (formData as ProductionItem).end_use?.join(','),
+            stakeholders: (formData as ProductionItem).stakeholders?.join(','),
+          }),
+          ...(sector === 'storage' && {
+            capacities: {
+              storage: {
+                mass_kt_per_year: {
+                  value: (formData as StorageItem).storage_mass_kt_per_year_value,
+                  unit: (formData as StorageItem).storage_mass_kt_per_year_unit,
+                },
+              },
+            },
+            stakeholders: (formData as StorageItem).stakeholders?.join(','),
+          }),
+          ...(sector === 'ccus' && {
+            capacity: {
+              value: (formData as CCUSItem).capacity_value,
+              unit: (formData as CCUSItem).capacity_unit ?? '',
+            },
+            technology_fate: (formData as CCUSItem).technology_fate,
+            end_use_sector: (formData as CCUSItem).end_use_sector?.join(','),
+            stakeholders: (formData as CCUSItem).stakeholders?.join(','),
+            status_date: {
+              project_status: (formData as CCUSItem).project_status,
+              operation_date: (formData as CCUSItem).operation_date,
+            },
+          }),
+        },
+      };
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataPayload),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save ${sector} data`);
+      }
+
+      const notification = document.createElement('div');
+      notification.className =
+        'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-lg animate-fade-in-out';
+      notification.textContent = 'Changes saved successfully!';
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    } catch (error) {
+      const notification = document.createElement('div');
+      notification.className =
+        'fixed top-4 right-4 bg-red-600 text-white px-4 py-2 rounded-md shadow-lg animate-fade-in-out';
+      notification.textContent = `Error saving changes: ${error instanceof Error ? error.message : 'Unknown error'}`;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+    }
   };
 
   const renderFields = () => {
-    const fields: FieldConfig[] = [
-      { name: 'name', label: 'Project Name', type: 'text', placeholder: 'Enter project name' },
-      { name: 'status', label: 'Status', type: 'text', placeholder: 'e.g. Concept, Operational, DEMO' },
-      { name: 'start_year', label: 'Start Year', type: 'number', placeholder: 'YYYY' },
-      { name: 'capacity_mw', label: 'Capacity (MW)', type: 'number', placeholder: 'Enter capacity' },
-      { name: 'process', label: 'Process', type: 'text', placeholder: 'Production process' },
-      { name: 'end_use', label: 'End Use', type: 'text', placeholder: 'e.g. Power, CH4 grid injection' },
-      { name: 'consumption_tpy', label: 'Consumption (t/y)', type: 'number', placeholder: 'Annual consumption' },
+    const commonFields: FieldConfig[] = [
+      {
+        name: sector === 'storage' ? 'project_name' : 'name',
+        label: 'Project Name',
+        type: 'text',
+        placeholder: 'Enter project name',
+      },
+      {
+        name: sector === 'ccus' ? 'project_status' : 'status',
+        label: 'Status',
+        type: 'text',
+        placeholder: 'e.g. Concept, Operational, DEMO',
+      },
+      {
+        name: sector === 'ccus' ? 'operation_date' : 'date_online',
+        label: 'Start Date',
+        type: 'text',
+        placeholder: 'YYYY-MM-DD',
+      },
       { name: 'city', label: 'City', type: 'text', placeholder: 'City location' },
       { name: 'country', label: 'Country', type: 'text', placeholder: 'Country location' },
     ];
+
+    const sectorFields: FieldConfig[] =
+      sector === 'production'
+        ? [
+            { name: 'capacity_value', label: 'Capacity (MW)', type: 'number', placeholder: 'Enter capacity' },
+            { name: 'technology', label: 'Technology', type: 'text', placeholder: 'Production technology' },
+            { name: 'end_use', label: 'End Use', type: 'text', placeholder: 'e.g. Power, CH4 grid injection' },
+            { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },
+          ]
+        : sector === 'storage'
+        ? [
+            {
+              name: 'storage_mass_kt_per_year_value',
+              label: 'Storage Capacity (kt/year)',
+              type: 'number',
+              placeholder: 'Enter storage capacity',
+            },
+            {
+              name: 'storage_mass_kt_per_year_unit',
+              label: 'Storage Capacity Unit',
+              type: 'text',
+              placeholder: 'e.g. kt/year',
+            },
+            { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },
+          ]
+        : sector === 'ccus'
+        ? [
+            { name: 'capacity_value', label: 'Capacity', type: 'number', placeholder: 'Enter capacity' },
+            { name: 'technology_fate', label: 'Technology Fate', type: 'text', placeholder: 'Technology fate' },
+            { name: 'end_use_sector', label: 'End Use Sector', type: 'text', placeholder: 'Comma-separated sectors' },
+            { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Enter stakeholders' },
+          ]
+        : [];
+
+    const fields = [...commonFields, ...sectorFields];
 
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -128,7 +257,13 @@ const PlantForm = ({ initialFeature, initialError }: PlantFormProps) => {
             <input
               type={field.type}
               name={field.name}
-              value={String(formData[field.name] ?? '')}
+              value={
+                (field.name === 'end_use' && sector === 'production') ||
+                (field.name === 'stakeholders' && sector !== 'ccus') ||
+                (field.name === 'end_use_sector' && sector === 'ccus')
+                  ? (formData[field.name as keyof typeof formData] as string[] | null)?.join(', ') ?? ''
+                  : String(formData[field.name as keyof typeof formData] ?? '')
+              }
               onChange={handleInputChange}
               disabled={!isEditing}
               placeholder={field.placeholder}
@@ -218,11 +353,11 @@ const PlantForm = ({ initialFeature, initialError }: PlantFormProps) => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
             <h2 className="text-2xl sm:text-3xl font-bold text-blue-800">
-              {feature.properties.name || 'Feature Details'}
+              {(sector === 'storage' ? formData.project_name : formData.project_name) || 'Feature Details'}
             </h2>
             <p className="text-gray-500 capitalize text-sm sm:text-base">
-              {feature.properties.type
-                ? `${feature.properties.type} Project`
+              {formData.type
+                ? `${formData.type} Project`
                 : 'Unknown Project Type'}
             </p>
           </div>

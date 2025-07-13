@@ -1,15 +1,182 @@
-import { NextResponse } from 'next/server';
-import { getPortData } from '@/services/getPortData';
+import { NextResponse, NextRequest } from 'next/server';
+import Pool from '@/lib/db';
+import { PortItem } from '@/lib/types2';
+
+interface PortFeature {
+  type: 'Feature';
+  geometry: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+  properties: PortItem;
+}
 
 export async function GET() {
   try {
-    const portData = await getPortData();
-    return NextResponse.json(portData);
+    const client = await Pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT 
+          id,
+          internal_id,
+          line as line_number,
+          data->>'ref_id' AS ref_id,
+          data->>'project_name' AS project_name,
+          data->>'location' AS city,
+          data->>'country' AS country,
+          data->>'trade_type' AS trade_type,
+          data->>'partners' AS partners,
+          data->'investment' AS investment,
+          data->'status_dates' AS status_dates,
+          data->>'product_type' AS product_type,
+          data->>'data_source' AS data_source,
+          data->>'technology_type' AS technology_type,
+          data->'capacity'->'announced_size' AS announced_size,
+          CASE 
+            WHEN data->'coordinates'->>'latitude' ~ '^[0-9\\.-]+$' 
+            THEN (data->'coordinates'->>'latitude')::double precision
+            ELSE 0
+          END AS latitude,
+          CASE 
+            WHEN data->'coordinates'->>'longitude' ~ '^[0-9\\.-]+$' 
+            THEN (data->'coordinates'->>'longitude')::double precision
+            ELSE 0
+          END AS longitude,
+          sector AS type
+         FROM project_map
+         WHERE sector = 'Port' `
+      );
+
+      const features: PortFeature[] = result.rows.map((row) => {
+        const {
+          id,
+          internal_id,
+          line_number,
+          ref_id,
+          project_name,
+          city,
+          country,
+          trade_type,
+          partners,
+          investment,
+          status_dates,
+          product_type,
+          data_source,
+          technology_type,
+          announced_size,
+          latitude,
+          longitude,
+          type,
+        } = row;
+
+        const portItem: PortItem = {
+          id,
+          internal_id: internal_id || null,
+          line_number: line_number || null,
+          ref_id: ref_id || null,
+          name: project_name || 'N/A',
+          city: city || null,
+          country: country || null,
+          trade_type: trade_type || null,
+          partners: partners || null,
+          investment: investment ? { costs_musd: investment.costs_musd || null } : null,
+          status: status_dates?.status || null,
+          latitude: latitude || 0,
+          longitude: longitude || 0,
+          type: type.toLowerCase(),
+          project_name: project_name || null,
+          product_type: product_type || null,
+          data_source: data_source || null,
+          technology_type: technology_type || null,
+          announced_size: announced_size
+            ? {
+                unit: announced_size.unit || null,
+                value: announced_size.value ? parseFloat(announced_size.value) || 0 : null,
+                vessels: announced_size.vessels ? parseInt(announced_size.vessels, 10) || null : null,
+                capacity_per_vessel: announced_size.capacity_per_vessel
+                  ? parseFloat(announced_size.capacity_per_vessel) || null
+                  : null,
+                original_text: announced_size.original_text || null,
+              }
+            : null,
+        };
+
+        return {
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [longitude || 0, latitude || 0],
+          },
+          properties: portItem,
+        };
+      });
+
+      console.log(
+        'Fetched ports:',
+        features.map((f) => ({
+          internal_id: f.properties.internal_id,
+          coordinates: f.geometry.coordinates,
+        }))
+      );
+
+      return NextResponse.json({
+        ports: {
+          type: 'FeatureCollection',
+          features,
+        },
+      });
+    } finally {
+      client.release();
+    }
   } catch (error) {
-    console.error('[Ports API Error]', error);
-    return NextResponse.json(
-      { error: `Internal Server Error: ${error instanceof Error ? error.message : String(error)}` },
-      { status: 500 }
-    );
+    console.error('Error fetching ports data:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+
+export async function POST(req: NextRequest) {
+  try {
+    const { internal_id, data } = await req.json();
+
+    // Fetch original port record to copy file_link, tab, line, and sector
+    const originalQuery = `
+      SELECT file_link, tab, line, sector
+      FROM project_map
+      WHERE internal_id = $1 AND sector = 'Port'
+      ORDER BY created_at DESC
+      LIMIT 1
+    `;
+    const originalResult = await Pool.query(originalQuery, [internal_id]);
+
+
+    const { file_link, tab, line, sector } = originalResult.rows[0];
+
+    // Ensure line_number is included in data
+    const dataWithLineNumber = {
+      ...data,
+      line_number: data.line_number ?? line ?? null,
+    };
+
+    // Insert new row with same internal_id and updated data
+    const insertQuery = `
+      INSERT INTO project_map (internal_id, data, file_link, tab, line, sector, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
+      RETURNING id
+    `;
+    const insertResult = await Pool.query(insertQuery, [
+      internal_id,
+      JSON.stringify(dataWithLineNumber),
+      file_link,
+      tab,
+      line,
+      sector,
+    ]);
+
+
+
+    return NextResponse.json({ message: 'Port data saved successfully', id: insertResult.rows[0].id }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to save port data' }, { status: 500 });
   }
 }

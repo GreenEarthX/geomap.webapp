@@ -31,13 +31,13 @@ export const addStorageMarkers = (
     const popupHtml = generatePopupHtml(props, 'Storage');
 
     const marker = L.marker([props.latitude, props.longitude], { icon })
-      .bindTooltip(props.name || 'Unnamed', { sticky: true })
+      .bindTooltip(props.project_name || 'Unnamed', { sticky: true })
       .bindPopup(popupHtml)
       .on('click', () => {
-        if (props.name) {
+        if (props.project_name) {
           const params = new URLSearchParams();
-          params.set('plantName', props.name);
-          setSelectedPlantName(props.name);
+          params.set('plantName', props.project_name);
+          setSelectedPlantName(props.project_name);
           window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
           map.setView([props.latitude!, props.longitude!], 12);
         }

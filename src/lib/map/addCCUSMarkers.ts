@@ -22,7 +22,7 @@ export const addCCUSMarkers = (
     }
 
     const icon = L.AwesomeMarkers.icon({
-      markerColor: statusColorMap[props.status?.toLowerCase() || 'other/unknown'] || statusColorMap['other/unknown'],
+      markerColor: statusColorMap[props.project_status?.toLowerCase() || 'other/unknown'] || statusColorMap['other/unknown'],
       iconColor: 'white',
       icon: 'leaf',
       prefix: 'fa',

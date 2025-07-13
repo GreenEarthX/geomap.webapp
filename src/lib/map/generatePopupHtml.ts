@@ -1,6 +1,5 @@
 import { ProductionItem, StorageItem, CCUSItem, PortItem, PipelineItem, CCUSReference } from '@/lib/types2';
 
-// Helper function to format field names (e.g., project_name → Project Name)
 const formatFieldName = (key: string): string => {
   return key
     .split('_')
@@ -8,13 +7,11 @@ const formatFieldName = (key: string): string => {
     .join(' ');
 };
 
-// Helper function to format field values
 const formatValue = (value: any): string => {
   if (value === null || value === undefined || value === '') return 'N/A';
   if (Array.isArray(value)) {
     if (value.length === 0) return 'N/A';
     if (value[0] && typeof value[0] === 'object' && 'link' in value[0]) {
-      // Handle CCUSReference[] for CCUS, only show links
       return value
         .filter((ref: CCUSReference) => ref.link)
         .map((ref: CCUSReference) => ref.link)
@@ -23,41 +20,256 @@ const formatValue = (value: any): string => {
     return value.join(', ');
   }
   if (typeof value === 'object') {
-    // Handle objects like announced_size or investment
     if ('unit' in value && 'value' in value) {
       return `${value.value} ${value.unit}${value.vessels ? ` (${value.vessels} vessels)` : ''}`;
     }
     if ('costs_musd' in value) {
-      return value.costs_musd;
+      if (!value.costs_musd || value.costs_musd.value === null || value.costs_musd.value === undefined) {
+        return '';
+      }
+      return `${value.costs_musd.value} ${value.costs_musd.unit || 'MUSD'}`;
+    }
+    if ('status' in value && 'date_online' in value) {
+      const status = value.status || 'N/A';
+      const date = value.date_online ? ` (${value.date_online})` : '';
+      return `${status}${date}`;
     }
     return JSON.stringify(value);
   }
   return String(value);
 };
 
-// Main function to generate popup HTML
+interface CapacityField {
+  base: string;
+  valueField: string;
+  unitField: string;
+}
+
+const storageCapacityFields: CapacityField[] = [
+  { base: 'storage_mass_kt_per_year', valueField: 'storage_mass_kt_per_year_value', unitField: 'storage_mass_kt_per_year_unit' },
+];
+
+const productionCapacityFields: CapacityField[] = [
+  { base: 'capacity', valueField: 'capacity_value', unitField: 'capacity_unit' },
+  { base: 'investment_capex', valueField: 'investment_capex', unitField: '' },
+];
+
+const ccusCapacityFields: CapacityField[] = [
+  { base: 'capacity', valueField: 'capacity_value', unitField: 'capacity_unit' },
+  { base: 'investment_capex', valueField: 'investment_capex', unitField: '' },
+];
+
+const fieldOrder: Record<'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline', string[]> = {
+  Storage: [
+    'project_name',
+    'project_type',
+    'owner',
+    //'stakeholders',
+    'contact_name',
+    'email',
+    'country',
+    'zip',
+    'city',
+    'street',
+    'website_url',
+    'status',
+    'date_online',
+    'primary_product',
+    'storage_mass_kt_per_year',
+  ],
+  Production: [
+    'name',
+    'project_name',
+    'country',
+    'city',
+    'owner',
+    'project_type',
+    'primary_product',
+    'secondary_product',
+    'technology',
+    'status',
+    'date_online',
+    'capacity',
+    'end_use',
+    //'stakeholders',
+    //'investment_capex',
+  ],
+  CCUS: [
+    'name',
+    'project_name',
+    'country',
+    'city',
+    'owner',
+    'project_type',
+    'product',
+    'technology_fate',
+    'project_status',
+    'operation_date',
+    'capacity',
+    'end_use_sector',
+    //'stakeholders',
+    //'investment_capex',
+  ],
+  Port: [
+    'name',
+    'project_name',
+    'country',
+    'city',
+    'trade_type',
+    'product_type',
+    'status',
+    'announced_size',
+    //'investment',
+    'partners',
+    'technology_type',
+    //'data_source',
+    'status_dates',
+  ],
+  Pipeline: [
+    'pipeline_name',
+    'start_location',
+    'stop_location',
+    'infrastructure_type',
+    'status',
+    'pipeline_number',
+    'segment_id',
+    'segment_order',
+    'total_segments',
+  ],
+};
+
 export const generatePopupHtml = (
   props: ProductionItem | StorageItem | CCUSItem | PortItem | PipelineItem,
   type: 'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline'
 ): string => {
-  const excludedFields = ['id', 'internal_id', 'ref_id', 'latitude', 'longitude', 'ref'];
-  const entries = Object.entries(props).filter(([key, value]) => {
-    if (excludedFields.includes(key)) return false; // Exclude specified fields
-    return value !== null && value !== undefined && value !== '' && (!Array.isArray(value) || value.length > 0);
-  });
+  const excludedFields = ['id', 'internal_id', 'latitude', 'longitude', 'stakeholders','data_source', 'Ref Id', 'end_use', 'investment', 'references', 'investment_capex'];
+  let capacityFields: CapacityField[] = [];
+  let specialEntries: [string, { value: any; unit?: any }][] = [];
 
-  const popupContent = entries
+  if (type === 'Storage') {
+    capacityFields = storageCapacityFields;
+    const storageProps = props as StorageItem;
+    specialEntries = capacityFields
+      .filter(field => 
+        storageProps[field.valueField as keyof StorageItem] !== undefined && 
+        storageProps[field.unitField as keyof StorageItem] !== undefined &&
+        storageProps[field.valueField as keyof StorageItem] !== null &&
+        storageProps[field.unitField as keyof StorageItem] !== null
+      )
+      .map(field => [
+        field.base,
+        {
+          value: storageProps[field.valueField as keyof StorageItem],
+          unit: storageProps[field.unitField as keyof StorageItem],
+        }
+      ]);
+  } else if (type === 'Production') {
+    capacityFields = productionCapacityFields;
+    const productionProps = props as ProductionItem;
+    specialEntries = capacityFields
+      .filter(field => 
+        (field.base === 'investment_capex' ? 
+          productionProps[field.valueField as keyof ProductionItem] !== undefined &&
+          productionProps[field.valueField as keyof ProductionItem] !== null :
+          productionProps[field.valueField as keyof ProductionItem] !== undefined && 
+          productionProps[field.unitField as keyof ProductionItem] !== undefined &&
+          productionProps[field.valueField as keyof ProductionItem] !== null &&
+          productionProps[field.unitField as keyof ProductionItem] !== null)
+      )
+      .map(field => [
+        field.base,
+        {
+          value: productionProps[field.valueField as keyof ProductionItem],
+          unit: field.unitField ? productionProps[field.unitField as keyof ProductionItem] : undefined,
+        }
+      ]);
+  } else if (type === 'CCUS') {
+    capacityFields = ccusCapacityFields;
+    const ccusProps = props as CCUSItem;
+    specialEntries = capacityFields
+      .filter(field => 
+        (field.base === 'investment_capex' ? 
+          ccusProps[field.valueField as keyof CCUSItem] !== undefined &&
+          ccusProps[field.valueField as keyof CCUSItem] !== null :
+          ccusProps[field.valueField as keyof CCUSItem] !== undefined && 
+          ccusProps[field.unitField as keyof CCUSItem] !== undefined &&
+          ccusProps[field.valueField as keyof CCUSItem] !== null &&
+          ccusProps[field.unitField as keyof CCUSItem] !== null)
+      )
+      .map(field => [
+        field.base,
+        {
+          value: ccusProps[field.valueField as keyof CCUSItem],
+          unit: field.unitField ? ccusProps[field.unitField as keyof CCUSItem] : undefined,
+        }
+      ]);
+  }
+
+  const allExcludedKeys = new Set([
+    ...excludedFields,
+    ...capacityFields.map(field => field.valueField),
+    ...capacityFields.filter(field => field.unitField).map(field => field.unitField),
+  ]);
+
+  const regularEntries: [string, any][] = Object.entries(props).filter(([key, value]) => 
+    !allExcludedKeys.has(key) &&
+    value !== null &&
+    value !== undefined &&
+    value !== '' &&
+    (!Array.isArray(value) || value.length > 0)
+  );
+
+  const orderedFieldOrder = fieldOrder[type];
+  const allEntries: [string, any][] = [];
+  const usedKeys = new Set<string>();
+
+  for (const key of orderedFieldOrder) {
+    const specialEntry = specialEntries.find(([entryKey]) => entryKey === key);
+    if (specialEntry) {
+      allEntries.push(specialEntry);
+      usedKeys.add(key);
+      continue;
+    }
+    const regularEntry = regularEntries.find(([entryKey]) => entryKey === key);
+    if (regularEntry) {
+      const formattedValue = formatValue(regularEntry[1]);
+      if (formattedValue !== '') {
+        allEntries.push(regularEntry);
+        usedKeys.add(key);
+      }
+    }
+  }
+
+  const remainingEntries = regularEntries.filter(([key, value]) => !usedKeys.has(key) && formatValue(value) !== '');
+  allEntries.push(...remainingEntries);
+
+  const popupContent = allEntries
     .map(([key, value]) => {
-      return `<b>${formatFieldName(key)}:</b> ${formatValue(value)}`;
+      return `
+        <b class="font-semibold text-gray-800 text-xs">${formatFieldName(key)}:</b>
+        <span class="text-gray-600 text-xs">${formatValue(value)}</span>
+      `;
     })
     .join('<br>');
 
   const verifyButton = 'internal_id' in props && props.internal_id
-    ? `<button onclick="window.location.href='/plant-form/${type.toLowerCase()}/${props.internal_id}'" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">Verify</button>`
-    : '<span class="text-red-500 text-xs">No ID available</span>';
+    ? `
+        <button
+          onclick="event.stopPropagation(); window.location.href='/${type === 'Port' ? 'port-form' : 'plant-form/' + type.toLowerCase()}/${props.internal_id}'"
+          class="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 w-full"
+          aria-label="Verify ${props.project_name || type.toLowerCase()} details"
+        >
+          Verify
+        </button>
+      `
+    : `
+        <span class="mt-2 block text-center text-red-500 text-xs" aria-label="No ID available">
+          No ID available
+        </span>
+      `;
 
   return `
-    <div class="max-w-xs p-2 text-sm">
+    <div class="max-w-[90vw] w-64 p-2 bg-white rounded shadow border border-gray-100 font-sans text-sm">
       ${popupContent}
       ${verifyButton}
     </div>
