@@ -6,42 +6,42 @@ export async function getStorageData(): Promise<GeoJSONFeatureCollection> {
 
   try {
     const result = await client.query(`
-      SELECT 
-        id,
-        internal_id,
-        data->>'project_name' AS project_name,
-        data->>'project_type' AS project_type,
-        data->>'owner' AS owner,
-        data->'stakeholders' AS stakeholders,
-        data->>'contact_name' AS contact_name,
-        data->>'email' AS email,
-        data->>'country' AS country,
-        data->>'zip' AS zip,
-        data->>'city' AS city,
-        data->>'street' AS street,
-        data->>'website_url' AS website_url,
-        data->'status'->>'current_status' AS status,
-        data->'status'->>'date_online' AS date_online,
-        data->>'primary_product' AS primary_product,
-        CASE 
-          WHEN data->'capacities'->'storage'->'mass_kt_per_year'->>'value' ~ '^[0-9]+(\\.[0-9]+)?$' 
-          THEN (data->'capacities'->'storage'->'mass_kt_per_year'->>'value')::double precision
-          ELSE NULL
-        END AS storage_mass_kt_per_year_value,
-        data->'capacities'->'storage'->'mass_kt_per_year'->>'unit' AS storage_mass_kt_per_year_unit,
-        CASE 
-          WHEN data->'status'->'coordinates'->>'latitude' ~ '^[0-9\\.-]+$' 
-          THEN (data->'status'->'coordinates'->>'latitude')::double precision
-          ELSE NULL
-        END AS latitude,
-        CASE 
-          WHEN data->'status'->'coordinates'->>'longitude' ~ '^[0-9\\.-]+$' 
-          THEN (data->'status'->'coordinates'->>'longitude')::double precision
-          ELSE NULL
-        END AS longitude,
-        sector AS type
-      FROM project_map
-      WHERE sector = 'Storage' AND active = 1;
+      SELECT
+    id,
+    internal_id,
+    data->>'project_name' AS project_name,
+    data->>'project_type' AS project_type,
+    data->>'owner' AS owner,
+    data->'stakeholders' AS stakeholders,
+    data->>'contact_name' AS contact_name,
+    data->>'email' AS email,
+    data->>'country' AS country,
+    data->>'zip' AS zip,
+    data->>'city' AS city,
+    data->>'street' AS street,
+    data->>'website_url' AS website_url,
+    data->'status'->>'current_status' AS status,
+    data->'status'->>'date_online' AS date_online,
+    data->>'primary_product' AS primary_product,
+    CASE
+      WHEN data->'capacities'->>'value' ~ '^[0-9]+(\\.[0-9]+)?$'
+      THEN (data->'capacities'->>'value')::double precision
+      ELSE NULL
+    END AS storage_mass_kt_per_year_value,
+    data->'capacities'->>'unit' AS storage_mass_kt_per_year_unit,
+    CASE
+      WHEN data->'coordinates'->>'latitude' ~ '^[0-9\\.-]+$'
+      THEN (data->'coordinates'->>'latitude')::double precision
+      ELSE NULL
+    END AS latitude,
+    CASE
+      WHEN data->'coordinates'->>'longitude' ~ '^[0-9\\.-]+$'
+      THEN (data->'coordinates'->>'longitude')::double precision
+      ELSE NULL
+    END AS longitude,
+    sector AS type
+  FROM project_map
+  WHERE sector = 'Storage' AND active = 1;
     `);
 
     const formatFeature = (item: StorageItem): GeoJSONFeatureCollection['features'][0] => ({

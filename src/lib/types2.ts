@@ -59,6 +59,8 @@ export interface StorageItem {
   investment_capex: string | null;
   project_status: string | null;
   operation_date: string | null;
+  //data: JSON | null ;
+  
 }
 
 export interface CCUSReference {
@@ -73,7 +75,7 @@ export interface CCUSItem {
   city: string | null;
   country: string | null;
   street: string | null;
-  zip_code: string | null;
+  zip: string | null;
   email: string | null;
   owner: string | null;
   contact: string | null;
@@ -96,40 +98,37 @@ export interface CCUSItem {
   date_online: string | null;
 }
 
+// In lib/types2.ts
 export interface PortItem {
-  id: string;
+  id: number;
   internal_id: string | null;
-  line_number: string | null;
+  line_number: number | null;
   ref_id: string | null;
-  name: string | null;
+  name: string;
+  project_name: string | null;
   city: string | null;
+  street: string | null;
+  zip: string | null;
   country: string | null;
+  email: string | null;
+  contact_name: string | null;
+  website_url: string | null;
+  owner: string | null;
+  stakeholders: string | null;
+  port_code: string | null;
   trade_type: string | null;
   partners: string | null;
-  investment: { costs_musd: string | null } | null;
+  investment: string | null;
   status: string | null;
-  latitude: number | null;
-  longitude: number | null;
+  latitude: number;
+  longitude: number;
   type: string;
-  project_name: string | null;
   product_type: string | null;
-  data_source: string | null;
   technology_type: string | null;
-  announced_size: {
-    unit: string | null;
-    value: number | null;
-    vessels?: number | null;
-    capacity_per_vessel?: number | null;
-    original_text?: string | null;
-  } | null;
-  references: { [key: string]: string | null } | null;
-  status_dates: {
-    status: string | null;
-    date_online: string | null;
-    repurposed_new: string | null;
-    decommission_date: string | null;
-    announced_start_date: string | null;
-  } | null;
+  capacity_value: number | null;
+  capacity_unit: string | null;
+  storage_capacity_value: number | null;
+  storage_capacity_unit: string | null;
 }
 
 export interface PipelineItem {

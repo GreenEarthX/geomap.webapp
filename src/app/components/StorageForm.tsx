@@ -153,20 +153,16 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
       status: {
         current_status: formData.status || null,
         date_online: formData.date_online || null,
-        coordinates: {
-          latitude: String(formData.latitude || 0),
-          longitude: String(formData.longitude || 0),
-        },
       },
       primary_product: formData.primary_product || null,
       capacities: {
-        storage: {
-          mass_kt_per_year: {
             unit: formData.storage_mass_kt_per_year_unit || null,
             value: formData.storage_mass_kt_per_year_value || null,
           },
-        },
-      },
+      coordinates: {
+          latitude: String(formData.latitude || 0),
+          longitude: String(formData.longitude || 0),
+        },    
     };
 
     try {
@@ -226,7 +222,7 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
       { name: 'status', label: 'Status', type: 'text', placeholder: 'e.g. Feasibility study' },
       { name: 'date_online', label: 'Date Online', type: 'text', placeholder: 'Enter date online' },
       { name: 'primary_product', label: 'Primary Product', type: 'text', placeholder: 'Enter primary product' },
-      { name: 'storage_mass_kt_per_year', label: 'Storage Mass kt/year', type: 'text', placeholder: 'e.g. 72 kt H2/year', isCombined: true },
+      { name: 'storage_mass_kt_per_year', label: 'Storage Capacity', type: 'text', placeholder: 'e.g. 72 kt H2/year', isCombined: true },
       { name: 'contact_name', label: 'Contact Name', type: 'text', placeholder: 'Enter contact name' },
       { name: 'email', label: 'Email', type: 'email', placeholder: 'Enter email' },
       { name: 'website_url', label: 'Website', type: 'text', placeholder: 'Enter website URL' },

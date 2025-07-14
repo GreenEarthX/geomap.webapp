@@ -2,23 +2,22 @@
 
 import { useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { PortItem } from '@/lib/types2';
+import { PortItem } from '@/lib/types2'; // Ensure this path is correct
 
-// Define an extended interface for the form state to include new fields
-type PortFormData = Partial<PortItem> & {
-  port_code?: string;
-  stakeholders?: string[];
+// --- TYPE DEFINITIONS ---
+
+// Omit the conflicting properties from the base type and redefine them for the form.
+type PortFormData = Omit<Partial<PortItem>, 'capacity_value' | 'storage_capacity_value' | 'stakeholders'> & {
+  stakeholders?: string; // Changed from string[] to string
   contact_name?: string;
-  email?: string;
-  zip?: string;
-  street?: string;
   website_url?: string;
-  end_use?: string[];
-  capacity_total_volume?: string;
-  capacity_storage_volume?: string;
-  investmentString?: string;
+  // Redefine capacity fields to be strings for form inputs.
+  capacity_value: string;
+  storage_capacity_value: string;
+  investmentString?: string; // UI helper for investment
 };
 
+// Configuration types for rendering the form dynamically
 interface FieldConfig {
   name: keyof PortFormData;
   label: string;
@@ -32,29 +31,82 @@ interface SectionConfig {
   fields: (keyof PortFormData)[];
 }
 
+// Props for the main component
 interface PortFormProps {
-  initialFeature: PortItem & { [key: string]: any } | null; // Allow extra properties from DB
+  initialFeature: PortItem & { [key: string]: any } | null;
   initialError: string | null;
 }
 
-// Reusable function to clean array data on load
-const cleanArrayField = (fieldData: any): string[] => {
-    if (!Array.isArray(fieldData)) return [];
-    if (fieldData.length > 0 && Array.isArray(fieldData[0])) return fieldData.flat();
-    if (fieldData.length === 1 && typeof fieldData[0] === 'string') {
-        try {
-            const parsed = JSON.parse(fieldData[0]);
-            if (Array.isArray(parsed)) return parsed;
-        } catch (e) { /* Fall through */ }
-    }
-    return fieldData;
+// --- HELPER FUNCTIONS ---
+
+/**
+ * Prepares the form data for saving, merging it with the original data
+ * to preserve fields not shown on the form and ensure a consistent data structure.
+ * @param formData - The current state of the form.
+ * @param originalData - The initial data loaded from the database.
+ * @returns The complete data object ready to be saved.
+ */
+const prepareDataForSave = (formData: PortFormData, originalData: PortFormProps['initialFeature']) => {
+    // Start with a deep copy of the original data to preserve all existing fields.
+    const dataToSave = JSON.parse(JSON.stringify(originalData || {}));
+
+    // Remove helper/derived properties that are not part of the 'data' JSONB blob.
+    const fieldsToDelete = ['id', 'name', 'type', 'latitude', 'longitude', 'internal_id', 'investmentString', 'investment', 'capacity_value', 'capacity_unit', 'storage_capacity_value', 'storage_capacity_unit', 'status_dates', 'line_number', 'ref_id'];
+    fieldsToDelete.forEach(field => delete dataToSave[field]);
+
+    // Merge edited data from the form into the new object.
+    dataToSave.project_name = formData.project_name || null;
+    dataToSave.port_code = formData.port_code || null;
+    dataToSave.partners = formData.partners || null;
+    dataToSave.stakeholders = formData.stakeholders || null; // Changed to handle string
+    dataToSave.contact_name = formData.contact_name || null;
+    dataToSave.email = formData.email || null;
+    dataToSave.country = formData.country || null;
+    dataToSave.zip = formData.zip || null;
+    dataToSave.city = formData.city || null;
+    dataToSave.street = formData.street || null;
+    dataToSave.website_url = formData.website_url || null;
+    dataToSave.product_type = formData.product_type || null;
+    dataToSave.technology_type = formData.technology_type || null;
+    dataToSave.trade_type = formData.trade_type || null;
+    // `end_use` logic removed
+    
+    // Handle nested objects carefully to match the DB schema.
+    if (!dataToSave.status_dates) dataToSave.status_dates = {};
+    dataToSave.status_dates.status = formData.status || null;
+
+    if (!dataToSave.coordinates) dataToSave.coordinates = {};
+    dataToSave.coordinates.latitude = Number(formData.latitude || 0);
+    dataToSave.coordinates.longitude = Number(formData.longitude || 0);
+
+    // Reconstruct the investment value. The DB expects 'investment_capex'.
+    const investmentValue = parseFloat(String(formData.investmentString)?.replace(/MUSD/i, '').trim() || '0');
+    dataToSave.investment_capex = isNaN(investmentValue) ? null : investmentValue;
+
+    // Reconstruct the nested capacity objects
+    const capacityVal = parseFloat(formData.capacity_value || '');
+    dataToSave.capacity = {
+        value: isNaN(capacityVal) ? null : capacityVal,
+        unit: formData.capacity_unit || null
+    };
+
+    const storageVal = parseFloat(formData.storage_capacity_value || '');
+    dataToSave.storage_capacity_tonnes = {
+        value: isNaN(storageVal) ? null : storageVal,
+        unit: formData.storage_capacity_unit || null
+    };
+
+    return dataToSave;
 };
 
+
+// --- FORM COMPONENT ---
 
 const PortForm = ({ initialFeature, initialError }: PortFormProps) => {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
+  
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
     'General Information': true,
     'Location': true,
@@ -63,54 +115,48 @@ const PortForm = ({ initialFeature, initialError }: PortFormProps) => {
     'Capacity & Investment': true,
   });
 
-  const initialFormData: PortFormData = {
-    id: initialFeature?.id ?? '',
-    internal_id: initialFeature?.internal_id ?? id ?? '',
-    name: initialFeature?.name ?? 'Placeholder Port',
-    project_name: initialFeature?.project_name ?? '',
-    type: 'port',
-    port_code: initialFeature?.port_code ?? '',
-    partners: initialFeature?.partners ?? '',
-    stakeholders: cleanArrayField(initialFeature?.stakeholders),
-    contact_name: initialFeature?.contact_name ?? '',
-    email: initialFeature?.email ?? '',
-    country: initialFeature?.country ?? '',
-    zip: initialFeature?.zip ?? '',
-    city: initialFeature?.city ?? '',
-    street: initialFeature?.street ?? '',
-    website_url: initialFeature?.website_url ?? '',
-    status: initialFeature?.status ?? '',
-    status_dates: initialFeature?.status_dates ?? { status: '', date_online: '', repurposed_new: '', decommission_date: '', announced_start_date: '' },
-    product_type: initialFeature?.product_type ?? '',
-    end_use: cleanArrayField(initialFeature?.end_use),
-    capacity_total_volume: initialFeature?.capacity_total_volume ?? '',
-    capacity_storage_volume: initialFeature?.capacity_storage_volume ?? '',
-    investment: initialFeature?.investment ?? null,
-    investmentString: initialFeature?.investment?.costs_musd ? `${initialFeature.investment.costs_musd} MUSD` : '',
-    latitude: initialFeature?.latitude ?? 0,
-    longitude: initialFeature?.longitude ?? 0,
+  // Function to derive initial form state from props, now fully aligned
+  const getInitialFormData = (feature: PortFormProps['initialFeature']): PortFormData => {
+    const investmentCosts = feature?.investment
+    return {
+      id: feature?.id ?? undefined,
+      internal_id: feature?.internal_id ?? id ?? '',
+      name: feature?.name ?? 'Placeholder Port',
+      project_name: feature?.project_name ?? '',
+      type: 'port',
+      port_code: feature?.port_code ?? '',
+      partners: feature?.partners ?? '',
+      stakeholders: feature?.stakeholders ?? '', // Changed to handle string
+      contact_name: feature?.contact_name ?? '',
+      email: feature?.email ?? '',
+      country: feature?.country ?? '',
+      zip: feature?.zip ?? '',
+      city: feature?.city ?? '',
+      street: feature?.street ?? '',
+      website_url: feature?.website_url ?? '',
+      status: feature?.status ?? '',
+      product_type: feature?.product_type ?? '',
+      technology_type: feature?.technology_type ?? '',
+      trade_type: feature?.trade_type ?? '',
+      // `end_use` removed
+      capacity_value: String(feature?.capacity_value ?? ''),
+      capacity_unit: feature?.capacity_unit ?? '',
+      storage_capacity_value: String(feature?.storage_capacity_value ?? ''),
+      storage_capacity_unit: feature?.storage_capacity_unit ?? '',
+      investmentString: investmentCosts ? `${investmentCosts} MUSD` : '',
+      latitude: feature?.latitude ?? 0,
+      longitude: feature?.longitude ?? 0,
+    };
   };
 
-  const [formData, setFormData] = useState(initialFormData);
-
+  const [formData, setFormData] = useState(() => getInitialFormData(initialFeature));
+  
+  // --- EVENT HANDLERS ---
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    const arrayFields = ['stakeholders', 'end_use'];
-
-    if (arrayFields.includes(name)) {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value.split(',').map((v) => v.trim()).filter(Boolean),
-      }));
-    } else if (name === 'investmentString') {
-      setFormData((prev) => ({
-        ...prev,
-        investmentString: value,
-        investment: { costs_musd: value.replace(/MUSD/i, '').trim() || null },
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    // Simplified: No longer need to handle array fields
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -127,38 +173,16 @@ const PortForm = ({ initialFeature, initialError }: PortFormProps) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ internal_id: formData.internal_id }),
         });
-
         if (!deleteResponse.ok && deleteResponse.status !== 404) {
-            throw new Error('Failed to deactivate the old project version.');
+            throw new Error(`Failed to deactivate the old project version. Code: ${deleteResponse.status}`);
         }
-
     } catch (error) {
         console.error('Error during deactivation step:', error);
-        alert('An error occurred while updating the project. Please try again.');
+        alert(`An error occurred while updating the project: ${error instanceof Error ? error.message : 'Unknown error'}`);
         return;
     }
 
-    const dataPayload = {
-      project_name: formData.project_name || null,
-      port_code: formData.port_code || null,
-      owner_partner: formData.partners || null,
-      stakeholders: formData.stakeholders?.length ? formData.stakeholders : null,
-      name_contact: formData.contact_name || null,
-      email: formData.email || null,
-      country: formData.country || null,
-      zip: formData.zip || null,
-      city: formData.city || null,
-      street: formData.street || null,
-      website: formData.website_url || null,
-      status_date: formData.status || null,
-      products: formData.product_type || null,
-      end_use: formData.end_use?.length ? formData.end_use : null,
-      capacity_total_volume: formData.capacity_total_volume || null,
-      capacity_storage_volume: formData.capacity_storage_volume || null,
-      investment_capex: formData.investment?.costs_musd || null,
-      coordinates: { latitude: String(formData.latitude || 0), longitude: String(formData.longitude || 0) },
-      type: 'port',
-    };
+    const dataToSave = prepareDataForSave(formData, initialFeature);
 
     try {
       const createResponse = await fetch('/api/ports', {
@@ -166,12 +190,12 @@ const PortForm = ({ initialFeature, initialError }: PortFormProps) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           internal_id: formData.internal_id,
-          data: dataPayload,
+          data: dataToSave,
         }),
       });
-
       if (!createResponse.ok) {
-        throw new Error(`Failed to save new port data: ${createResponse.statusText}`);
+        const errorBody = await createResponse.json();
+        throw new Error(`Failed to save new port data: ${errorBody.error || createResponse.statusText}`);
       }
 
       const notification = document.createElement('div');
@@ -184,10 +208,11 @@ const PortForm = ({ initialFeature, initialError }: PortFormProps) => {
       }, 3000);
 
       setIsEditing(false);
+      router.refresh(); 
 
     } catch (error) {
       console.error('Error saving new port data:', error);
-      alert('An error occurred while saving the new project data. Please try again.');
+      alert(`An error occurred while saving the project: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
@@ -195,12 +220,14 @@ const PortForm = ({ initialFeature, initialError }: PortFormProps) => {
     setOpenSections((prev) => ({ ...prev, [sectionTitle]: !prev[sectionTitle] }));
   };
 
+  // --- RENDER LOGIC ---
+
   const renderFields = () => {
     const fields: FieldConfig[] = [
       { name: 'project_name', label: 'Project Name', type: 'text', placeholder: 'Enter project name' },
       { name: 'port_code', label: 'Port Code', type: 'text', placeholder: 'Alphanumeric, 5 characters' },
       { name: 'partners', label: 'Owner (Partners)', type: 'text', placeholder: 'Enter partners' },
-      { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },
+      { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Enter stakeholders' },
       { name: 'contact_name', label: 'Name (Contact)', type: 'text', placeholder: 'Enter contact name' },
       { name: 'email', label: 'Email', type: 'email', placeholder: 'Enter email' },
       { name: 'country', label: 'Country', type: 'text', placeholder: 'Country location' },
@@ -208,11 +235,15 @@ const PortForm = ({ initialFeature, initialError }: PortFormProps) => {
       { name: 'city', label: 'City', type: 'text', placeholder: 'City location' },
       { name: 'street', label: 'Street', type: 'text', placeholder: 'Enter street' },
       { name: 'website_url', label: 'Website', type: 'text', placeholder: 'Enter website URL' },
-      { name: 'status', label: 'Status / Date', type: 'text', placeholder: 'e.g. Operational (2025)' },
-      { name: 'product_type', label: 'Products', type: 'text', placeholder: 'Enter products' },
-      { name: 'end_use', label: 'End Use', type: 'text', placeholder: 'Comma-separated end uses' },
-      { name: 'capacity_total_volume', label: 'Capacity: Total Volume', type: 'text', placeholder: 'Million tons per year' },
-      { name: 'capacity_storage_volume', label: 'Capacity: Storage Volume', type: 'text', placeholder: 'Million tons per year' },
+      { name: 'status', label: 'Status', type: 'text', placeholder: 'e.g. Operational' },
+      { name: 'product_type', label: 'Product Type', type: 'text', placeholder: 'e.g. Synfuels' },
+      { name: 'technology_type', label: 'Technology Type', type: 'text', placeholder: 'e.g. LNG Shipping' },
+      { name: 'trade_type', label: 'Trade Type', type: 'text', placeholder: 'e.g. Import' },
+      // `end_use` field removed
+      { name: 'capacity_value', label: 'Capacity Value', type: 'text', placeholder: 'e.g., 5.5' },
+      { name: 'capacity_unit', label: 'Capacity Unit', type: 'text', placeholder: 'e.g., Mtpa' },
+      { name: 'storage_capacity_value', label: 'Storage Capacity Value', type: 'text', placeholder: 'e.g., 2.1' },
+      { name: 'storage_capacity_unit', label: 'Storage Capacity Unit', type: 'text', placeholder: 'e.g., Tonnes' },
       { name: 'investmentString', label: 'Investment (CAPEX)', type: 'text', placeholder: 'e.g. 500 MUSD' },
     ];
 
@@ -220,8 +251,8 @@ const PortForm = ({ initialFeature, initialError }: PortFormProps) => {
       { title: 'General Information', fields: ['project_name', 'port_code', 'partners', 'stakeholders'] },
       { title: 'Location', fields: ['country', 'city', 'street', 'zip'] },
       { title: 'Contact Information', fields: ['contact_name', 'email', 'website_url'] },
-      { title: 'Project Details', fields: ['status', 'product_type', 'end_use'] },
-      { title: 'Capacity & Investment', fields: ['capacity_total_volume', 'capacity_storage_volume', 'investmentString'] },
+      { title: 'Project Details', fields: ['status', 'product_type', 'technology_type', 'trade_type'] }, // `end_use` removed
+      { title: 'Capacity & Investment', fields: ['capacity_value', 'capacity_unit', 'storage_capacity_value', 'storage_capacity_unit', 'investmentString'] },
     ];
 
     return (
@@ -245,11 +276,7 @@ const PortForm = ({ initialFeature, initialError }: PortFormProps) => {
                       <input
                         type={field.type}
                         name={field.name}
-                        value={
-                            (Array.isArray(formData[field.name as keyof PortFormData]))
-                                ? (formData[field.name as keyof PortFormData] as string[]).join(', ')
-                                : String(formData[field.name as keyof PortFormData] ?? '')
-                        }
+                        value={String(formData[field.name as keyof PortFormData] ?? '')}
                         onChange={handleInputChange}
                         disabled={!isEditing || field.disabled}
                         placeholder={field.placeholder}
@@ -271,25 +298,13 @@ const PortForm = ({ initialFeature, initialError }: PortFormProps) => {
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-sm max-w-lg w-full">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2">Error Loading Data</h2>
             <p className="text-gray-600 mb-6">{initialError}</p>
             <div className="flex flex-col sm:flex-row justify-center gap-3">
-              <button onClick={() => router.push('/')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
-                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7-7" />
-                </svg>
-                Back to Map
-              </button>
-              <button onClick={() => router.push('/port-list')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
-                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-18-8h18m-18 12h18" />
-                </svg>
-                Port List
-              </button>
+              <button onClick={() => router.push('/')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">Back to Map</button>
+              <button onClick={() => router.push('/port-list')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">Port List</button>
             </div>
           </div>
         </div>
@@ -307,34 +322,17 @@ const PortForm = ({ initialFeature, initialError }: PortFormProps) => {
           </div>
           <button
             type="button"
-            onClick={(e) => {
-                if (isEditing) {
-                    // If we are already editing, this button click should trigger the form submission.
-                    // We can do this by finding the form and calling requestSubmit().
-                    (document.getElementById('port-form') as HTMLFormElement)?.requestSubmit();
-                } else {
-                    // If not editing, just enable the editing mode.
-                    setIsEditing(true);
-                }
-            }}
+            onClick={() => isEditing ? (document.getElementById('port-form') as HTMLFormElement)?.requestSubmit() : setIsEditing(true) }
             className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${isEditing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
           >
-            <svg className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-0' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {isEditing ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-              )}
-            </svg>
+            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">{isEditing ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />}</svg>
             {isEditing ? 'Save Changes' : 'Edit'}
           </button>
         </div>
 
         <div className="mb-6 p-4 bg-blue-50 rounded-md border border-blue-100">
           <div className="flex items-center">
-            <svg className="w-5 h-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <svg className="w-5 h-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <p className="text-blue-700 text-sm">
               {isEditing
                 ? 'You are now editing this port. Make your changes and click Save Changes when done.'
@@ -347,25 +345,15 @@ const PortForm = ({ initialFeature, initialError }: PortFormProps) => {
           {renderFields()}
           <div className="flex flex-col sm:flex-row justify-between mt-6 pt-4 border-t border-gray-200 gap-4">
             <div className="flex flex-col sm:flex-row gap-3">
-              <button type="button" onClick={() => router.push('/')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
-                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7-7" />
-                </svg>
-                Back to Map
-              </button>
-              <button type="button" onClick={() => router.push('/port-list')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
-                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-18-8h18m-18 12h18" />
-                </svg>
-                Port List
-              </button>
+              <button type="button" onClick={() => router.push('/')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">Back to Map</button>
+              <button type="button" onClick={() => router.push('/port-list')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">Port List</button>
             </div>
             {isEditing && (
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => {
-                    setFormData(initialFormData);
+                    setFormData(getInitialFormData(initialFeature));
                     setIsEditing(false);
                   }}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200 shadow-sm hover:shadow-md"

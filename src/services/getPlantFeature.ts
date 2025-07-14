@@ -71,19 +71,19 @@ export async function getPlantFeature(id: string, type: string): Promise<PlantFe
             ? `
               data->>'date_online' AS date_online,
               data->'status'->>'current_status' AS status,
-              data->'capacities'->'storage'->'mass_kt_per_year'->>'unit' AS storage_mass_kt_per_year_unit,
+              data->'capacities'->>'unit' AS storage_mass_kt_per_year_unit,
               CASE 
-                WHEN data->'capacities'->'storage'->'mass_kt_per_year'->>'value' ~ '^[0-9]+(\\.[0-9]+)?$' 
-                THEN (data->'capacities'->'storage'->'mass_kt_per_year'->>'value')::double precision
+                WHEN data->'capacities'->>'value' ~ '^[0-9]+(\\.[0-9]+)?$' 
+                THEN (data->'capacities'->>'value')::double precision
                 ELSE NULL
               END AS storage_mass_kt_per_year_value,
               data->>'stakeholders' AS stakeholders
             `
             : `
-              data->>'contact' AS contact,
-              data->>'website' AS website,
+              data->>'contact_name' AS contact,
+              data->>'website_url' AS website,
               data->>'product' AS product,
-              data->>'zip_code' AS zip_code,
+              data->>'zip' AS zip,
               data->'status_date'->>'project_status' AS project_status,
               data->'status_date'->>'operation_date' AS operation_date,
               data->>'technology_fate' AS technology_fate,
@@ -186,6 +186,7 @@ export async function getPlantFeature(id: string, type: string): Promise<PlantFe
       properties = {
         id: item.id ?? '',
         internal_id: item.internal_id ?? id,
+        zip:item.zip ?? '',
         name: item.name ?? 'Placeholder Feature',
         type: item.type ?? 'CCUS',
         city: item.city ?? '',

@@ -22,11 +22,14 @@ export default async function PlantFormPage({ params }: PlantFormPageProps) {
     const { properties } = initialLeafletFeature;
     const sector = type.toLowerCase();
 
+    // Log the date_online value here to check if it's being fetched correctly
+    console.log('Fetched date_online value:', properties.date_online);
+
     if (sector === 'production' && 'primary_product' in properties) {
       initialFeature = {
         id: properties.id ?? '',
         internal_id: properties.internal_id ?? id,
-        name: properties.project_name ?? 'Placeholder Feature', // Fixed: Use properties.name instead of properties.project_name
+        name: properties.project_name ?? 'Placeholder Feature',
         type: properties.type ?? 'Production',
         status: properties.status ?? '',
         city: properties.city ?? '',
@@ -85,6 +88,7 @@ export default async function PlantFormPage({ params }: PlantFormPageProps) {
         city: properties.city ?? '',
         country: properties.country ?? '',
         street: properties.street ?? '',
+        zip: properties.zip ?? '',
         email: properties.email ?? '',
         owner: properties.owner ?? '',
         contact: properties.contact ?? '',

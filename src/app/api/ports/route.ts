@@ -1,6 +1,7 @@
+// In src/app/api/ports/route.ts
 import { NextResponse, NextRequest } from 'next/server';
 import Pool from '@/lib/db';
-import { PortItem } from '@/lib/types2';
+import { PortItem } from '@/lib/types2'; // Ensure this path is correct
 
 interface PortFeature {
   type: 'Feature';
@@ -15,23 +16,48 @@ export async function GET() {
   try {
     const client = await Pool.connect();
     try {
+      // This query now fetches only the latest record for each 'internal_id'
+      // to prevent sending multiple versions of the same port.
       const result = await client.query(
-        `SELECT 
+        `WITH latest_projects AS (
+          SELECT *, ROW_NUMBER() OVER(PARTITION BY internal_id ORDER BY id DESC) as rn
+          FROM project_map
+          WHERE sector = 'Port'
+         )
+         SELECT 
           id,
           internal_id,
           line as line_number,
-          data->>'ref_id' AS ref_id,
+          data->>'ref' AS ref_id,
           data->>'project_name' AS project_name,
-          data->>'location' AS city,
+          data->>'city' AS city,
           data->>'country' AS country,
+          data->>'zip' As zip,
+          data->>'street' As street,
+          data->>'email' As email,
+          data->>'contact_name' As contact_name,
+          data->>'website_url' As website_url,
+          data->>'owner' As owner,
+          data->>'stakeholders' As stakeholders,
+          data->>'port_code' As port_code, 
           data->>'trade_type' AS trade_type,
           data->>'partners' AS partners,
-          data->'investment' AS investment,
-          data->'status_dates' AS status_dates,
+          data->>'investment_capex' AS investment,
+          data->'status_dates'->>'status' AS status,
           data->>'product_type' AS product_type,
-          data->>'data_source' AS data_source,
           data->>'technology_type' AS technology_type,
-          data->'capacity'->'announced_size' AS announced_size,
+          data->'capacity'->>'unit' AS capacity_unit,
+          CASE 
+            WHEN data->'capacity'->>'value' ~ '^[0-9]+(\\.[0-9]+)?$' 
+            THEN (data->'capacity'->>'value')::double precision
+            ELSE NULL
+          END AS capacity_value,
+          data->'storage_capacity_tonnes'->>'unit' AS storage_capacity_unit,
+          CASE 
+            WHEN data->'storage_capacity_tonnes'->>'value' ~ '^[0-9]+(\\.[0-9]+)?$' 
+            THEN (data->'storage_capacity_tonnes'->>'value')::double precision
+            ELSE NULL
+          END AS storage_capacity_value,
           CASE 
             WHEN data->'coordinates'->>'latitude' ~ '^[0-9\\.-]+$' 
             THEN (data->'coordinates'->>'latitude')::double precision
@@ -43,11 +69,12 @@ export async function GET() {
             ELSE 0
           END AS longitude,
           sector AS type
-         FROM project_map
-         WHERE sector = 'Port' `
+         FROM latest_projects
+         WHERE rn = 1`
       );
 
       const features: PortFeature[] = result.rows.map((row) => {
+        // Destructure all the properties from the row, including the new ones
         const {
           id,
           internal_id,
@@ -56,49 +83,60 @@ export async function GET() {
           project_name,
           city,
           country,
+          zip,
+          street,
+          email,
+          contact_name,
+          website_url,
+          owner,
+          stakeholders,
+          port_code,
           trade_type,
           partners,
           investment,
-          status_dates,
+          status,
           product_type,
-          data_source,
           technology_type,
-          announced_size,
+          capacity_unit,
+          capacity_value,
+          storage_capacity_unit,
+          storage_capacity_value,
           latitude,
           longitude,
           type,
         } = row;
 
+        // Create the portItem object with all fields from the interface
         const portItem: PortItem = {
           id,
           internal_id: internal_id || null,
           line_number: line_number || null,
           ref_id: ref_id || null,
           name: project_name || 'N/A',
+          project_name: project_name || null,
           city: city || null,
+          zip: zip || null,
+          street: street || null,
           country: country || null,
+          email: email || null,
+          contact_name: contact_name || null,
+          website_url: website_url || null,
+          owner: owner || null,
+          stakeholders: stakeholders || null,
+          port_code: port_code || null,
           trade_type: trade_type || null,
           partners: partners || null,
-          investment: investment ? { costs_musd: investment.costs_musd || null } : null,
-          status: status_dates?.status || null,
+          investment: investment || null,
+          status: status || null,
           latitude: latitude || 0,
           longitude: longitude || 0,
           type: type.toLowerCase(),
-          project_name: project_name || null,
           product_type: product_type || null,
-          data_source: data_source || null,
           technology_type: technology_type || null,
-          announced_size: announced_size
-            ? {
-                unit: announced_size.unit || null,
-                value: announced_size.value ? parseFloat(announced_size.value) || 0 : null,
-                vessels: announced_size.vessels ? parseInt(announced_size.vessels, 10) || null : null,
-                capacity_per_vessel: announced_size.capacity_per_vessel
-                  ? parseFloat(announced_size.capacity_per_vessel) || null
-                  : null,
-                original_text: announced_size.original_text || null,
-              }
-            : null,
+          capacity_value: capacity_value || null,
+          capacity_unit: capacity_unit || null,
+          storage_capacity_value: storage_capacity_value || null,
+          storage_capacity_unit: storage_capacity_unit || null,
         };
 
         return {
@@ -110,14 +148,6 @@ export async function GET() {
           properties: portItem,
         };
       });
-
-      console.log(
-        'Fetched ports:',
-        features.map((f) => ({
-          internal_id: f.properties.internal_id,
-          coordinates: f.geometry.coordinates,
-        }))
-      );
 
       return NextResponse.json({
         ports: {
@@ -134,11 +164,10 @@ export async function GET() {
   }
 }
 
-
-// src/app/api/ports/route.ts
-
-// ... (keep the imports and the GET function as they are) ...
-
+/**
+ * POST handler to create a new version of a port project.
+ * This assumes the client has already deactivated the previous version.
+ */
 export async function POST(req: NextRequest) {
   try {
     const { internal_id, data } = await req.json();
@@ -147,60 +176,65 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Missing internal_id or data payload.' }, { status: 400 });
     }
 
-    // --- Step 1: Fetch the required metadata from the latest existing record ---
+    // Step 1: Fetch the required metadata from the latest existing record (active or inactive).
     const previousRecordQuery = `
       SELECT file_link, tab, line
       FROM project_map
       WHERE internal_id = $1
-      ORDER BY created_at DESC
+      ORDER BY id DESC
       LIMIT 1;
     `;
-    const previousRecordResult = await Pool.query(previousRecordQuery, [internal_id]);
+    const client = await Pool.connect();
+    let file_link, tab, line;
 
-    // --- Step 2: Handle the case where the original project doesn't exist ---
-    // This is an update, so an original record must exist to copy from.
-    if (previousRecordResult.rows.length === 0) {
-      return NextResponse.json(
-        { error: `Cannot update project: Original project with internal_id '${internal_id}' not found.` },
-        { status: 404 }
-      );
+    try {
+        const previousRecordResult = await client.query(previousRecordQuery, [internal_id]);
+
+        // Step 2: Handle the case where the original project doesn't exist.
+        if (previousRecordResult.rows.length === 0) {
+          return NextResponse.json(
+            { error: `Cannot update project: Original project with internal_id '${internal_id}' not found.` },
+            { status: 404 }
+          );
+        }
+
+        ({ file_link, tab, line } = previousRecordResult.rows[0]);
+
+        // Step 3: Insert the new record as the active version.
+        const insertQuery = `
+          INSERT INTO project_map (
+            internal_id,
+            data,
+            sector,
+            active,
+            file_link,
+            tab,
+            line
+          )
+          VALUES ($1, $2, 'Port', 0, $3, $4, $5)
+          RETURNING id;
+        `;
+
+        const values = [
+            internal_id,
+            data, // The data is already an object, pool driver handles stringification
+            file_link,
+            tab,
+            line,
+        ];
+
+        const result = await client.query(insertQuery, values);
+
+        return NextResponse.json(
+          { message: 'Port data saved successfully', id: result.rows[0].id },
+          { status: 201 }
+        );
+    } finally {
+        client.release();
     }
-
-    const { file_link, tab, line } = previousRecordResult.rows[0];
-
-    // --- Step 3: Insert the new record using the old metadata and new data ---
-    const insertQuery = `
-      INSERT INTO project_map (
-        internal_id,
-        data,
-        sector,
-        active,
-        file_link,
-        tab,
-        line
-      )
-      VALUES ($1, $2, 'Port', 0, $3, $4, $5)
-      RETURNING id;
-    `;
-
-    const values = [
-        internal_id,
-        JSON.stringify(data),
-        file_link, //  Use value from the previous record
-        tab,       //  Use value from the previous record
-        line,      //  Use value from the previous record
-    ];
-
-    const result = await Pool.query(insertQuery, values);
-
-    return NextResponse.json(
-      { message: 'Port data saved successfully', id: result.rows[0].id },
-      { status: 201 }
-    );
 
   } catch (error) {
     console.error('Error in POST /api/ports:', error);
-    // Provide a more specific error message if possible
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ error: `Failed to save port data: ${errorMessage}` }, { status: 500 });
   }
