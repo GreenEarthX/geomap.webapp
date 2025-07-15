@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ProductionItem } from '@/lib/types2';
 
@@ -58,25 +58,84 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     'website_url',
   ];
 
-  const cleanArrayField = (fieldData: any): string[] => {
-      if (!Array.isArray(fieldData)) return [];
+  const cleanArrayField = (data: any): string[] => {
+    let result: string[] = [];
 
-      // This checks if the array is nested (e.g., [['a', 'b']]) and flattens it.
-      if (fieldData.length > 0 && Array.isArray(fieldData[0])) {
-          return fieldData.flat();
-      }
-      
-      // This handles cases where the data might be a stringified array like ['["a", "b"]']
-      if (fieldData.length === 1 && typeof fieldData[0] === 'string') {
+    if (Array.isArray(data)) {
+      result = data
+        .flatMap((item) => {
+          const str = String(item)
+            .replace(/\\"/g, '') // Remove escaped quotes
+            .replace(/^"|"$/g, '') // Remove surrounding quotes
+            .replace(/^\[|\]$/g, '') // Remove surrounding brackets
+            .replace(/\\/g, '') // Remove backslashes
+            .trim();
           try {
-              const parsed = JSON.parse(fieldData[0]);
-              if (Array.isArray(parsed)) return parsed;
+            const parsed = JSON.parse(str);
+            if (Array.isArray(parsed)) {
+              return parsed.map((subItem) =>
+                String(subItem)
+                  .replace(/\\"/g, '')
+                  .replace(/^"|"$/g, '')
+                  .replace(/\\/g, '')
+                  .trim()
+              );
+            }
+            return [String(parsed).replace(/\\"/g, '').replace(/^"|"$/g, '').replace(/\\/g, '').trim()];
           } catch (e) {
-              // Not a JSON string, so we fall through and return the original array
+            return str
+              .split(',')
+              .map((s) =>
+                s
+                  .replace(/\\"/g, '')
+                  .replace(/^"|"$/g, '')
+                  .replace(/^\[|\]$/g, '')
+                  .replace(/\\/g, '')
+                  .trim()
+              )
+              .filter(Boolean);
           }
+        })
+        .filter(Boolean);
+    } else if (typeof data === 'string') {
+      try {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) {
+          result = parsed.map((item) =>
+            String(item)
+              .replace(/\\"/g, '')
+              .replace(/^"|"$/g, '')
+              .replace(/\\/g, '')
+              .trim()
+          );
+        } else {
+          result = [String(parsed).replace(/\\"/g, '').replace(/^"|"$/g, '').replace(/\\/g, '').trim()];
+        }
+      } catch (e) {
+        result = data
+          .split(',')
+          .map((s) =>
+            s
+              .replace(/\\"/g, '')
+              .replace(/^"|"$/g, '')
+              .replace(/^\[|\]$/g, '')
+              .replace(/\\/g, '')
+              .trim()
+          )
+          .filter(Boolean);
       }
+    } else {
+      result = [];
+    }
 
-      return fieldData; // Return the array as is if it's already clean
+    return result.map((item) =>
+      item
+        .replace(/\\"/g, '')
+        .replace(/^"|"$/g, '')
+        .replace(/^\[|\]$/g, '')
+        .replace(/\\/g, '')
+        .trim()
+    ).filter(Boolean);
   };
 
   const initialFormData: Partial<ProductionItem> & { capacity?: string; investment_capex?: string } = {
@@ -113,6 +172,17 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
 
   const [formData, setFormData] = useState<Partial<ProductionItem> & { capacity?: string; investment_capex?: string }>(initialFormData);
 
+  useEffect(() => {
+    if (initialFeature) {
+      console.log('1. Raw initial stakeholders data:', initialFeature.stakeholders);
+      console.log('2. Cleaned stakeholders data:', cleanArrayField(initialFeature.stakeholders));
+      console.log('3. formData.stakeholders:', formData.stakeholders);
+      console.log('4. Raw initial end_use data:', initialFeature.end_use);
+      console.log('5. Cleaned end_use data:', cleanArrayField(initialFeature.end_use));
+      console.log('6. formData.end_use:', formData.end_use);
+    }
+  }, [initialFeature, formData.stakeholders, formData.end_use]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     if (name === 'capacity' || name === 'investment_capex') {
@@ -126,12 +196,23 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
         [name]: value,
         ...(name === 'investment_capex' ? { investment_capex: value } : {}),
       }));
+    } else if (name === 'end_use' || name === 'stakeholders') {
+      const cleanedArray = value
+        .split(',')
+        .map((v) =>
+          v
+            .replace(/\\"/g, '')
+            .replace(/^"|"$/g, '')
+            .replace(/^\[|\]$/g, '')
+            .replace(/\\/g, '')
+            .trim()
+        )
+        .filter(Boolean);
+      setFormData((prev) => ({ ...prev, [name]: cleanedArray }));
     } else {
       const parsedValue =
         ['latitude', 'longitude'].includes(name)
           ? parseFloat(value) || 0
-          : name === 'end_use' || name === 'stakeholders'
-          ? value.split(',').map((v) => v.trim()).filter(Boolean)
           : value;
       setFormData((prev) => ({ ...prev, [name]: parsedValue }));
     }
@@ -141,12 +222,36 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     e.preventDefault();
     setIsEditing(false);
 
-    // Map formData to project_map.data JSONB structure
+    const cleanStakeholdersArray = Array.isArray(formData.stakeholders)
+      ? formData.stakeholders
+          .map((s) =>
+            s
+              .replace(/\\"/g, '')
+              .replace(/^"|"$/g, '')
+              .replace(/^\[|\]$/g, '')
+              .replace(/\\/g, '')
+              .trim()
+          )
+          .filter(Boolean)
+      : [];
+    const cleanEndUseArray = Array.isArray(formData.end_use)
+      ? formData.end_use
+          .map((s) =>
+            s
+              .replace(/\\"/g, '')
+              .replace(/^"|"$/g, '')
+              .replace(/^\[|\]$/g, '')
+              .replace(/\\/g, '')
+              .trim()
+          )
+          .filter(Boolean)
+      : [];
+
     const dataPayload = {
       plant_name: formData.name || null,
       project_name: formData.project_name || null,
       owner: formData.owner || null,
-      stakeholders: formData.stakeholders?.length ? formData.stakeholders : null,
+      stakeholders: cleanStakeholdersArray.length ? cleanStakeholdersArray : null,
       contact_name: formData.contact_name || null,
       email: formData.email || null,
       country: formData.country || null,
@@ -170,7 +275,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
         unit: formData.capacity_unit || null,
         value: formData.capacity_value || null,
       },
-      end_use: formData.end_use?.length ? formData.end_use : null,
+      end_use: cleanEndUseArray.length ? cleanEndUseArray : null,
       investment_capex: formData.investment_capex || null,
     };
 
@@ -198,7 +303,6 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
         setTimeout(() => notification.remove(), 300);
       }, 3000);
 
-      // Reset form to initial state
       setFormData(initialFormData);
     } catch (error) {
       console.error('Error saving Production data:', error);
@@ -302,7 +406,23 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
                         name={field.name}
                         value={
                           field.name === 'end_use' || field.name === 'stakeholders'
-                            ? (formData[field.name] as string[] | null)?.join(', ') ?? ''
+                            ? Array.isArray(formData[field.name])
+                              ? (formData[field.name] as string[])
+                                  .map((s) =>
+                                    s
+                                      .replace(/\\"/g, '')
+                                      .replace(/^"|"$/g, '')
+                                      .replace(/^\[|\]$/g, '')
+                                      .replace(/\\/g, '')
+                                      .trim()
+                                  )
+                                  .join(', ')
+                              : String(formData[field.name] ?? '')
+                                  .replace(/\\"/g, '')
+                                  .replace(/^"|"$/g, '')
+                                  .replace(/^\[|\]$/g, '')
+                                  .replace(/\\/g, '')
+                                  .trim()
                             : field.name === 'capacity'
                             ? formData.capacity ?? ''
                             : field.name === 'investment_capex'

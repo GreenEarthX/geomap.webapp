@@ -53,7 +53,7 @@ export async function getPlantFeature(id: string, type: string): Promise<PlantFe
         ${
           sector === 'Production'
             ? `
-              data->>'date_online' AS date_online,
+              data->'status'->>'date_online' AS date_online,
               data->'status'->>'current_status' AS status,
               data->>'secondary_product' AS secondary_product,
               data->>'technology' AS technology,
@@ -69,7 +69,7 @@ export async function getPlantFeature(id: string, type: string): Promise<PlantFe
             `
             : sector === 'Storage'
             ? `
-              data->>'date_online' AS date_online,
+              data->'status'->>'date_online' AS date_online,
               data->'status'->>'current_status' AS status,
               data->'capacities'->>'unit' AS storage_mass_kt_per_year_unit,
               CASE 

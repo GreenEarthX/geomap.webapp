@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { StorageItem } from '@/lib/types2';
 
@@ -34,44 +34,82 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
     'Contact Information': true,
   });
 
-  // Field order matching generatePopupHtml
-  const fieldOrder: (keyof StorageItem | 'storage_mass_kt_per_year')[] = [
-    'project_name',
-    'project_type',
-    'owner',
-    'stakeholders',
-    'country',
-    'city',
-    'street',
-    'zip',
-    'status',
-    'date_online',
-    'primary_product',
-    'storage_mass_kt_per_year',
-    'contact_name',
-    'email',
-    'website_url',
-  ];
-  
-  const cleanStakeholders = (stakeholders: any): string[] => {
-      if (!Array.isArray(stakeholders)) return [];
+  const cleanStakeholders = (data: any): string[] => {
+    let result: string[] = [];
 
-      // This checks if the array is nested (e.g., [['a', 'b']]) and flattens it.
-      if (stakeholders.length > 0 && Array.isArray(stakeholders[0])) {
-          return stakeholders.flat();
-      }
-      
-      // This handles cases where the data might be a stringified array like ['["a", "b"]']
-      if (stakeholders.length === 1 && typeof stakeholders[0] === 'string') {
+    if (Array.isArray(data)) {
+      result = data
+        .flatMap((item) => {
+          // Convert to string and remove quotes, brackets, and backslashes
+          const str = String(item)
+            .replace(/\\"/g, '') // Remove escaped quotes
+            .replace(/^"|"$/g, '') // Remove surrounding quotes
+            .replace(/^\[|\]$/g, '') // Remove surrounding brackets
+            .replace(/\\/g, '') // Remove backslashes
+            .trim();
           try {
-              const parsed = JSON.parse(stakeholders[0]);
-              if (Array.isArray(parsed)) return parsed;
+            const parsed = JSON.parse(str);
+            if (Array.isArray(parsed)) {
+              return parsed.map((subItem) =>
+                String(subItem)
+                  .replace(/\\"/g, '')
+                  .replace(/^"|"$/g, '')
+                  .replace(/\\/g, '')
+                  .trim()
+              );
+            }
+            return [String(parsed).replace(/\\"/g, '').replace(/^"|"$/g, '').replace(/\\/g, '').trim()];
           } catch (e) {
-              // Not a JSON string, so we fall through and return the original array
+            return str.split(',').map((s) =>
+              s
+                .replace(/\\"/g, '')
+                .replace(/^"|"$/g, '')
+                .replace(/^\[|\]$/g, '')
+                .replace(/\\/g, '')
+                .trim()
+            );
           }
+        })
+        .filter(Boolean);
+    } else if (typeof data === 'string') {
+      try {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) {
+          result = parsed.map((item) =>
+            String(item)
+              .replace(/\\"/g, '')
+              .replace(/^"|"$/g, '')
+              .replace(/\\/g, '')
+              .trim()
+          );
+        } else {
+          result = [String(parsed).replace(/\\"/g, '').replace(/^"|"$/g, '').replace(/\\/g, '').trim()];
+        }
+      } catch (e) {
+        result = data
+          .split(',')
+          .map((s) =>
+            s
+              .replace(/\\"/g, '')
+              .replace(/^"|"$/g, '')
+              .replace(/^\[|\]$/g, '')
+              .replace(/\\/g, '')
+              .trim()
+          )
+          .filter(Boolean);
       }
+    } else {
+      result = [];
+    }
 
-      return stakeholders; // Return the array as is if it's already clean
+    return result.map((item) =>
+      item
+        .replace(/\\"/g, '')
+        .replace(/^"|"$/g, '')
+        .replace(/^\[|\]$/g, '')
+        .replace(/\\/g, '')
+        .trim()
+    ).filter(Boolean);
   };
 
   const initialFormData: Partial<StorageItem> & {
@@ -107,8 +145,14 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
     storage_mass_kt_per_year?: string;
   }>(initialFormData);
 
-
-  
+  useEffect(() => {
+    if (initialFeature) {
+      console.log('1. Raw initial stakeholders data:', initialFeature.stakeholders);
+      const cleaned = cleanStakeholders(initialFeature.stakeholders);
+      console.log('2. Cleaned stakeholders data:', cleaned);
+      console.log('3. formData.stakeholders:', formData.stakeholders);
+    }
+  }, [initialFeature, formData.stakeholders]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -122,12 +166,23 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
         storage_mass_kt_per_year_unit: parsedUnit || prev.storage_mass_kt_per_year_unit || '',
         [name]: value,
       }));
+    } else if (name === 'stakeholders') {
+      const stakeholdersArray = value
+        .split(',')
+        .map((s) =>
+          s
+            .replace(/\\"/g, '')
+            .replace(/^"|"$/g, '')
+            .replace(/^\[|\]$/g, '')
+            .replace(/\\/g, '')
+            .trim()
+        )
+        .filter(Boolean);
+      setFormData((prev) => ({ ...prev, [name]: stakeholdersArray }));
     } else {
       const parsedValue =
         ['latitude', 'longitude'].includes(name)
           ? parseFloat(value) || 0
-          : name === 'stakeholders'
-          ? value.split(',').map((v) => v.trim()).filter(Boolean)
           : value;
       setFormData((prev) => ({ ...prev, [name]: parsedValue }));
     }
@@ -137,12 +192,24 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
     e.preventDefault();
     setIsEditing(false);
 
-    // Map formData to project_map.data JSONB structure
+    const cleanStakeholdersArray = Array.isArray(formData.stakeholders)
+      ? formData.stakeholders
+          .map((s) =>
+            s
+              .replace(/\\"/g, '')
+              .replace(/^"|"$/g, '')
+              .replace(/^\[|\]$/g, '')
+              .replace(/\\/g, '')
+              .trim()
+          )
+          .filter(Boolean)
+      : [];
+
     const dataPayload = {
       project_name: formData.project_name || null,
       project_type: formData.project_type || null,
       owner: formData.owner || null,
-      stakeholders: formData.stakeholders?.length ? formData.stakeholders : null,
+      stakeholders: cleanStakeholdersArray.length ? cleanStakeholdersArray : null,
       contact_name: formData.contact_name || null,
       email: formData.email || null,
       country: formData.country || null,
@@ -156,13 +223,13 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
       },
       primary_product: formData.primary_product || null,
       capacities: {
-            unit: formData.storage_mass_kt_per_year_unit || null,
-            value: formData.storage_mass_kt_per_year_value || null,
-          },
+        unit: formData.storage_mass_kt_per_year_unit || null,
+        value: formData.storage_mass_kt_per_year_value || null,
+      },
       coordinates: {
-          latitude: String(formData.latitude || 0),
-          longitude: String(formData.longitude || 0),
-        },    
+        latitude: String(formData.latitude || 0),
+        longitude: String(formData.longitude || 0),
+      },
     };
 
     try {
@@ -189,7 +256,6 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
         setTimeout(() => notification.remove(), 300);
       }, 3000);
 
-      // Reset form to initial state
       setFormData(initialFormData);
     } catch (error) {
       console.error('Error saving Storage data:', error);
@@ -214,7 +280,7 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
       { name: 'project_name', label: 'Project Name', type: 'text', placeholder: 'Enter project name' },
       { name: 'project_type', label: 'Project Type', type: 'text', placeholder: 'Enter project type' },
       { name: 'owner', label: 'Owner', type: 'text', placeholder: 'Enter owner' },
-      { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },
+      { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders, e.g., stake1, stake2' },
       { name: 'country', label: 'Country', type: 'text', placeholder: 'Country location' },
       { name: 'city', label: 'City', type: 'text', placeholder: 'City location' },
       { name: 'street', label: 'Street', type: 'text', placeholder: 'Enter street' },
@@ -288,7 +354,23 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
                         name={field.name}
                         value={
                           field.name === 'stakeholders'
-                            ? (formData[field.name] as string[] | null)?.join(', ') ?? ''
+                            ? Array.isArray(formData[field.name])
+                              ? (formData[field.name] as string[])
+                                  .map((s) =>
+                                    s
+                                      .replace(/\\"/g, '')
+                                      .replace(/^"|"$/g, '')
+                                      .replace(/^\[|\]$/g, '')
+                                      .replace(/\\/g, '')
+                                      .trim()
+                                  )
+                                  .join(', ')
+                              : String(formData[field.name] ?? '')
+                                  .replace(/\\"/g, '')
+                                  .replace(/^"|"$/g, '')
+                                  .replace(/^\[|\]$/g, '')
+                                  .replace(/\\/g, '')
+                                  .trim()
                             : field.name === 'storage_mass_kt_per_year'
                             ? formData.storage_mass_kt_per_year ?? ''
                             : String(formData[field.name] ?? '')
