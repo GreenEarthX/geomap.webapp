@@ -26,6 +26,12 @@ export default function PlantTypeWidgetsPage() {
       onClick: () => router.push('/plant-list?type=CCUS'),
     },
     {
+      title: 'Ports',
+      image: '/plants/port-plant.png', // Added new image path for the port
+      color: 'bg-orange-600', // Added a new color for the port widget
+      onClick: () => router.push('/ports'), // Added navigation for ports
+    },
+    {
       title: 'All Plants',
       image: '/plants/all-plants.png',
       color: 'bg-purple-600',
@@ -47,15 +53,15 @@ export default function PlantTypeWidgetsPage() {
           />
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-blue-800 mt-5">
-          Explore Hydrogen & CCUS Plants
+          Explore Hydrogen & CCUS Infrastructure
         </h1>
         <p className="text-gray-600 text-sm sm:text-base mt-2">
-          Select a plant category to view details
+          Select a category to view details
         </p>
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 max-w-6xl mx-auto">
         {cards.map((card, index) => (
           <div
             key={index}

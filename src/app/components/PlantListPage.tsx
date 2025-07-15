@@ -15,12 +15,14 @@ interface Feature {
     internal_id?: string;
     name?: string;
     status?: string;
-    type?: string;
+    type?: string; // This property is key for the fix
     capacity_mw?: number | null;
     end_use?: string;
     start_year?: number | null;
     country?: string;
     process?: string;
+    // Add any other potential properties from your different data types
+    project_name?: string; 
   };
 }
 
@@ -52,14 +54,22 @@ export default function PlantListPage() {
         let combined: Feature[] = [];
         if (typeParam === 'CCUS') {
           combined = data.ccus?.features ?? [];
-        } else if (typeParam === 'Production' || typeParam === 'Storage') {
-          combined = (data.hydrogen?.features ?? []).filter(
+        } else if (typeParam === 'Production' || typeParam === 'Storage' || typeParam === 'Port') {
+          // Assuming 'hydrogen' and 'ports' are the sources
+          const allFeatures = [
+            ...(data.hydrogen?.features ?? []),
+            ...(data.ports?.features ?? [])
+          ];
+          combined = allFeatures.filter(
             (f: Feature) => f.properties.type === typeParam
           );
         } else {
+          // This case handles when NO typeParam is present (shows all)
           combined = [
             ...(data.hydrogen?.features ?? []),
             ...(data.ccus?.features ?? []),
+            ...(data.ports?.features ?? []),
+            // Add any other data sources here
           ];
         }
         setPlantList(combined);
@@ -74,8 +84,9 @@ export default function PlantListPage() {
 
   const filtered = plantList.filter((f) => {
     const p = f.properties;
+    const nameMatch = p.name || p.project_name || '';
     return (
-      (!search || p.name?.toLowerCase().includes(search.toLowerCase())) &&
+      (!search || nameMatch.toLowerCase().includes(search.toLowerCase())) &&
       (!filters.status || p.status === filters.status) &&
       (!filters.process || p.process === filters.process) &&
       (!filters.end_use || p.end_use === filters.end_use)
@@ -89,16 +100,33 @@ export default function PlantListPage() {
     ...new Set(
       plantList
         .map((p) => p.properties[key])
-        .filter((v): v is string => typeof v === 'string')
+        .filter((v): v is string => typeof v === 'string' && v.trim() !== '')
     ),
-  ];
+  ].sort();
 
-  const handleVerify = (internal_id?: string) => {
-    if (!internal_id) return;
-    if (typeParam === 'CCUS') {
-      router.push(`/plant-form/ccus/${internal_id}`);
-    } else {
-      router.push(`/plant-form/hydrogen/${internal_id}`);
+  // ✅ FIXED: Now accepts the specific plant's type
+  const handleVerify = (internal_id?: string, plantType?: string) => {
+    if (!internal_id || !plantType) return;
+
+    // ✅ FIXED: Uses the passed-in plantType, not the URL's typeParam
+    const type = plantType.toLowerCase(); 
+
+    switch (type) {
+        case 'production':
+            router.push(`/plant-form/production/${internal_id}`);
+            break;
+        case 'storage':
+            router.push(`/plant-form/storage/${internal_id}`);
+            break;
+        case 'ccus':
+            router.push(`/plant-form/ccus/${internal_id}`);
+            break;
+        case 'port':
+            router.push(`/port-form/${internal_id}`);
+            break;
+        default:
+            console.error('Unknown plant type for verification:', plantType);
+            break;
     }
   };
 
@@ -119,7 +147,7 @@ export default function PlantListPage() {
         </h1>
       </div>
 
-      <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-sm p-4 md:p-6 mb-8">
+      <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-sm p-4 md:p-6 mb-8">
         <input
           type="text"
           placeholder="Search by Plant Name..."
@@ -149,7 +177,7 @@ export default function PlantListPage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-sm p-4 md:p-6">
+      <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-sm p-4 md:p-6">
         <div className="overflow-x-auto">
           <table className="w-full table-auto border-collapse">
             <thead className="bg-blue-50">
@@ -179,11 +207,11 @@ export default function PlantListPage() {
             <tbody>
               {paginated.map((p, index) => (
                 <tr
-                  key={index}
+                  key={`${p.properties.internal_id}-${index}`}
                   className="border-b border-gray-200 hover:bg-gray-50"
                 >
                   <td className="px-4 py-3 text-sm text-gray-700">
-                    {p.properties.name || 'Not Available'}
+                    {p.properties.name || p.properties.project_name || 'Not Available'}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
                     {p.properties.type || 'Not Available'}
@@ -209,8 +237,9 @@ export default function PlantListPage() {
                   <td className="px-4 py-3 text-sm sticky right-0 bg-white z-10">
                     <button
                       className="px-3 py-1.5 border border-blue-600 text-blue-600 rounded-full text-sm hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      onClick={() => handleVerify(p.properties.internal_id)}
-                      disabled={!p.properties.internal_id}
+                      // ✅ FIXED: Pass the specific plant type to the handler
+                      onClick={() => handleVerify(p.properties.internal_id, p.properties.type)}
+                      disabled={!p.properties.internal_id || !p.properties.type}
                     >
                       Verify
                     </button>
@@ -267,7 +296,7 @@ const SelectBox: React.FC<SelectBoxProps> = ({ label, options, value, onChange }
     className="p-3 border border-gray-300 rounded-md min-w-[140px] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
   >
     <option value="" className="text-gray-500">
-      {label}
+      {`All ${label}s`}
     </option>
     {options.map((opt) => (
       <option key={opt} value={opt}>

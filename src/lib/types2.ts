@@ -143,6 +143,7 @@ export interface PipelineItem {
   total_segments: number | null;
   status: string | null;
   type: string;
+  project_name: string | null;
 }
 
 export interface GeoJSONFeatureCollection {

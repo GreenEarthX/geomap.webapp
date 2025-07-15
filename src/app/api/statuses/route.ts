@@ -4,24 +4,22 @@ import pool from '@/lib/db';
 export async function GET() {
   const client = await pool.connect();
   try {
+    await client.query('SELECT 1'); // Test connection
+
     const query = `
       SELECT DISTINCT 
         sector,
         CASE 
-          WHEN sector = 'CCUS' THEN LOWER(TRIM(data->'status_date'->>'project_status'))
-          WHEN sector = 'Port' THEN LOWER(TRIM(data->'status_dates'->>'status'))
-          WHEN sector = 'Pipeline' THEN LOWER(TRIM(data->'status'->>'current_status'))
-          ELSE LOWER(TRIM(data->'status'->>'current_status'))
+          WHEN LOWER(sector) = 'ccus' THEN LOWER(TRIM(COALESCE((data #>> '{status_date,project_status}')::TEXT, 'unknown')))
+          WHEN LOWER(sector) = 'port' THEN LOWER(TRIM(COALESCE((data #>> '{status_dates,status}')::TEXT, 'unknown')))
+          WHEN LOWER(sector) = 'pipeline' THEN LOWER(TRIM(COALESCE((data #>> '{status,current_status}')::TEXT, 'unknown')))
+          ELSE LOWER(TRIM(COALESCE((data #>> '{status,current_status}')::TEXT, 'unknown')))
         END AS current_status
       FROM project_map
-      WHERE sector IN ('Production', 'Storage', 'CCUS', 'Port', 'Pipeline')
-        AND (
-          (sector = 'CCUS' AND data->'status_date'->>'project_status' IS NOT NULL AND TRIM(data->'status_date'->>'project_status') <> '')
-          OR
-          (sector IN ('Production', 'Storage', 'Pipeline') AND data->'status'->>'current_status' IS NOT NULL AND TRIM(data->'status'->>'current_status') <> '')
-          OR
-          (sector = 'Port' AND data->'status_dates'->>'status' IS NOT NULL AND TRIM(data->'status_dates'->>'status') <> '')
-        ) AND active = 1;
+      WHERE LOWER(sector) IN ('production', 'storage', 'ccus', 'port', 'pipeline')
+        AND active = 1
+        AND data IS NOT NULL
+        AND jsonb_typeof(data) = 'object'
       ORDER BY sector, current_status
     `;
 
@@ -32,10 +30,12 @@ export async function GET() {
       current_status: row.current_status
     }));
 
+    console.log('[getStatuses] Fetched statuses:', statuses);
+
     return NextResponse.json({ statuses });
   } catch (error) {
     console.error('[getStatuses ERROR]', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error', details: error instanceof Error ? error.message : String(error) }, { status: 500 });
   } finally {
     client.release();
   }
