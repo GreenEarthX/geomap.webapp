@@ -8,19 +8,20 @@ export async function GET() {
       SELECT DISTINCT 
         sector,
         CASE 
-          WHEN sector = 'CCUS' THEN TRIM(data->'status_date'->>'project_status')
-          WHEN sector = 'Port' THEN TRIM(data->'status_dates'->>'status')
-          ELSE TRIM(data->'status'->>'current_status')
+          WHEN sector = 'CCUS' THEN LOWER(TRIM(data->'status_date'->>'project_status'))
+          WHEN sector = 'Port' THEN LOWER(TRIM(data->'status_dates'->>'status'))
+          WHEN sector = 'Pipeline' THEN LOWER(TRIM(data->'status'->>'current_status'))
+          ELSE LOWER(TRIM(data->'status'->>'current_status'))
         END AS current_status
       FROM project_map
-      WHERE sector IN ('Production', 'Storage', 'CCUS', 'Port')
+      WHERE sector IN ('Production', 'Storage', 'CCUS', 'Port', 'Pipeline')
         AND (
           (sector = 'CCUS' AND data->'status_date'->>'project_status' IS NOT NULL AND TRIM(data->'status_date'->>'project_status') <> '')
           OR
-          (sector IN ('Production', 'Storage') AND data->'status'->>'current_status' IS NOT NULL AND TRIM(data->'status'->>'current_status') <> '')
+          (sector IN ('Production', 'Storage', 'Pipeline') AND data->'status'->>'current_status' IS NOT NULL AND TRIM(data->'status'->>'current_status') <> '')
           OR
           (sector = 'Port' AND data->'status_dates'->>'status' IS NOT NULL AND TRIM(data->'status_dates'->>'status') <> '')
-        )
+        ) AND active = 1;
       ORDER BY sector, current_status
     `;
 

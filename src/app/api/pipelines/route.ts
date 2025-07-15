@@ -8,7 +8,7 @@ export async function GET() {
       const result = await client.query(
         `SELECT id, internal_id, data, sector
          FROM project_map
-         WHERE sector = 'Pipeline'`
+         WHERE sector = 'Pipeline' AND active = 1;`
       );
 
       const features = result.rows.flatMap((row) => {
