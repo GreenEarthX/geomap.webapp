@@ -1,32 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ProductionItem } from '@/lib/types2';
+import { STATUS_OPTIONS, StatusType, PRODUCER_PROJECT_TYPES_OPTIONS, ProducerProjectTypeType, PRODUCER_END_USE_OPTIONS, ProducerEndUseType, PRODUCER_PRODUCT_OPTIONS, ProducerProductType, PRODUCER_TECHNOLOGY_OPTIONS, ProducerTechnologyType } from '@/lib/lookupTables';
+
+// --- TYPE DEFINITIONS ---
 
 interface FieldConfig {
   name: keyof ProductionItem | 'capacity' | 'investment_capex';
   label: string;
   type: string;
-  placeholder: string;
+  placeholder?: string;
   isCombined?: boolean;
+  options?: ReadonlyArray<string>;
 }
 
+type SectionTitle = 'General Information' | 'Location' | 'Project Details' | 'Capacity' | 'Contact Information';
+
 interface SectionConfig {
-  title: string;
+  title: SectionTitle;
   fields: (keyof ProductionItem | 'capacity' | 'investment_capex')[];
 }
 
 interface ProductionFormProps {
   initialFeature: ProductionItem | null;
   initialError: string | null;
+  statusOptions: typeof STATUS_OPTIONS;
+  statusTooltip: React.ReactElement;
+  projectTypeOptions: typeof PRODUCER_PROJECT_TYPES_OPTIONS;
+  endUseOptions: typeof PRODUCER_END_USE_OPTIONS;
+  productOptions: typeof PRODUCER_PRODUCT_OPTIONS;
+  technologyTypeOptions: typeof PRODUCER_TECHNOLOGY_OPTIONS;
 }
 
-const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) => {
+const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initialError, statusOptions, statusTooltip, projectTypeOptions, endUseOptions, productOptions, technologyTypeOptions }) => {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const [isEditing, setIsEditing] = useState(false);
-  const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [openSections, setOpenSections] = useState<Record<SectionTitle, boolean>>({
     'General Information': true,
     'Location': true,
     'Project Details': true,
@@ -58,25 +70,23 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     'website_url',
   ];
 
-  const cleanArrayField = (fieldData: any): string[] => {
-      if (!Array.isArray(fieldData)) return [];
-
-      // This checks if the array is nested (e.g., [['a', 'b']]) and flattens it.
-      if (fieldData.length > 0 && Array.isArray(fieldData[0])) {
-          return fieldData.flat();
+  const cleanArrayField = (data: any): string[] => {
+    if (!data) return [];
+    if (Array.isArray(data)) {
+      return data.map((item: any) => String(item).trim()).filter(Boolean);
+    }
+    if (typeof data === 'string') {
+      try {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) {
+          return parsed.map((item: any) => String(item).trim()).filter(Boolean);
+        }
+        return [String(parsed).trim()].filter(Boolean);
+      } catch (e) {
+        return data.split(',').map((s: string) => s.trim()).filter(Boolean);
       }
-      
-      // This handles cases where the data might be a stringified array like ['["a", "b"]']
-      if (fieldData.length === 1 && typeof fieldData[0] === 'string') {
-          try {
-              const parsed = JSON.parse(fieldData[0]);
-              if (Array.isArray(parsed)) return parsed;
-          } catch (e) {
-              // Not a JSON string, so we fall through and return the original array
-          }
-      }
-
-      return fieldData; // Return the array as is if it's already clean
+    }
+    return [];
   };
 
   const initialFormData: Partial<ProductionItem> & { capacity?: string; investment_capex?: string } = {
@@ -94,7 +104,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     city: initialFeature?.city ?? '',
     street: initialFeature?.street ?? '',
     website_url: initialFeature?.website_url ?? '',
-    status: initialFeature?.status ?? '',
+    status: initialFeature?.status ? String(initialFeature.status) : '',
     date_online: initialFeature?.date_online ?? '',
     project_type: initialFeature?.project_type ?? '',
     primary_product: initialFeature?.primary_product ?? '',
@@ -102,9 +112,9 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     technology: initialFeature?.technology ?? '',
     capacity_unit: initialFeature?.capacity_unit ?? '',
     capacity_value: initialFeature?.capacity_value ?? 0,
-    capacity: initialFeature?.capacity_value && initialFeature?.capacity_unit 
+    capacity: initialFeature?.capacity_value != null && initialFeature?.capacity_unit 
       ? `${initialFeature.capacity_value} ${initialFeature.capacity_unit}` 
-      : '',
+      : initialFeature?.capacity_unit || '',
     end_use: cleanArrayField(initialFeature?.end_use),
     investment_capex: initialFeature?.investment_capex ?? '',
     latitude: initialFeature?.latitude ?? 0,
@@ -113,7 +123,19 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
 
   const [formData, setFormData] = useState<Partial<ProductionItem> & { capacity?: string; investment_capex?: string }>(initialFormData);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (initialFeature) {
+      console.log('Raw initial data:', initialFeature);
+      console.log('Cleaned stakeholders:', cleanArrayField(initialFeature.stakeholders));
+      console.log('Form stakeholders:', formData.stakeholders);
+      console.log('Cleaned end_use:', cleanArrayField(initialFeature.end_use));
+      console.log('Form end_use:', formData.end_use);
+      console.log('ProductionForm received initialFeature prop:', JSON.stringify(initialFeature, null, 2));
+      console.log('ProductionForm initialized with formData:', JSON.stringify(initialFormData, null, 2));
+    }
+  }, [initialFeature]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === 'capacity' || name === 'investment_capex') {
       const [parsedValue, ...unitParts] = value.trim().split(' ');
@@ -126,27 +148,43 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
         [name]: value,
         ...(name === 'investment_capex' ? { investment_capex: value } : {}),
       }));
+    } else if (name === 'stakeholders') {
+      const cleanedArray = value.split(',').map((v) => v.trim()).filter(Boolean);
+      setFormData((prev) => ({ ...prev, [name]: cleanedArray }));
     } else {
       const parsedValue =
         ['latitude', 'longitude'].includes(name)
           ? parseFloat(value) || 0
-          : name === 'end_use' || name === 'stakeholders'
-          ? value.split(',').map((v) => v.trim()).filter(Boolean)
           : value;
       setFormData((prev) => ({ ...prev, [name]: parsedValue }));
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleEndUseCheckboxChange = (value: string) => {
+    if (!isEditing) return;
+    const currentEndUse = Array.isArray(formData.end_use) ? formData.end_use : [];
+    const updatedEndUse = currentEndUse.includes(value)
+      ? currentEndUse.filter((item) => item !== value)
+      : [...currentEndUse, value];
+    setFormData((prev) => ({ ...prev, end_use: updatedEndUse }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsEditing(false);
 
-    // Map formData to project_map.data JSONB structure
+    const cleanStakeholdersArray = Array.isArray(formData.stakeholders)
+      ? formData.stakeholders.filter(Boolean)
+      : [];
+    const cleanEndUseArray = Array.isArray(formData.end_use)
+      ? formData.end_use.filter(Boolean)
+      : [];
+
     const dataPayload = {
       plant_name: formData.name || null,
       project_name: formData.project_name || null,
       owner: formData.owner || null,
-      stakeholders: formData.stakeholders?.length ? formData.stakeholders : null,
+      stakeholders: cleanStakeholdersArray.length ? cleanStakeholdersArray : null,
       contact_name: formData.contact_name || null,
       email: formData.email || null,
       country: formData.country || null,
@@ -170,7 +208,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
         unit: formData.capacity_unit || null,
         value: formData.capacity_value || null,
       },
-      end_use: formData.end_use?.length ? formData.end_use : null,
+      end_use: cleanEndUseArray.length ? cleanEndUseArray : null,
       investment_capex: formData.investment_capex || null,
     };
 
@@ -198,7 +236,6 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
         setTimeout(() => notification.remove(), 300);
       }, 3000);
 
-      // Reset form to initial state
       setFormData(initialFormData);
     } catch (error) {
       console.error('Error saving Production data:', error);
@@ -214,7 +251,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
     }
   };
 
-  const toggleSection = (sectionTitle: string) => {
+  const toggleSection = (sectionTitle: SectionTitle) => {
     setOpenSections((prev) => ({ ...prev, [sectionTitle]: !prev[sectionTitle] }));
   };
 
@@ -223,18 +260,18 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
       { name: 'name', label: 'Plant Name', type: 'text', placeholder: 'Enter plant name' },
       { name: 'project_name', label: 'Project Name', type: 'text', placeholder: 'Enter project name' },
       { name: 'owner', label: 'Owner', type: 'text', placeholder: 'Enter owner' },
-      { name: 'project_type', label: 'Project Type', type: 'text', placeholder: 'Enter project type' },
-      { name: 'primary_product', label: 'Primary Product', type: 'text', placeholder: 'Enter primary product' },
-      { name: 'secondary_product', label: 'Secondary Product', type: 'text', placeholder: 'Enter secondary product' },
+      { name: 'project_type', label: 'Project Type', type: 'select', options: projectTypeOptions },
+      { name: 'primary_product', label: 'Primary Product', type: 'select', options: productOptions },
+      { name: 'secondary_product', label: 'Secondary Product', type: 'select', options: productOptions },
       { name: 'country', label: 'Country', type: 'text', placeholder: 'Country location' },
       { name: 'city', label: 'City', type: 'text', placeholder: 'City location' },
       { name: 'street', label: 'Street', type: 'text', placeholder: 'Enter street' },
       { name: 'zip', label: 'Zip Code', type: 'text', placeholder: 'Enter zip code' },
-      { name: 'technology', label: 'Technology', type: 'text', placeholder: 'Production technology' },
-      { name: 'status', label: 'Status', type: 'text', placeholder: 'e.g. Feasibility study' },
+      { name: 'technology', label: 'Technology', type: 'select', options: technologyTypeOptions },
+      { name: 'status', label: 'Status', type: 'select', options: statusOptions },
       { name: 'date_online', label: 'Date Online', type: 'text', placeholder: 'Enter date online' },
       { name: 'capacity', label: 'Capacity', type: 'text', placeholder: 'e.g. 100 MW', isCombined: true },
-      { name: 'end_use', label: 'End Use', type: 'text', placeholder: 'e.g. Power, CH4 grid injection' },
+      { name: 'end_use', label: 'End Use', type: 'multiselect', options: endUseOptions },
       { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },
       { name: 'investment_capex', label: 'Investment (CAPEX)', type: 'text', placeholder: 'e.g. 100 USD', isCombined: true },
       { name: 'contact_name', label: 'Contact Name', type: 'text', placeholder: 'Enter contact name' },
@@ -265,9 +302,16 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
       },
     ];
 
+    const [isEndUseOpen, setIsEndUseOpen] = useState<boolean>(false);
+    const endUseValues = Array.isArray(formData.end_use) ? formData.end_use : [];
+    const dbEndUseValues = cleanArrayField(initialFeature?.end_use).filter(
+      (value) => !endUseOptions.includes(value as ProducerEndUseType)
+    );
+    const allEndUseOptions = [...new Set([...endUseOptions, ...dbEndUseValues])];
+
     return (
       <div className="space-y-4">
-        {sections.map((section) => (
+        {sections.map((section: SectionConfig) => (
           <div key={section.title} className="border border-gray-200 rounded-lg shadow-sm">
             <button
               type="button"
@@ -291,31 +335,110 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
                   .filter((field): field is FieldConfig => !!field)
                   .map((field) => (
                     <div key={field.name} className="flex flex-col">
-                      <label className="text-sm font-medium text-gray-700 mb-1">
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center">
                         {field.label}
+                        {field.name === 'status' && statusTooltip}
                         {isEditing && field.type === 'number' && (
                           <span className="ml-1 text-xs text-gray-500">(numeric)</span>
                         )}
                       </label>
-                      <input
-                        type={field.type}
-                        name={field.name}
-                        value={
-                          field.name === 'end_use' || field.name === 'stakeholders'
-                            ? (formData[field.name] as string[] | null)?.join(', ') ?? ''
-                            : field.name === 'capacity'
-                            ? formData.capacity ?? ''
-                            : field.name === 'investment_capex'
-                            ? formData.investment_capex ?? ''
-                            : String(formData[field.name] ?? '')
-                        }
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        placeholder={field.placeholder}
-                        className={`w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
-                          isEditing ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
-                        } text-black`}
-                      />
+                      {field.type === 'select' ? (
+                        <select
+                          name={field.name}
+                          value={formData[field.name] ?? ''}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          className={`w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-black ${
+                            isEditing ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
+                          }`}
+                        >
+                          <option value="">
+                            {field.name === 'status' ? 'Select a status' 
+                              : field.name === 'project_type' ? 'Select a project type'
+                              : field.name === 'primary_product' ? 'Select primary product'
+                              : field.name === 'secondary_product' ? 'Select secondary product'
+                              : field.name === 'technology' ? 'Select a technology'
+                              : 'Select an option'}
+                          </option>
+                          {field.name === 'status' && initialFeature?.status && !statusOptions.includes(initialFeature.status as StatusType) && (
+                            <option value={initialFeature.status}>{initialFeature.status}</option>
+                          )}
+                          {field.name === 'project_type' && initialFeature?.project_type && !projectTypeOptions.includes(initialFeature.project_type as ProducerProjectTypeType) && (
+                            <option value={initialFeature.project_type}>{initialFeature.project_type}</option>
+                          )}
+                          {field.name === 'primary_product' && initialFeature?.primary_product && !productOptions.includes(initialFeature.primary_product as ProducerProductType) && (
+                            <option value={initialFeature.primary_product}>{initialFeature.primary_product}</option>
+                          )}
+                          {field.name === 'secondary_product' && initialFeature?.secondary_product && !productOptions.includes(initialFeature.secondary_product as ProducerProductType) && (
+                            <option value={initialFeature.secondary_product}>{initialFeature.secondary_product}</option>
+                          )}
+                          {field.name === 'technology' && initialFeature?.technology && !technologyTypeOptions.includes(initialFeature.technology as ProducerTechnologyType) && (
+                            <option value={initialFeature.technology}>{initialFeature.technology}</option>
+                          )}
+                          {field.options?.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      ) : field.type === 'multiselect' ? (
+                        <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => isEditing && setIsEndUseOpen(!isEndUseOpen)}
+                            className={`w-full p-3 rounded-md border border-gray-300 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-black ${
+                              isEditing ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
+                            }`}
+                            disabled={!isEditing}
+                          >
+                            {Array.isArray(formData.end_use) && formData.end_use.length > 0
+                              ? formData.end_use.join(', ')
+                              : 'Select end use options'}
+                          </button>
+                          {isEndUseOpen && (
+                            <div className="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                              {allEndUseOptions.map((option) => (
+                                <label
+                                  key={option}
+                                  className="flex items-center px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    value={option}
+                                    checked={Array.isArray(formData.end_use) && formData.end_use.includes(option)}
+                                    onChange={() => handleEndUseCheckboxChange(option)}
+                                    disabled={!isEditing}
+                                    className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                  />
+                                  {option}
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <input
+                          type={field.type}
+                          name={field.name}
+                          value={
+                            field.name === 'stakeholders'
+                              ? Array.isArray(formData[field.name])
+                                ? (formData[field.name] as string[]).join(', ')
+                                : String(formData[field.name] ?? '')
+                              : field.name === 'capacity'
+                              ? formData.capacity ?? ''
+                              : field.name === 'investment_capex'
+                              ? formData.investment_capex ?? ''
+                              : String(formData[field.name] ?? '')
+                          }
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          placeholder={field.placeholder}
+                          className={`w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-black ${
+                            isEditing ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
+                          }`}
+                        />
+                      )}
                     </div>
                   ))}
               </div>
@@ -352,6 +475,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
             <p className="text-gray-600 mb-6">{initialError}</p>
             <div className="flex flex-col sm:flex-row justify-center gap-3">
               <button
+                type="button"
                 onClick={() => router.push('/')}
                 className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
               >
@@ -371,6 +495,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
                 Back to Map
               </button>
               <button
+                type="button"
                 onClick={() => router.push('/plant-list')}
                 className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
               >
@@ -409,6 +534,7 @@ const ProductionForm = ({ initialFeature, initialError }: ProductionFormProps) =
             </p>
           </div>
           <button
+            type="button"
             onClick={() => setIsEditing(!isEditing)}
             className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${
               isEditing

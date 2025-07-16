@@ -1,19 +1,31 @@
+import { ReactElement } from 'react';
 import ProductionForm from '@/app/components/ProductionForm';
 import StorageForm from '@/app/components/StorageForm';
 import CCUSForm from '@/app/components/CCUSForm';
-import { getPlantFeature } from '@/services/getPlantFeature';
 import { logger } from '@/lib/logger';
 import { ProductionItem, StorageItem, CCUSItem } from '@/lib/types2';
+import { STATUS_OPTIONS, PRODUCER_PROJECT_TYPES_OPTIONS, STORAGE_PROJECT_TYPES_OPTIONS, CCUS_PROJECT_TYPES_OPTIONS, PRODUCER_END_USE_OPTIONS, CCUS_END_USE_OPTIONS, PRODUCER_PRODUCT_OPTIONS, CCUS_TECHNOLOGY_OPTIONS, PRODUCER_TECHNOLOGY_OPTIONS } from '@/lib/lookupTables';
+import { cache } from 'react';
+
+// Cache the fetch to avoid redundant calls
+const cachedFetch = cache(async (url: string) => {
+  const response = await fetch(url, { cache: 'force-cache' }); // Use Next.js cache
+  return response.json();
+});
 
 interface PlantFormPageProps {
   params: Promise<{ type: string; id: string }>;
 }
 
 export default async function PlantFormPage({ params }: PlantFormPageProps) {
-  const { type, id } = await params;
+  const { type, id } = await params; // Properly await params
   logger.info('PlantFormPage params', { type, id });
 
-  const { feature: initialLeafletFeature, error: initialError } = await getPlantFeature(id, type);
+  // Fetch data server-side with caching
+  const { feature: initialLeafletFeature, error: initialError } = await cachedFetch(
+    `http://localhost:3000/api/plant/${type}/${id}`
+  );
+  console.log('[PlantFormPage] Fetched feature from API:', JSON.stringify(initialLeafletFeature, null, 2));
 
   logger.info('PlantFormPage fetched feature', { initialLeafletFeature, initialError });
 
@@ -22,7 +34,6 @@ export default async function PlantFormPage({ params }: PlantFormPageProps) {
     const { properties } = initialLeafletFeature;
     const sector = type.toLowerCase();
 
-    // Log the date_online value here to check if it's being fetched correctly
     console.log('Fetched date_online value:', properties.date_online);
 
     if (sector === 'production' && 'primary_product' in properties) {
@@ -109,15 +120,90 @@ export default async function PlantFormPage({ params }: PlantFormPageProps) {
     }
   }
 
-  logger.info('PlantFormPage props passed to form', { initialFeature, initialError });
+  const statusOptions: string[] = [
+    'Project initiation (Before Pre-FEED)',
+    'Project Foundation- Pre-FEED',
+    'FEED',
+    'Pre-FID',
+    'FID',
+    'EPC contracted',
+    'Pre-Commissioning & Commissioning',
+    'Initial Production (COD)',
+  ];
+
+ const statusTooltip: ReactElement = (
+  <span
+    // The title attribute remains, providing the simple tooltip functionality.
+    title={`If your current status is not part of this list, please select the most appropriate one.\n\n${statusOptions.join('\n')}`}
+    
+    // --- STYLE UPDATES ARE HERE ---
+    className="
+      ml-2           // Margin left
+      p-1.5          // Padding around the icon
+      cursor-help    // Help cursor on hover
+      text-gray-400  // Icon color
+      hover:text-gray-600 // Icon color on hover
+      hover:bg-gray-100   // Background color on hover
+      dark:text-gray-500  // Icon color in dark mode
+      dark:hover:text-gray-300 // Icon color on hover in dark mode
+      dark:hover:bg-gray-800   // Background on hover in dark mode
+      rounded-full   // Makes the hover background circular
+      transition-colors // Smoothly animates the color changes
+      duration-200   // Sets the speed of the animation
+    "
+  >
+    <svg
+      className="w-5 h-5 block" // Slightly larger icon, `block` for better alignment
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  </span>
+);
 
   const sector = type.toLowerCase();
   if (sector === 'production') {
-    return <ProductionForm initialFeature={initialFeature as ProductionItem | null} initialError={initialError} />;
+    return (
+      <ProductionForm
+        initialFeature={initialFeature as ProductionItem | null}
+        initialError={initialError}
+        statusOptions={STATUS_OPTIONS}
+        statusTooltip={statusTooltip}
+        projectTypeOptions={PRODUCER_PROJECT_TYPES_OPTIONS}
+        endUseOptions={PRODUCER_END_USE_OPTIONS}
+        productOptions={PRODUCER_PRODUCT_OPTIONS}
+        technologyTypeOptions={PRODUCER_TECHNOLOGY_OPTIONS}
+      />
+    );
   } else if (sector === 'storage') {
-    return <StorageForm initialFeature={initialFeature as StorageItem | null} initialError={initialError} />;
+    return (
+      <StorageForm
+        initialFeature={initialFeature as StorageItem | null}
+        initialError={initialError}
+        statusOptions={STATUS_OPTIONS}
+        statusTooltip={statusTooltip}
+        projectTypeOptions={STORAGE_PROJECT_TYPES_OPTIONS}
+      />
+    );
   } else if (sector === 'ccus') {
-    return <CCUSForm initialFeature={initialFeature as CCUSItem | null} initialError={initialError} />;
+    return (
+      <CCUSForm
+        initialFeature={initialFeature as CCUSItem | null}
+        initialError={initialError}
+        statusOptions={STATUS_OPTIONS}
+        statusTooltip={statusTooltip}
+        projectTypeOptions={CCUS_PROJECT_TYPES_OPTIONS}
+        endUseSectorOptions={CCUS_END_USE_OPTIONS}
+        technologyTypeOptions={CCUS_TECHNOLOGY_OPTIONS}
+      />
+    );
   }
 
   return (

@@ -1,3 +1,4 @@
+import 'server-only'; // Ensures this file is server-only
 import pool from '@/lib/db';
 import { ProductionItem, StorageItem, CCUSItem, CCUSReference } from '@/lib/types2';
 
@@ -53,7 +54,7 @@ export async function getPlantFeature(id: string, type: string): Promise<PlantFe
         ${
           sector === 'Production'
             ? `
-              data->>'date_online' AS date_online,
+              data->'status'->>'date_online' AS date_online,
               data->'status'->>'current_status' AS status,
               data->>'secondary_product' AS secondary_product,
               data->>'technology' AS technology,
@@ -69,7 +70,7 @@ export async function getPlantFeature(id: string, type: string): Promise<PlantFe
             `
             : sector === 'Storage'
             ? `
-              data->>'date_online' AS date_online,
+              data->'status'->>'date_online' AS date_online,
               data->'status'->>'current_status' AS status,
               data->'capacities'->>'unit' AS storage_mass_kt_per_year_unit,
               CASE 
@@ -186,7 +187,7 @@ export async function getPlantFeature(id: string, type: string): Promise<PlantFe
       properties = {
         id: item.id ?? '',
         internal_id: item.internal_id ?? id,
-        zip:item.zip ?? '',
+        zip: item.zip ?? '',
         name: item.name ?? 'Placeholder Feature',
         type: item.type ?? 'CCUS',
         city: item.city ?? '',
@@ -201,7 +202,7 @@ export async function getPlantFeature(id: string, type: string): Promise<PlantFe
         stakeholders: item.stakeholders ? item.stakeholders.split(',').map((s: string) => s.trim()) : [],
         product: item.product ?? '',
         technology_fate: item.technology_fate ?? '',
-        end_use_sector: item.end_use_sector ? item.end_use_sector.split(',').map((s: string) => s.trim()) : [],
+        end_use_sector: item.end_use_sector ?? '',
         capacity_unit: item.capacity_unit ?? '',
         capacity_value: item.capacity_value ?? 0,
         investment_capex: item.investment_capex ?? '',

@@ -59,12 +59,15 @@ const ccusCapacityFields: CapacityField[] = [
   { base: 'investment_capex', valueField: 'investment_capex', unitField: '' },
 ];
 
+const portCapacityFields: CapacityField[] = [
+  { base: 'capacity', valueField: 'capacity_value', unitField: 'capacity_unit' },
+];
+
 const fieldOrder: Record<'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline', string[]> = {
   Storage: [
     'project_name',
     'project_type',
     'owner',
-    //'stakeholders',
     'contact_name',
     'email',
     'country',
@@ -91,8 +94,6 @@ const fieldOrder: Record<'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline'
     'date_online',
     'capacity',
     'end_use',
-    //'stakeholders',
-    //'investment_capex',
   ],
   CCUS: [
     'name',
@@ -107,8 +108,6 @@ const fieldOrder: Record<'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline'
     'operation_date',
     'capacity',
     'end_use_sector',
-    //'stakeholders',
-    //'investment_capex',
   ],
   Port: [
     'name',
@@ -119,11 +118,9 @@ const fieldOrder: Record<'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline'
     'product_type',
     'status',
     'announced_size',
-    //'investment',
     'partners',
     'technology_type',
-    //'data_source',
-    'status_dates',
+    'capacity',
   ],
   Pipeline: [
     'pipeline_name',
@@ -142,7 +139,7 @@ export const generatePopupHtml = (
   props: ProductionItem | StorageItem | CCUSItem | PortItem | PipelineItem,
   type: 'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline'
 ): string => {
-  const excludedFields = ['id', 'internal_id', 'latitude', 'longitude', 'stakeholders','data_source', 'Ref Id', 'end_use', 'investment', 'references', 'investment_capex'];
+  const excludedFields = ['id', 'internal_id', 'latitude', 'longitude', 'stakeholders', 'data_source', 'Ref Id', 'end_use', 'investment', 'references', 'investment_capex'];
   let capacityFields: CapacityField[] = [];
   let specialEntries: [string, { value: any; unit?: any }][] = [];
 
@@ -150,8 +147,8 @@ export const generatePopupHtml = (
     capacityFields = storageCapacityFields;
     const storageProps = props as StorageItem;
     specialEntries = capacityFields
-      .filter(field => 
-        storageProps[field.valueField as keyof StorageItem] !== undefined && 
+      .filter(field =>
+        storageProps[field.valueField as keyof StorageItem] !== undefined &&
         storageProps[field.unitField as keyof StorageItem] !== undefined &&
         storageProps[field.valueField as keyof StorageItem] !== null &&
         storageProps[field.unitField as keyof StorageItem] !== null
@@ -167,11 +164,11 @@ export const generatePopupHtml = (
     capacityFields = productionCapacityFields;
     const productionProps = props as ProductionItem;
     specialEntries = capacityFields
-      .filter(field => 
-        (field.base === 'investment_capex' ? 
+      .filter(field =>
+        (field.base === 'investment_capex' ?
           productionProps[field.valueField as keyof ProductionItem] !== undefined &&
           productionProps[field.valueField as keyof ProductionItem] !== null :
-          productionProps[field.valueField as keyof ProductionItem] !== undefined && 
+          productionProps[field.valueField as keyof ProductionItem] !== undefined &&
           productionProps[field.unitField as keyof ProductionItem] !== undefined &&
           productionProps[field.valueField as keyof ProductionItem] !== null &&
           productionProps[field.unitField as keyof ProductionItem] !== null)
@@ -187,11 +184,11 @@ export const generatePopupHtml = (
     capacityFields = ccusCapacityFields;
     const ccusProps = props as CCUSItem;
     specialEntries = capacityFields
-      .filter(field => 
-        (field.base === 'investment_capex' ? 
+      .filter(field =>
+        (field.base === 'investment_capex' ?
           ccusProps[field.valueField as keyof CCUSItem] !== undefined &&
           ccusProps[field.valueField as keyof CCUSItem] !== null :
-          ccusProps[field.valueField as keyof CCUSItem] !== undefined && 
+          ccusProps[field.valueField as keyof CCUSItem] !== undefined &&
           ccusProps[field.unitField as keyof CCUSItem] !== undefined &&
           ccusProps[field.valueField as keyof CCUSItem] !== null &&
           ccusProps[field.unitField as keyof CCUSItem] !== null)
@@ -203,6 +200,23 @@ export const generatePopupHtml = (
           unit: field.unitField ? ccusProps[field.unitField as keyof CCUSItem] : undefined,
         }
       ]);
+  } else if (type === 'Port') {
+    capacityFields = portCapacityFields;
+    const portProps = props as PortItem;
+    specialEntries = capacityFields
+      .filter(field =>
+        portProps[field.valueField as keyof PortItem] !== undefined &&
+        portProps[field.unitField as keyof PortItem] !== undefined &&
+        portProps[field.valueField as keyof PortItem] !== null &&
+        portProps[field.unitField as keyof PortItem] !== null
+      )
+      .map(field => [
+        field.base,
+        {
+          value: portProps[field.valueField as keyof PortItem],
+          unit: portProps[field.unitField as keyof PortItem],
+        }
+      ]);
   }
 
   const allExcludedKeys = new Set([
@@ -211,7 +225,7 @@ export const generatePopupHtml = (
     ...capacityFields.filter(field => field.unitField).map(field => field.unitField),
   ]);
 
-  const regularEntries: [string, any][] = Object.entries(props).filter(([key, value]) => 
+  const regularEntries: [string, any][] = Object.entries(props).filter(([key, value]) =>
     !allExcludedKeys.has(key) &&
     value !== null &&
     value !== undefined &&
@@ -252,26 +266,52 @@ export const generatePopupHtml = (
     })
     .join('<br>');
 
-  const verifyButton = 'internal_id' in props && props.internal_id
+  // =========== BEGIN MODIFICATION ===========
+  
+  let verifyUrl = '';
+  // Use 'internal_id' from props for routing, as requested.
+  const internalId = 'internal_id' in props ? props.internal_id : null; 
+
+  if (internalId) {
+    switch (type) {
+      case 'Production':
+        verifyUrl = `/plant-form/production/${internalId}`;
+        break;
+      case 'Storage':
+        verifyUrl = `/plant-form/storage/${internalId}`;
+        break;
+      case 'CCUS':
+        verifyUrl = `/plant-form/ccus/${internalId}`;
+        break;
+      case 'Port':
+        verifyUrl = `/port-form/${internalId}`;
+        break;
+      // No verify button for Pipeline by default
+    }
+  }
+
+  const verifyButton = verifyUrl
     ? `
         <button
-          onclick="event.stopPropagation(); window.location.href='/${type === 'Port' ? 'port-form' : 'plant-form/' + type.toLowerCase()}/${props.internal_id}'"
+          onclick="event.stopPropagation(); window.open('${verifyUrl}', '_blank')"
           class="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 w-full"
-          aria-label="Verify ${props.project_name || type.toLowerCase()} details"
+          aria-label="Verify ${'project_name' in props ? props.project_name : type.toLowerCase()} details"
         >
           Verify
         </button>
       `
     : `
         <span class="mt-2 block text-center text-red-500 text-xs" aria-label="No ID available">
-          No ID available
+          No ID available for verification
         </span>
       `;
+
+  // =========== END MODIFICATION ===========
 
   return `
     <div class="max-w-[90vw] w-64 p-2 bg-white rounded shadow border border-gray-100 font-sans text-sm">
       ${popupContent}
-      ${verifyButton}
+      ${type !== 'Pipeline' ? verifyButton : ''} 
     </div>
   `;
 };

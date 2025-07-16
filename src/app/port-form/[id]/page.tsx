@@ -1,6 +1,8 @@
 import { PortItem } from '@/lib/types2';
 import PortForm from '@/app/components/PortForm';
 import { logger } from '@/lib/logger';
+import { STATUS_OPTIONS, PORT_PROJECT_TYPES_OPTIONS, PORT_PRODUCT_OPTIONS, PORT_TECHNOLOGY_OPTIONS } from '@/lib/lookupTables';
+import { ReactElement } from 'react';
 
 interface PortFormPageProps {
   params: Promise<{ id: string }>;
@@ -16,6 +18,7 @@ export default async function PortFormPage({ params }: PortFormPageProps) {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
     logger.info('Fetching port data from:', { url: `${apiUrl}/api/ports` });
+
     const response = await fetch(`${apiUrl}/api/ports`, {
       cache: 'no-store',
     });
@@ -44,5 +47,26 @@ export default async function PortFormPage({ params }: PortFormPageProps) {
 
   logger.info('PortFormPage props passed to PortForm', { initialFeature, initialError });
 
-  return <PortForm initialFeature={initialFeature} initialError={initialError} />;
+  const statusTooltip: ReactElement = (
+    <span
+      className="ml-2 text-gray-500 cursor-help"
+      title="If your current status is not part of the dropdown list provided by our app, please select the most appropriate one."
+    >
+      <svg className="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    </span>
+  );
+
+  return (
+    <PortForm
+      initialFeature={initialFeature}
+      initialError={initialError}
+      statusOptions={STATUS_OPTIONS}
+      statusTooltip={statusTooltip}
+      projectTypeOptions={PORT_PROJECT_TYPES_OPTIONS}
+      productTypeOptions={PORT_PRODUCT_OPTIONS} // Added productTypeOptions
+      technologyTypeOptions={PORT_TECHNOLOGY_OPTIONS}
+    />
+  );
 }
