@@ -161,7 +161,7 @@ const LeafletMap = () => {
         const ccusProps = props as CCUSItem;
         name = ccusProps.name || ccusProps.project_name || '';
         statusValue = ccusProps.project_status || '';
-        endUseValue = ccusProps.end_use_sector || null;
+        endUseValue = ccusProps.end_use_sector || '';
         countryValue = ccusProps.country || '';
         break;
       case 'port':

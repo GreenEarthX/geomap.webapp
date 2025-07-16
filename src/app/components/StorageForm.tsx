@@ -3,13 +3,16 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { StorageItem } from '@/lib/types2';
+import { STATUS_OPTIONS, StatusType, STORAGE_PROJECT_TYPES_OPTIONS, StorageProjectTypeType } from '@/lib/lookupTables';
 
+// Updated FieldConfig to include options for the dropdown
 interface FieldConfig {
   name: keyof StorageItem | 'storage_mass_kt_per_year';
   label: string;
   type: string;
-  placeholder: string;
+  placeholder?: string;
   isCombined?: boolean;
+  options?: ReadonlyArray<string>;
 }
 
 interface SectionConfig {
@@ -17,12 +20,16 @@ interface SectionConfig {
   fields: (keyof StorageItem | 'storage_mass_kt_per_year')[];
 }
 
+// Updated StorageFormProps to accept status options, project type options, and a tooltip
 interface StorageFormProps {
   initialFeature: StorageItem | null;
   initialError: string | null;
+  statusOptions: typeof STATUS_OPTIONS;
+  statusTooltip: React.ReactElement;
+  projectTypeOptions: typeof STORAGE_PROJECT_TYPES_OPTIONS;
 }
 
-const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
+const StorageForm = ({ initialFeature, initialError, statusOptions, statusTooltip, projectTypeOptions }: StorageFormProps) => {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -35,82 +42,45 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
   });
 
   const cleanStakeholders = (data: any): string[] => {
-    let result: string[] = [];
+  if (!data) return [];
 
-    if (Array.isArray(data)) {
-      result = data
-        .flatMap((item) => {
-          // Convert to string and remove quotes, brackets, and backslashes
-          const str = String(item)
-            .replace(/\\"/g, '') // Remove escaped quotes
-            .replace(/^"|"$/g, '') // Remove surrounding quotes
-            .replace(/^\[|\]$/g, '') // Remove surrounding brackets
-            .replace(/\\/g, '') // Remove backslashes
-            .trim();
+  // Handle if data is already an array
+  if (Array.isArray(data)) {
+    return data
+      .flatMap((item) => {
+        if (typeof item === 'string') {
           try {
-            const parsed = JSON.parse(str);
-            if (Array.isArray(parsed)) {
-              return parsed.map((subItem) =>
-                String(subItem)
-                  .replace(/\\"/g, '')
-                  .replace(/^"|"$/g, '')
-                  .replace(/\\/g, '')
-                  .trim()
-              );
-            }
-            return [String(parsed).replace(/\\"/g, '').replace(/^"|"$/g, '').replace(/\\/g, '').trim()];
+            // Attempt to parse JSON string, removing escaped quotes and backslashes
+            const parsed = JSON.parse(item.replace(/\\"/g, '"').replace(/\\\\/g, '\\'));
+            return Array.isArray(parsed) ? parsed : [parsed];
           } catch (e) {
-            return str.split(',').map((s) =>
-              s
-                .replace(/\\"/g, '')
-                .replace(/^"|"$/g, '')
-                .replace(/^\[|\]$/g, '')
-                .replace(/\\/g, '')
-                .trim()
-            );
+            // If not JSON, clean the string by removing brackets, quotes, and backslashes
+            return [item.replace(/[\[\]"\\/]/g, '').trim()];
           }
-        })
-        .filter(Boolean);
-    } else if (typeof data === 'string') {
-      try {
-        const parsed = JSON.parse(data);
-        if (Array.isArray(parsed)) {
-          result = parsed.map((item) =>
-            String(item)
-              .replace(/\\"/g, '')
-              .replace(/^"|"$/g, '')
-              .replace(/\\/g, '')
-              .trim()
-          );
-        } else {
-          result = [String(parsed).replace(/\\"/g, '').replace(/^"|"$/g, '').replace(/\\/g, '').trim()];
         }
-      } catch (e) {
-        result = data
-          .split(',')
-          .map((s) =>
-            s
-              .replace(/\\"/g, '')
-              .replace(/^"|"$/g, '')
-              .replace(/^\[|\]$/g, '')
-              .replace(/\\/g, '')
-              .trim()
-          )
-          .filter(Boolean);
-      }
-    } else {
-      result = [];
-    }
+        // Clean non-string items by removing brackets, quotes, and backslashes
+        return [String(item).replace(/[\[\]"\\/]/g, '').trim()];
+      })
+      .filter(Boolean);
+  }
 
-    return result.map((item) =>
-      item
-        .replace(/\\"/g, '')
-        .replace(/^"|"$/g, '')
-        .replace(/^\[|\]$/g, '')
-        .replace(/\\/g, '')
-        .trim()
-    ).filter(Boolean);
-  };
+  // Handle if data is a string
+  if (typeof data === 'string') {
+    try {
+      // Attempt to parse JSON string, removing escaped quotes and backslashes
+      const parsed = JSON.parse(data.replace(/\\"/g, '"').replace(/\\\\/g, '\\'));
+      return cleanStakeholders(parsed); // Recursively handle parsed data
+    } catch (e) {
+      // If not JSON, split by comma and clean each part
+      return data
+        .split(',')
+        .map((s) => s.replace(/[\[\]"\\/]/g, '').trim())
+        .filter(Boolean);
+    }
+  }
+
+  return [];
+};
 
   const initialFormData: Partial<StorageItem> & {
     storage_mass_kt_per_year?: string;
@@ -129,7 +99,7 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
     city: initialFeature?.city ?? '',
     street: initialFeature?.street ?? '',
     website_url: initialFeature?.website_url ?? '',
-    status: initialFeature?.status ?? '',
+    status: initialFeature?.status ? String(initialFeature.status) : '',
     date_online: initialFeature?.date_online ?? '',
     primary_product: initialFeature?.primary_product ?? '',
     storage_mass_kt_per_year_unit: initialFeature?.storage_mass_kt_per_year_unit ?? '',
@@ -147,14 +117,15 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
 
   useEffect(() => {
     if (initialFeature) {
-      console.log('1. Raw initial stakeholders data:', initialFeature.stakeholders);
-      const cleaned = cleanStakeholders(initialFeature.stakeholders);
-      console.log('2. Cleaned stakeholders data:', cleaned);
-      console.log('3. formData.stakeholders:', formData.stakeholders);
+      console.log('Database status:', initialFeature.status);
+      console.log('Status options:', statusOptions);
+      console.log('Database project_type:', initialFeature.project_type);
+      console.log('Project type options:', projectTypeOptions);
     }
-  }, [initialFeature, formData.stakeholders]);
+  }, [initialFeature, statusOptions, projectTypeOptions]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Generic input handler for both text inputs and select dropdowns
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === 'storage_mass_kt_per_year') {
       const [parsedValue, ...unitParts] = value.trim().split(' ');
@@ -167,17 +138,7 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
         [name]: value,
       }));
     } else if (name === 'stakeholders') {
-      const stakeholdersArray = value
-        .split(',')
-        .map((s) =>
-          s
-            .replace(/\\"/g, '')
-            .replace(/^"|"$/g, '')
-            .replace(/^\[|\]$/g, '')
-            .replace(/\\/g, '')
-            .trim()
-        )
-        .filter(Boolean);
+      const stakeholdersArray = value.split(',').map((s) => s.trim()).filter(Boolean);
       setFormData((prev) => ({ ...prev, [name]: stakeholdersArray }));
     } else {
       const parsedValue =
@@ -192,18 +153,7 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
     e.preventDefault();
     setIsEditing(false);
 
-    const cleanStakeholdersArray = Array.isArray(formData.stakeholders)
-      ? formData.stakeholders
-          .map((s) =>
-            s
-              .replace(/\\"/g, '')
-              .replace(/^"|"$/g, '')
-              .replace(/^\[|\]$/g, '')
-              .replace(/\\/g, '')
-              .trim()
-          )
-          .filter(Boolean)
-      : [];
+    const cleanStakeholdersArray = Array.isArray(formData.stakeholders) ? formData.stakeholders.filter(Boolean) : [];
 
     const dataPayload = {
       project_name: formData.project_name || null,
@@ -255,8 +205,7 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
         notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
         setTimeout(() => notification.remove(), 300);
       }, 3000);
-
-      setFormData(initialFormData);
+      
     } catch (error) {
       console.error('Error saving Storage data:', error);
       const notification = document.createElement('div');
@@ -276,16 +225,17 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
   };
 
   const renderFields = () => {
+    // Field definitions, now with status and project_type as select types
     const fields: FieldConfig[] = [
       { name: 'project_name', label: 'Project Name', type: 'text', placeholder: 'Enter project name' },
-      { name: 'project_type', label: 'Project Type', type: 'text', placeholder: 'Enter project type' },
+      { name: 'project_type', label: 'Project Type', type: 'select', options: projectTypeOptions },
       { name: 'owner', label: 'Owner', type: 'text', placeholder: 'Enter owner' },
-      { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders, e.g., stake1, stake2' },
+      { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },
       { name: 'country', label: 'Country', type: 'text', placeholder: 'Country location' },
       { name: 'city', label: 'City', type: 'text', placeholder: 'City location' },
       { name: 'street', label: 'Street', type: 'text', placeholder: 'Enter street' },
       { name: 'zip', label: 'Zip Code', type: 'text', placeholder: 'Enter zip code' },
-      { name: 'status', label: 'Status', type: 'text', placeholder: 'e.g. Feasibility study' },
+      { name: 'status', label: 'Status', type: 'select', options: statusOptions },
       { name: 'date_online', label: 'Date Online', type: 'text', placeholder: 'Enter date online' },
       { name: 'primary_product', label: 'Primary Product', type: 'text', placeholder: 'Enter primary product' },
       { name: 'storage_mass_kt_per_year', label: 'Storage Capacity', type: 'text', placeholder: 'e.g. 72 kt H2/year', isCombined: true },
@@ -317,6 +267,7 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
       },
     ];
 
+    // JSX rendering logic for fields, now with conditional for select dropdown
     return (
       <div className="space-y-4">
         {sections.map((section) => (
@@ -343,45 +294,54 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
                   .filter((field): field is FieldConfig => !!field)
                   .map((field) => (
                     <div key={field.name} className="flex flex-col">
-                      <label className="text-sm font-medium text-gray-700 mb-1">
+                      <label className="text-sm font-medium text-gray-700 mb-1 flex items-center">
                         {field.label}
-                        {isEditing && field.type === 'number' && (
-                          <span className="ml-1 text-xs text-gray-500">(numeric)</span>
-                        )}
+                        {field.name === 'status' && statusTooltip}
                       </label>
-                      <input
-                        type={field.type}
-                        name={field.name}
-                        value={
-                          field.name === 'stakeholders'
-                            ? Array.isArray(formData[field.name])
-                              ? (formData[field.name] as string[])
-                                  .map((s) =>
-                                    s
-                                      .replace(/\\"/g, '')
-                                      .replace(/^"|"$/g, '')
-                                      .replace(/^\[|\]$/g, '')
-                                      .replace(/\\/g, '')
-                                      .trim()
-                                  )
-                                  .join(', ')
-                              : String(formData[field.name] ?? '')
-                                  .replace(/\\"/g, '')
-                                  .replace(/^"|"$/g, '')
-                                  .replace(/^\[|\]$/g, '')
-                                  .replace(/\\/g, '')
-                                  .trim()
-                            : field.name === 'storage_mass_kt_per_year'
-                            ? formData.storage_mass_kt_per_year ?? ''
-                            : String(formData[field.name] ?? '')
-                        }
-                        onChange={handleInputChange}
-                        disabled={!isEditing}
-                        placeholder={field.placeholder}
-                        className={`w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 ${
-                          isEditing ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
-                        } text-black`}
-                      />
+                      {field.type === 'select' ? (
+                        <select
+                          name={field.name}
+                          value={formData[field.name] ?? ''}
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          className={`w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-black ${
+                            isEditing ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
+                          }`}
+                        >
+                          <option value="">
+                            {field.name === 'status' ? 'Select a status' : 'Select a project type'}
+                          </option>
+                          {field.name === 'status' && initialFeature?.status && !statusOptions.includes(initialFeature.status as StatusType) && (
+                            <option value={initialFeature.status}>{initialFeature.status}</option>
+                          )}
+                          {field.name === 'project_type' && initialFeature?.project_type && !projectTypeOptions.includes(initialFeature.project_type as StorageProjectTypeType) && (
+                            <option value={initialFeature.project_type}>{initialFeature.project_type}</option>
+                          )}
+                          {field.options?.map((option) => (
+                            <option key={option} value={option}>
+                              {option}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type={field.type}
+                          name={field.name}
+                          value={
+                            field.name === 'stakeholders'
+                              ? Array.isArray(formData[field.name]) ? (formData[field.name] as string[]).join(', ') : ''
+                              : field.name === 'storage_mass_kt_per_year'
+                              ? formData.storage_mass_kt_per_year ?? ''
+                              : String(formData[field.name as keyof StorageItem] ?? '')
+                          }
+                          onChange={handleInputChange}
+                          disabled={!isEditing}
+                          placeholder={field.placeholder}
+                          className={`w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-black ${
+                            isEditing ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
+                          }`}
+                        />
+                      )}
                     </div>
                   ))}
               </div>
@@ -398,60 +358,22 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-sm max-w-lg w-full">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
-              <svg
-                className="h-6 w-6 text-red-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
+              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
               </svg>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2">
-              Error Loading Data
-            </h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2">Error Loading Data</h2>
             <p className="text-gray-600 mb-6">{initialError}</p>
             <div className="flex flex-col sm:flex-row justify-center gap-3">
-              <button
-                onClick={() => router.push('/')}
-                className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
+              <button onClick={() => router.push('/')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
                 </svg>
                 Back to Map
               </button>
-              <button
-                onClick={() => router.push('/plant-list')}
-                className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 10h18M3 14h18m-18-8h18m-18 12h18"
-                  />
+              <button onClick={() => router.push('/plant-list')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-18-8h18m-18 12h18"/>
                 </svg>
                 Plant List
               </button>
@@ -474,35 +396,9 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
               Storage Project
             </p>
           </div>
-          <button
-            onClick={() => setIsEditing(!isEditing)}
-            className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${
-              isEditing
-                ? 'bg-green-600 text-white hover:bg-green-700'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            <svg
-              className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-45' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              {isEditing ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                />
-              )}
+          <button onClick={() => setIsEditing(!isEditing)} className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${isEditing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+            <svg className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-45' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {isEditing ? ( <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/> ) : ( <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>)}
             </svg>
             {isEditing ? 'Save' : 'Edit'}
           </button>
@@ -510,18 +406,8 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
 
         <div className="mb-6 p-4 bg-blue-50 rounded-md border border-blue-100">
           <div className="flex items-center">
-            <svg
-              className="w-5 h-5 text-blue-500 mr-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
+            <svg className="w-5 h-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
             <p className="text-blue-700 text-sm">
               {isEditing
@@ -535,63 +421,25 @@ const StorageForm = ({ initialFeature, initialError }: StorageFormProps) => {
           {renderFields()}
           <div className="flex flex-col sm:flex-row justify-between mt-6 pt-4 border-t border-gray-200 gap-4">
             <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={() => router.push('/')}
-                className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
+              <button type="button" onClick={() => router.push('/')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
                 </svg>
                 Back to Map
               </button>
-              <button
-                type="button"
-                onClick={() => router.push('/plant-list')}
-                className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M3 10h18M3 14h18m-18-8h18m-18 12h18"
-                  />
+              <button type="button" onClick={() => router.push('/plant-list')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
+                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-18-8h18m-18 12h18"/>
                 </svg>
                 Plant List
               </button>
             </div>
             {isEditing && (
               <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFormData(initialFormData);
-                    setIsEditing(false);
-                  }}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200 shadow-sm hover:shadow-md"
-                >
+                <button type="button" onClick={() => { setFormData(initialFormData); setIsEditing(false); }} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200 shadow-sm hover:shadow-md">
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md"
-                >
+                <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md">
                   Save Changes
                 </button>
               </div>

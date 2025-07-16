@@ -82,12 +82,12 @@ export interface CCUSItem {
   website: string | null;
   project_name: string | null;
   project_type: string | null;
-  stakeholders: string[] | null;
+  stakeholders: string | null;
   project_status: string | null;
   operation_date: string | null;
   product: string | null;
   technology_fate: string | null;
-  end_use_sector: string[] | null;
+  end_use_sector: string | null;
   capacity_unit: string | null;
   capacity_value: number | null;
   investment_capex: string | null;
@@ -95,7 +95,6 @@ export interface CCUSItem {
   latitude: number | null;
   longitude: number | null;
   type: string;
-  date_online: string | null;
 }
 
 // In lib/types2.ts
@@ -106,6 +105,7 @@ export interface PortItem {
   ref_id: string | null;
   name: string;
   project_name: string | null;
+  project_type: string | null;
   city: string | null;
   street: string | null;
   zip: string | null;
