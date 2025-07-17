@@ -617,7 +617,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
               </button>
               <button
                 type="button"
-                onClick={() => router.push('/plant-list')}
+                onClick={() => router.push('/plant-list?type=Production')}
                 className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 <svg
@@ -633,7 +633,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
                     d="M3 10h18M3 14h18m-18-8h18m-18 12h18"
                   />
                 </svg>
-                Plant List
+                Production Plant List
               </button>
             </div>
             {isEditing && (

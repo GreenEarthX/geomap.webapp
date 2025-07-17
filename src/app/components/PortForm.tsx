@@ -344,7 +344,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
                 Back to Map
               </button>
               <button
-                onClick={() => router.push('/port-list')}
+                onClick={() => router.push('/ports')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Port List
@@ -404,7 +404,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
               </button>
               <button
                 type="button"
-                onClick={() => router.push('/port-list')}
+                onClick={() => router.push('/ports')}
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
               >
                 Port List
