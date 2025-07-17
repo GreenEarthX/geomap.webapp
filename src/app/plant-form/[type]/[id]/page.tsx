@@ -21,9 +21,9 @@ export default async function PlantFormPage({ params }: PlantFormPageProps) {
   const { type, id } = await params; // Properly await params
   logger.info('PlantFormPage params', { type, id });
 
-  // Fetch data server-side with caching
+  // Fetch data server-side with caching from map app's own API
   const { feature: initialLeafletFeature, error: initialError } = await cachedFetch(
-    `http://localhost:3000/api/plant/${type}/${id}`
+    `http://localhost:3001/api/plant/${type}/${id}`
   );
   console.log('[PlantFormPage] Fetched feature from API:', JSON.stringify(initialLeafletFeature, null, 2));
 

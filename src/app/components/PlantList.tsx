@@ -77,7 +77,10 @@ export default function PlantList({ type, data, columns }: PlantListProps) {
     if (p.type === 'CCUS') {
       statusMatch = (p as CCUSItem).project_status ?? '';
       projectTypeMatch = (p as CCUSItem).project_type ?? '';
-      endUseMatch = (p as CCUSItem).end_use_sector?.join(', ') ?? '';
+      const endUseSector = (p as CCUSItem).end_use_sector;
+      endUseMatch = Array.isArray(endUseSector)
+        ? endUseSector.join(', ')
+        : (endUseSector ?? '');
     } else if (p.type === 'Production') {
       statusMatch = (p as ProductionItem).status ?? '';
       projectTypeMatch = (p as ProductionItem).project_type ?? '';
@@ -114,7 +117,10 @@ export default function PlantList({ type, data, columns }: PlantListProps) {
         }
         if (key === 'end_use') {
           if (p.properties.type === 'CCUS') {
-            return (p.properties as CCUSItem).end_use_sector?.join(', ') ?? '';
+            const endUseSector = (p.properties as CCUSItem).end_use_sector;
+            return Array.isArray(endUseSector)
+              ? endUseSector.join(', ')
+              : (endUseSector ?? '');
           } else if (p.properties.type === 'Production') {
             return (p.properties as ProductionItem).end_use?.join(', ') ?? '';
           }
