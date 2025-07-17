@@ -427,11 +427,11 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
                 </svg>
                 Back to Map
               </button>
-              <button type="button" onClick={() => router.push('/plant-list')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
+              <button type="button" onClick={() => router.push('/plant-list?type=Storage')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
                 <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-18-8h18m-18 12h18"/>
                 </svg>
-                Plant List
+                Storage Plant List
               </button>
             </div>
             {isEditing && (
