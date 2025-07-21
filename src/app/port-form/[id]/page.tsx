@@ -1,5 +1,6 @@
 import { PortItem } from '@/lib/types2';
 import PortForm from '@/app/components/PortForm';
+import AuthBridge from '@/app/components/AuthBridge';
 import { logger } from '@/lib/logger';
 import { STATUS_OPTIONS, PORT_PROJECT_TYPES_OPTIONS, PORT_PRODUCT_OPTIONS, PORT_TECHNOLOGY_OPTIONS } from '@/lib/lookupTables';
 import { ReactElement } from 'react';
@@ -59,14 +60,17 @@ export default async function PortFormPage({ params }: PortFormPageProps) {
   );
 
   return (
-    <PortForm
-      initialFeature={initialFeature}
-      initialError={initialError}
-      statusOptions={STATUS_OPTIONS}
-      statusTooltip={statusTooltip}
-      projectTypeOptions={PORT_PROJECT_TYPES_OPTIONS}
-      productTypeOptions={PORT_PRODUCT_OPTIONS} // Added productTypeOptions
-      technologyTypeOptions={PORT_TECHNOLOGY_OPTIONS}
-    />
+    <>
+      <AuthBridge />
+      <PortForm
+        initialFeature={initialFeature}
+        initialError={initialError}
+        statusOptions={STATUS_OPTIONS}
+        statusTooltip={statusTooltip}
+        projectTypeOptions={PORT_PROJECT_TYPES_OPTIONS}
+        productTypeOptions={PORT_PRODUCT_OPTIONS} // Added productTypeOptions
+        technologyTypeOptions={PORT_TECHNOLOGY_OPTIONS}
+      />
+    </>
   );
 }

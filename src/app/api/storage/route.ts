@@ -18,6 +18,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { internal_id, data } = body;
 
+    // Get user context from middleware
+    const userId = req.headers.get('x-user-id');
+    const userEmail = req.headers.get('x-user-email');
+    const userName = req.headers.get('x-user-name');
+
     // Validate input
     if (!internal_id || typeof internal_id !== 'string') {
       console.error('Invalid or missing internal_id', { internal_id });
@@ -28,9 +33,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid or missing data' }, { status: 400 });
     }
 
+    // Clean data - remove any audit fields that should be in columns
+    const cleanData = { ...data };
+    delete cleanData.modified_by;
+    delete cleanData.modified_by_id;
+    delete cleanData.modified_by_name;
+    delete cleanData.modified_at;
+    delete cleanData.created_by;
+    delete cleanData.created_by_name;
+    delete cleanData.created_at;
+
     // Ensure line_number is string | null
-    if (data.line_number !== undefined && data.line_number !== null && typeof data.line_number !== 'string') {
-      console.error('Invalid line_number type', { line_number: data.line_number });
+    if (cleanData.line_number !== undefined && cleanData.line_number !== null && typeof cleanData.line_number !== 'string') {
+      console.error('Invalid line_number type', { line_number: cleanData.line_number });
       return NextResponse.json({ error: 'line_number must be a string or null' }, { status: 400 });
     }
 
@@ -55,7 +70,7 @@ export async function POST(req: NextRequest) {
 
       const { file_link, tab, line, sector } = originalResult.rows[0];
 
-      // Insert new record with updated data
+      // Insert new record with updated data and audit columns
       const insertResult = await client.query(
         `
         INSERT INTO project_map (
@@ -66,16 +81,26 @@ export async function POST(req: NextRequest) {
           line,
           sector,
           created_at,
+          created_by,
+          created_by_name,
+          modified_by,
+          modified_by_name,
+          modified_at,
           active
         )
-        VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP,0)
+        VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, $7, $8, $9, $10, CURRENT_TIMESTAMP, 0)
         RETURNING id
         `,
-        [internal_id, data, file_link, tab || 'Storage', line, sector || 'Storage']
+        [internal_id, cleanData, file_link, tab || 'Storage', line, sector || 'Storage', userEmail, userName, userEmail, userName]
       );
 
       const newId = insertResult.rows[0].id;
-      console.log('New Storage record created', { id: newId, internal_id });
+      console.log('New Storage record created', { 
+        id: newId, 
+        internal_id, 
+        modifiedBy: userEmail,
+        timestamp: new Date().toISOString()
+      });
 
       return NextResponse.json({ id: newId }, { status: 201 });
     } finally {

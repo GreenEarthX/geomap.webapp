@@ -162,9 +162,17 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     }
 
     try {
+      const token = localStorage.getItem('geomap-auth-token');
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+      
       const deleteResponse = await fetch('/api/delete-project', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ internal_id: formData.internal_id }),
       });
       if (!deleteResponse.ok && deleteResponse.status !== 404) {
@@ -179,9 +187,17 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     const dataToSave = prepareDataForSave(formData, initialFeature);
 
     try {
+      const token = localStorage.getItem('geomap-auth-token');
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+      
       const createResponse = await fetch('/api/ports', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           internal_id: formData.internal_id,
           data: dataToSave,
