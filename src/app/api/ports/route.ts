@@ -175,9 +175,24 @@ export async function POST(req: NextRequest) {
   try {
     const { internal_id, data } = await req.json();
 
+    // Get user context from middleware
+    const userId = req.headers.get('x-user-id');
+    const userEmail = req.headers.get('x-user-email');
+    const userName = req.headers.get('x-user-name');
+
     if (!internal_id || !data) {
         return NextResponse.json({ error: 'Missing internal_id or data payload.' }, { status: 400 });
     }
+
+    // Clean data - remove any audit fields that should be in columns
+    const cleanData = { ...data };
+    delete cleanData.modified_by;
+    delete cleanData.modified_by_id;
+    delete cleanData.modified_by_name;
+    delete cleanData.modified_at;
+    delete cleanData.created_by;
+    delete cleanData.created_by_name;
+    delete cleanData.created_at;
 
     // Step 1: Fetch the required metadata from the latest existing record (active or inactive).
     const previousRecordQuery = `
@@ -203,7 +218,7 @@ export async function POST(req: NextRequest) {
 
         ({ file_link, tab, line } = previousRecordResult.rows[0]);
 
-        // Step 3: Insert the new record as the active version.
+        // Step 3: Insert the new record as the active version with audit columns.
         const insertQuery = `
           INSERT INTO project_map (
             internal_id,
@@ -212,18 +227,28 @@ export async function POST(req: NextRequest) {
             active,
             file_link,
             tab,
-            line
+            line,
+            created_at,
+            created_by,
+            created_by_name,
+            modified_by,
+            modified_by_name,
+            modified_at
           )
-          VALUES ($1, $2, 'Port', 0, $3, $4, $5)
+          VALUES ($1, $2, 'Port', 0, $3, $4, $5, CURRENT_TIMESTAMP, $6, $7, $8, $9, CURRENT_TIMESTAMP)
           RETURNING id;
         `;
 
         const values = [
             internal_id,
-            data, // The data is already an object, pool driver handles stringification
+            cleanData, // The cleaned data without audit fields
             file_link,
             tab,
             line,
+            userEmail,
+            userName,
+            userEmail,
+            userName,
         ];
 
         const result = await client.query(insertQuery, values);

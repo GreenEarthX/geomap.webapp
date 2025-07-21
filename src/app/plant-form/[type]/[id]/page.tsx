@@ -2,6 +2,7 @@ import { ReactElement } from 'react';
 import ProductionForm from '@/app/components/ProductionForm';
 import StorageForm from '@/app/components/StorageForm';
 import CCUSForm from '@/app/components/CCUSForm';
+import AuthBridge from '@/app/components/AuthBridge';
 import { logger } from '@/lib/logger';
 import { ProductionItem, StorageItem, CCUSItem } from '@/lib/types2';
 import { STATUS_OPTIONS, PRODUCER_PROJECT_TYPES_OPTIONS, STORAGE_PROJECT_TYPES_OPTIONS, CCUS_PROJECT_TYPES_OPTIONS, PRODUCER_END_USE_OPTIONS, CCUS_END_USE_OPTIONS, PRODUCER_PRODUCT_OPTIONS, CCUS_TECHNOLOGY_OPTIONS, PRODUCER_TECHNOLOGY_OPTIONS } from '@/lib/lookupTables';
@@ -23,7 +24,7 @@ export default async function PlantFormPage({ params }: PlantFormPageProps) {
 
   // Fetch data server-side with caching
   const { feature: initialLeafletFeature, error: initialError } = await cachedFetch(
-    `http://localhost:3000/api/plant/${type}/${id}`
+    `${process.env.NEXT_PUBLIC_GEOMAP_URL || 'http://localhost:3001'}/api/plant/${type}/${id}`
   );
   console.log('[PlantFormPage] Fetched feature from API:', JSON.stringify(initialLeafletFeature, null, 2));
 
@@ -205,38 +206,47 @@ export default async function PlantFormPage({ params }: PlantFormPageProps) {
   const sector = type.toLowerCase();
   if (sector === 'production') {
     return (
-      <ProductionForm
-        initialFeature={initialFeature as ProductionItem | null}
-        initialError={initialError}
-        statusOptions={STATUS_OPTIONS}
-        statusTooltip={statusTooltip}
-        projectTypeOptions={PRODUCER_PROJECT_TYPES_OPTIONS}
-        endUseOptions={PRODUCER_END_USE_OPTIONS}
-        productOptions={PRODUCER_PRODUCT_OPTIONS}
-        technologyTypeOptions={PRODUCER_TECHNOLOGY_OPTIONS}
-      />
+      <>
+        <AuthBridge />
+        <ProductionForm
+          initialFeature={initialFeature as ProductionItem | null}
+          initialError={initialError}
+          statusOptions={STATUS_OPTIONS}
+          statusTooltip={statusTooltip}
+          projectTypeOptions={PRODUCER_PROJECT_TYPES_OPTIONS}
+          endUseOptions={PRODUCER_END_USE_OPTIONS}
+          productOptions={PRODUCER_PRODUCT_OPTIONS}
+          technologyTypeOptions={PRODUCER_TECHNOLOGY_OPTIONS}
+        />
+      </>
     );
   } else if (sector === 'storage') {
     return (
-      <StorageForm
-        initialFeature={initialFeature as StorageItem | null}
-        initialError={initialError}
-        statusOptions={STATUS_OPTIONS}
-        statusTooltip={statusTooltip}
-        projectTypeOptions={STORAGE_PROJECT_TYPES_OPTIONS}
-      />
+      <>
+        <AuthBridge />
+        <StorageForm
+          initialFeature={initialFeature as StorageItem | null}
+          initialError={initialError}
+          statusOptions={STATUS_OPTIONS}
+          statusTooltip={statusTooltip}
+          projectTypeOptions={STORAGE_PROJECT_TYPES_OPTIONS}
+        />
+      </>
     );
   } else if (sector === 'ccus') {
     return (
-      <CCUSForm
-        initialFeature={initialFeature as CCUSItem | null}
-        initialError={initialError}
-        statusOptions={STATUS_OPTIONS}
-        statusTooltip={statusTooltip}
-        projectTypeOptions={CCUS_PROJECT_TYPES_OPTIONS}
-        endUseSectorOptions={CCUS_END_USE_OPTIONS}
-        technologyTypeOptions={CCUS_TECHNOLOGY_OPTIONS}
-      />
+      <>
+        <AuthBridge />
+        <CCUSForm
+          initialFeature={initialFeature as CCUSItem | null}
+          initialError={initialError}
+          statusOptions={STATUS_OPTIONS}
+          statusTooltip={statusTooltip}
+          projectTypeOptions={CCUS_PROJECT_TYPES_OPTIONS}
+          endUseSectorOptions={CCUS_END_USE_OPTIONS}
+          technologyTypeOptions={CCUS_TECHNOLOGY_OPTIONS}
+        />
+      </>
     );
   }
 

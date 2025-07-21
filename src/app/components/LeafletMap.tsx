@@ -16,6 +16,7 @@ import { addStorageMarkers } from '@/lib/map/addStorageMarkers';
 import { addCCUSMarkers } from '@/lib/map/addCCUSMarkers';
 import { addPortMarkers } from '@/lib/map/addPortMarkers';
 import { addPipelineMarkers } from '@/lib/map/addPipelineMarkers';
+import AuthBridge from './AuthBridge';
 
 // Define interface for /api/statuses response
 interface StatusesResponse {
@@ -76,6 +77,7 @@ const LeafletMap = () => {
   const [legendVisible, setLegendVisible] = useState(true);
   const [legendPinned, setLegendPinned] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const mapRef = useRef<L.Map | null>(null);
   const filterRef = useRef<HTMLDivElement>(null);
@@ -338,6 +340,11 @@ const LeafletMap = () => {
   return (
     <div className="relative w-full h-screen">
       <div id="map" className="w-full h-full z-0"></div>
+
+      {/* Authentication Bridge */}
+      <div className="fixed top-4 right-4 z-[1000] bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border p-2">
+        <AuthBridge onAuthChange={setIsAuthenticated} />
+      </div>
 
       <button onClick={toggleFilters} className="sm:hidden fixed top-4 right-16 z-[600] bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-md hover:bg-blue-700">
         <i className={`fas fa-${filtersVisible ? 'times' : 'filter'}`} />

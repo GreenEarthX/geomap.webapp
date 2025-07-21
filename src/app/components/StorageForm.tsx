@@ -183,9 +183,17 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
     };
 
     try {
+      const token = localStorage.getItem('geomap-auth-token');
+      if (!token) {
+        throw new Error('No authentication token found. Please log in again.');
+      }
+      
       const response = await fetch('/api/storage', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           internal_id: formData.internal_id,
           data: dataPayload,
