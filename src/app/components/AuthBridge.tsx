@@ -153,12 +153,32 @@ export default function AuthBridge({ onAuthChange }: AuthBridgeProps) {
     window.location.href = onboardingUrl;
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Remove tokens locally
     localStorage.removeItem('geomap-auth-token');
     localStorage.removeItem('geomap-refresh-token');
     setIsAuthenticated(false);
     setUser(null);
     onAuthChange?.(false);
+
+    // Call geomap logout endpoint which will handle onboarding logout and redirect
+    try {
+      const response = await fetch('/api/logout', {
+        method: 'POST',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.redirectUrl;
+      } else {
+        // Fallback: redirect directly to onboarding signout
+        window.location.href = `${process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000'}/api/auth/signout`;
+      }
+    } catch (err) {
+      console.error('Failed to call logout endpoint:', err);
+      // Fallback: redirect directly to onboarding signout
+      window.location.href = `${process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000'}/api/auth/signout`;
+    }
   };
 
   if (loading) {
