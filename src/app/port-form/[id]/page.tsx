@@ -17,7 +17,7 @@ export default async function PortFormPage({ params }: PortFormPageProps) {
   let initialError: string | null = null;
 
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     logger.info('Fetching port data from:', { url: `${apiUrl}/api/ports` });
 
     const response = await fetch(`${apiUrl}/api/ports`, {
@@ -33,7 +33,10 @@ export default async function PortFormPage({ params }: PortFormPageProps) {
       portIds: data.ports?.features.map((f: { properties: PortItem }) => f.properties.internal_id) || [],
     });
 
-    const feature = data.ports?.features.find((f: { properties: PortItem }) => f.properties.internal_id === id);
+    const feature = data.ports?.features.find(
+      (f: { properties: PortItem }) =>
+        (f.properties.internal_id || '').trim().toLowerCase() === (id || '').trim().toLowerCase()
+    );
 
     if (!feature) {
       logger.warn(`No port found with internal_id: ${id}`);

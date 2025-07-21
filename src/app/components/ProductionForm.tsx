@@ -195,10 +195,10 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
       status: {
         current_status: formData.status || null,
         date_online: formData.date_online || null,
-        coordinates: {
+      },
+      coordinates: {
           latitude: String(formData.latitude || 0),
           longitude: String(formData.longitude || 0),
-        },
       },
       project_type: formData.project_type || null,
       primary_product: formData.primary_product || null,
