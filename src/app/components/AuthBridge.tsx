@@ -161,24 +161,8 @@ export default function AuthBridge({ onAuthChange }: AuthBridgeProps) {
     setUser(null);
     onAuthChange?.(false);
 
-    // Call geomap logout endpoint which will handle onboarding logout and redirect
-    try {
-      const response = await fetch('/api/logout', {
-        method: 'POST',
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        window.location.href = data.redirectUrl;
-      } else {
-        // Fallback: redirect directly to onboarding signout
-        window.location.href = `${process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000'}/api/auth/signout`;
-      }
-    } catch (err) {
-      console.error('Failed to call logout endpoint:', err);
-      // Fallback: redirect directly to onboarding signout
-      window.location.href = `${process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000'}/api/auth/signout`;
-    }
+    // Redirect to NextAuth signout endpoint, which will clear session and then redirect back
+    window.location.href = 'http://localhost:3000/api/auth/signout?callbackUrl=http://localhost:3001';
   };
 
   if (loading) {
