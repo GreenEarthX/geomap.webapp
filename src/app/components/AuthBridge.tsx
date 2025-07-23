@@ -162,7 +162,9 @@ export default function AuthBridge({ onAuthChange }: AuthBridgeProps) {
     onAuthChange?.(false);
 
     // Redirect to NextAuth signout endpoint, which will clear session and then redirect back
-    window.location.href = 'http://localhost:3000/api/auth/signout?callbackUrl=http://localhost:3001';
+    const onboardingUrl = process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000';
+    const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL || 'http://localhost:3001';
+    window.location.href = `${onboardingUrl}/api/auth/signout?callbackUrl=${geomapUrl}`;
   };
 
   if (loading) {
