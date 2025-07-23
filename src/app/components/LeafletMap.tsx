@@ -64,7 +64,6 @@ const getUniqueNamesForDropdown = (features: GeoJSONFeatureCollection['features'
     return Array.from(new Set(names.map(name => name.toLowerCase()))).sort();
 }
 
-
 const LeafletMap = () => {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
@@ -80,7 +79,8 @@ const LeafletMap = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const mapRef = useRef<L.Map | null>(null);
-  const filterRef = useRef<HTMLDivElement>(null);
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const filterBarRef = useRef<HTMLDivElement>(null);
 
   const statusColorMap: Record<string, string> = {
     cancelled: 'red',
@@ -211,7 +211,6 @@ const LeafletMap = () => {
   const endUses = Array.from(new Set([...getUniqueValues(allData, 'end_use'), ...getUniqueValues(allData, 'end_use_sector')])).sort();
   const plantTypeValues = getUniqueValues(allData, 'type');
 
-
   useEffect(() => {
     if (!mapRef.current || !selectedPlantName) return;
 
@@ -327,72 +326,93 @@ const LeafletMap = () => {
   const toggleLegendPin = () => setLegendPinned(prev => !prev);
   const toggleFilters = () => setFiltersVisible(prev => !prev);
 
+  // Hide filter bar when clicking outside or on the icon again
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
-      if (window.innerWidth < 640 && filterRef.current && !filterRef.current.contains(e.target as Node)) {
+      if (
+        filtersVisible &&
+        !filterButtonRef.current?.contains(e.target as Node) &&
+        !filterBarRef.current?.contains(e.target as Node)
+      ) {
         setFiltersVisible(false);
       }
     };
     document.addEventListener('mousedown', handleOutsideClick);
     return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, []);
+  }, [filtersVisible]);
 
   return (
     <div className="relative w-full h-screen">
       <div id="map" className="w-full h-full z-0"></div>
 
-      {/* Authentication Bridge */}
-      <div className="fixed top-4 right-4 z-[1000] bg-white/90 backdrop-blur-sm rounded-lg shadow-lg border p-2">
-        <AuthBridge onAuthChange={setIsAuthenticated} />
+      {/* Filter icon and layer button in a row, filter left of layer, same line */}
+      <div className="leaflet-top leaflet-right z-[700] flex flex-row items-start gap-2" style={{ position: 'fixed', top: 58, right: 55, height: 45 }}>
+        {/* Filter button on the left */}
+        <div className="leaflet-control leaflet-bar bg-white shadow border border-gray-200 flex items-center justify-center" style={{ width: 45, height: 45, cursor: 'pointer' }}>
+          <button
+            onClick={toggleFilters}
+            ref={filterButtonRef}
+            className="w-full h-full flex items-center justify-center text-base text-black hover:bg-gray-100 focus:outline-none"
+            title="Show Filters"
+            aria-label="Show Filters"
+            style={{ background: 'none', border: 'none', padding: 0 }}
+          >
+            <i className={`fas fa-filter${filtersVisible ? ' text-blue-700' : ''}`} />
+          </button>
+        </div>
+        {/* The actual layer button will appear to the right, as rendered by Leaflet */}
       </div>
 
-      <button onClick={toggleFilters} className="sm:hidden fixed top-4 right-16 z-[600] bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-md hover:bg-blue-700">
-        <i className={`fas fa-${filtersVisible ? 'times' : 'filter'}`} />
-      </button>
-      
-      <div ref={filterRef} className={`fixed top-0 left-1/2 -translate-x-1/2 w-11/12 max-w-5xl z-[500] flex flex-col sm:flex-row sm:flex-wrap sm:justify-center gap-2 p-2 bg-[rgba(255,255,255,0.8)] backdrop-blur-sm text-black rounded-b-lg shadow-md transition-all duration-300 ease-in-out ${filtersVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 sm:translate-y-0 sm:opacity-100'}`}>
-        <input type="text" placeholder="Search all fields..." value={search} onChange={(e) => setSearch(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:flex-grow sm:basis-48" />
-        <select value={selectedPlantName} onChange={handlePlantNameChange} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:flex-grow-[2] sm:basis-60">
-          <option value="">Filter by Project Name</option>
-          {uniquePlantNames.map((name) => (
-            <option key={name} value={name}>
-              {name.replace(/\b\w/g, l => l.toUpperCase())}
-            </option>
-          ))}
-        </select>
-        <select value={selectedCountry} onChange={handleCountryChange} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:flex-grow sm:basis-40">
-          <option value="">Country</option>
-          {countries.map((country) => (
-            <option key={country} value={country}>
-              {country.replace(/\b\w/g, l => l.toUpperCase())}
-            </option>
-          ))}
-        </select>
-        <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:flex-grow sm:basis-40">
-          <option value="">Status</option>
-          {statuses.map((statusOption) => (
-            <option key={statusOption} value={statusOption}>
-              {statusOption.replace(/\b\w/g, l => l.toUpperCase())}
-            </option>
-          ))}
-        </select>
-        <select value={endUse} onChange={(e) => setEndUse(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:flex-grow sm:basis-40">
-          <option value="">End Use</option>
-          {endUses.map((endUseOption) => (
-            <option key={endUseOption} value={endUseOption}>
-              {endUseOption.replace(/\b\w/g, l => l.toUpperCase())}
-            </option>
-          ))}
-        </select>
-        <select value={plantType} onChange={(e) => setPlantType(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:flex-grow sm:basis-40">
-          <option value="">Sector</option>
-          {plantTypeValues.map((typeOption) => (
-            <option key={typeOption} value={typeOption}>
-              {typeOption.replace(/\b\w/g, l => l.toUpperCase())}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Filter bar: single horizontal line, scrollable on mobile, below the filter icon */}
+      {filtersVisible && (
+        <div
+          ref={filterBarRef}
+          className="fixed left-1/2 -translate-x-1/2 z-[650] flex flex-row flex-nowrap items-center gap-2 px-2 py-2 pt-0 bg-[rgba(255,255,255,0.97)] backdrop-blur text-black rounded-lg shadow border border-gray-200 overflow-x-auto"
+          style={{ top: 60, width: '100%', maxWidth: '64rem', minHeight: 60 }}
+        >
+          <input type="text" placeholder="Search all fields..." value={search} onChange={(e) => setSearch(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px] max-w-[180px]" />
+          <select value={selectedPlantName} onChange={handlePlantNameChange} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[160px] max-w-[200px]">
+            <option value="">Filter by Project Name</option>
+            {uniquePlantNames.map((name) => (
+              <option key={name} value={name}>
+                {name.replace(/\b\w/g, l => l.toUpperCase())}
+              </option>
+            ))}
+          </select>
+          <select value={selectedCountry} onChange={handleCountryChange} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[120px] max-w-[160px]">
+            <option value="">Country</option>
+            {countries.map((country) => (
+              <option key={country} value={country}>
+                {country.replace(/\b\w/g, l => l.toUpperCase())}
+              </option>
+            ))}
+          </select>
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[110px] max-w-[140px]">
+            <option value="">Status</option>
+            {statuses.map((statusOption) => (
+              <option key={statusOption} value={statusOption}>
+                {statusOption.replace(/\b\w/g, l => l.toUpperCase())}
+              </option>
+            ))}
+          </select>
+          <select value={endUse} onChange={(e) => setEndUse(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[110px] max-w-[140px]">
+            <option value="">End Use</option>
+            {endUses.map((endUseOption) => (
+              <option key={endUseOption} value={endUseOption}>
+                {endUseOption.replace(/\b\w/g, l => l.toUpperCase())}
+              </option>
+            ))}
+          </select>
+          <select value={plantType} onChange={(e) => setPlantType(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[110px] max-w-[140px]">
+            <option value="">Sector</option>
+            {plantTypeValues.map((typeOption) => (
+              <option key={typeOption} value={typeOption}>
+                {typeOption.replace(/\b\w/g, l => l.toUpperCase())}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className={`fixed bottom-4 left-4 w-52 p-3 bg-white border-2 border-gray-300 rounded shadow-md z-[600] text-black text-xs transition-all duration-300 ${legendPinned || legendVisible ? 'opacity-100' : 'opacity-0'}`} onMouseEnter={() => setLegendVisible(true)} onMouseLeave={() => !legendPinned && setLegendVisible(false)}>
         <div className="flex justify-between items-center text-black">

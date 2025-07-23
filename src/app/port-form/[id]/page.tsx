@@ -1,6 +1,6 @@
 import { PortItem } from '@/lib/types2';
 import PortForm from '@/app/components/PortForm';
-import AuthBridge from '@/app/components/AuthBridge';
+// import AuthBridge from '@/app/components/AuthBridge';
 import { logger } from '@/lib/logger';
 import { STATUS_OPTIONS, PORT_PROJECT_TYPES_OPTIONS, PORT_PRODUCT_OPTIONS, PORT_TECHNOLOGY_OPTIONS } from '@/lib/lookupTables';
 import { ReactElement } from 'react';
@@ -64,7 +64,7 @@ export default async function PortFormPage({ params }: PortFormPageProps) {
 
   return (
     <>
-      <AuthBridge />
+      {/* <AuthBridge /> removed, now in layout */}
       <PortForm
         initialFeature={initialFeature}
         initialError={initialError}
