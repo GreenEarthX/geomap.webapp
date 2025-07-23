@@ -16,7 +16,7 @@ interface FieldConfig {
   options?: ReadonlyArray<string>;
 }
 
-type SectionTitle = 'General Information' | 'Location' | 'Project Details' | 'Capacity' | 'Contact Information';
+type SectionTitle = 'General Information' | 'Location' | 'Specific Information' | 'Capacity' | 'Contact Information';
 
 interface SectionConfig {
   title: SectionTitle;
@@ -41,7 +41,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
   const [openSections, setOpenSections] = useState<Record<SectionTitle, boolean>>({
     'General Information': true,
     'Location': true,
-    'Project Details': true,
+    'Specific Information': true,
     'Capacity': true,
     'Contact Information': true,
   });
@@ -195,10 +195,10 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
       status: {
         current_status: formData.status || null,
         date_online: formData.date_online || null,
-        coordinates: {
+      },
+      coordinates: {
           latitude: String(formData.latitude || 0),
           longitude: String(formData.longitude || 0),
-        },
       },
       project_type: formData.project_type || null,
       primary_product: formData.primary_product || null,
@@ -290,23 +290,19 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
     const sections: SectionConfig[] = [
       {
         title: 'General Information',
-        fields: ['name', 'project_name', 'owner', 'project_type', 'primary_product', 'secondary_product'],
+        fields: ['name', 'project_name', 'owner', 'stakeholders', 'project_type', 'technology', 'primary_product', 'secondary_product', 'end_use',  'website_url' ],
+      },
+      {
+        title: 'Contact Information',
+        fields: ['contact_name', 'email'],
       },
       {
         title: 'Location',
         fields: ['country', 'city', 'street', 'zip'],
       },
       {
-        title: 'Project Details',
-        fields: ['technology', 'status', 'date_online'],
-      },
-      {
-        title: 'Capacity',
-        fields: ['capacity', 'end_use', 'investment_capex'],
-      },
-      {
-        title: 'Contact Information',
-        fields: ['stakeholders', 'contact_name', 'email', 'website_url'],
+        title: 'Specific Information',
+        fields: ['status', 'date_online', 'capacity', 'investment_capex'],
       },
     ];
 

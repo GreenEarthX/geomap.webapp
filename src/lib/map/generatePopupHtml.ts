@@ -269,37 +269,64 @@ export const generatePopupHtml = (
   // =========== BEGIN MODIFICATION ===========
   
   let verifyUrl = '';
-  // Use 'internal_id' from props for routing, as requested.
-  const internalId = 'internal_id' in props ? props.internal_id : null; 
+  const internalId = 'internal_id' in props ? props.internal_id : null;
+  let formPath = '';
 
   if (internalId) {
     switch (type) {
       case 'Production':
-        verifyUrl = `/plant-form/production/${internalId}`;
+        formPath = `/plant-form/production/${internalId}`;
         break;
       case 'Storage':
-        verifyUrl = `/plant-form/storage/${internalId}`;
+        formPath = `/plant-form/storage/${internalId}`;
         break;
       case 'CCUS':
-        verifyUrl = `/plant-form/ccus/${internalId}`;
+        formPath = `/plant-form/ccus/${internalId}`;
         break;
       case 'Port':
-        verifyUrl = `/port-form/${internalId}`;
+        formPath = `/port-form/${internalId}`;
         break;
-      // No verify button for Pipeline by default
     }
+    // Always use geomap-redirect endpoint for authentication and token injection
+    verifyUrl = `http://localhost:3000/api/auth/geomap-redirect?redirect=${encodeURIComponent(`http://localhost:3001${formPath}`)}`;
   }
 
+  const loginUrl = `http://localhost:3000/auth/authenticate?redirect=${encodeURIComponent('http://localhost:3001' + formPath)}`;
   const verifyButton = verifyUrl
-    ? `
-        <button
-          onclick="event.stopPropagation(); window.open('${verifyUrl}', '_blank')"
-          class="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 w-full"
-          aria-label="Verify ${'project_name' in props ? props.project_name : type.toLowerCase()} details"
-        >
-          Verify
-        </button>
-      `
+    ? (() => {
+        // Synchronously check token before rendering button
+        let isAuthenticated = false;
+        try {
+          const token = typeof window !== 'undefined' ? window.localStorage.getItem('geomap-auth-token') : null;
+          if (token) {
+            try {
+              JSON.parse(atob(token.split('.')[1]));
+              isAuthenticated = true;
+            } catch (e) { isAuthenticated = false; }
+          }
+        } catch (e) { isAuthenticated = false; }
+        const label = isAuthenticated ? 'Verify' : 'Login to verify';
+        return `
+          <script>
+            window.isTokenValid = function() {
+              const token = localStorage.getItem('geomap-auth-token');
+              if (!token) return false;
+              try {
+                JSON.parse(atob(token.split('.')[1]));
+                return true;
+              } catch (e) { return false; }
+            };
+          </script>
+          <button
+            id="verify-btn-uniq"
+            onclick="event.stopPropagation(); if (window.isTokenValid && window.isTokenValid()) { window.open('${verifyUrl}', '_blank'); } else { window.open('${loginUrl}', '_blank'); }"
+            class="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 w-full"
+            aria-label="Verify or Login"
+          >
+            <span id='verify-btn-label-uniq'>${label}</span>
+          </button>
+        `;
+      })()
     : `
         <span class="mt-2 block text-center text-red-500 text-xs" aria-label="No ID available">
           No ID available for verification

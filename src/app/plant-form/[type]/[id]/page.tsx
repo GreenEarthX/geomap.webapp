@@ -2,7 +2,7 @@ import { ReactElement } from 'react';
 import ProductionForm from '@/app/components/ProductionForm';
 import StorageForm from '@/app/components/StorageForm';
 import CCUSForm from '@/app/components/CCUSForm';
-import AuthBridge from '@/app/components/AuthBridge';
+// import AuthBridge from '@/app/components/AuthBridge';
 import { logger } from '@/lib/logger';
 import { ProductionItem, StorageItem, CCUSItem } from '@/lib/types2';
 import { STATUS_OPTIONS, PRODUCER_PROJECT_TYPES_OPTIONS, STORAGE_PROJECT_TYPES_OPTIONS, CCUS_PROJECT_TYPES_OPTIONS, PRODUCER_END_USE_OPTIONS, CCUS_END_USE_OPTIONS, PRODUCER_PRODUCT_OPTIONS, CCUS_TECHNOLOGY_OPTIONS, PRODUCER_TECHNOLOGY_OPTIONS } from '@/lib/lookupTables';
@@ -208,7 +208,7 @@ export default async function PlantFormPage({ params }: PlantFormPageProps) {
   if (sector === 'production') {
     return (
       <>
-        <AuthBridge />
+        {/* <AuthBridge /> removed, now in layout */}
         <ProductionForm
           initialFeature={initialFeature as ProductionItem | null}
           initialError={initialError}
@@ -224,7 +224,7 @@ export default async function PlantFormPage({ params }: PlantFormPageProps) {
   } else if (sector === 'storage') {
     return (
       <>
-        <AuthBridge />
+        {/* <AuthBridge /> removed, now in layout */}
         <StorageForm
           initialFeature={initialFeature as StorageItem | null}
           initialError={initialError}
@@ -237,7 +237,7 @@ export default async function PlantFormPage({ params }: PlantFormPageProps) {
   } else if (sector === 'ccus') {
     return (
       <>
-        <AuthBridge />
+        {/* <AuthBridge /> removed, now in layout */}
         <CCUSForm
           initialFeature={initialFeature as CCUSItem | null}
           initialError={initialError}
