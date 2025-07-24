@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ReactElement } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { PortItem } from '@/lib/types2'; // Make sure this import path is correct
@@ -100,6 +100,11 @@ export default function PortListPage() {
         <h1 className="text-2xl md:text-3xl font-bold text-blue-600 mt-2">
           GEX Port Database
         </h1>
+      </div>
+
+      {/* Sector Switcher Added Here */}
+      <div className="max-w-7xl mx-auto px-4 md:px-0">
+          <SectorSwitcher currentType={'ports'} />
       </div>
 
       {/* Search and Filters */}
@@ -241,3 +246,55 @@ const SelectBox: React.FC<SelectBoxProps> = ({ label, options, value, onChange }
     ))}
   </select>
 );
+
+// --- SectorSwitcher Component Definition ---
+
+const SECTORS = [
+  { value: 'all', label: 'All Plants' },
+  { value: 'Production', label: 'Production Plants' },
+  { value: 'CCUS', label: 'CCUS Plants' },
+  { value: 'Storage', label: 'Storage Plants' },
+  { value: 'ports', label: 'Ports' },
+];
+
+interface SectorSwitcherProps {
+  currentType: string | null;
+}
+
+function SectorSwitcher({ currentType }: SectorSwitcherProps): ReactElement {
+  const router = useRouter();
+
+  const handleSectorChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedValue = event.target.value;
+
+    if (selectedValue === 'all') {
+      router.push('/plant-list');
+    } else if (selectedValue === 'ports') {
+      router.push('/ports');
+    } else {
+      router.push(`/plant-list?type=${selectedValue}`);
+    }
+  };
+
+  const selectedValue = currentType || 'all';
+
+  return (
+    <div className="p-4 bg-white rounded-lg shadow-sm mb-8">
+      <label htmlFor="sector-switcher" className="block text-md font-semibold text-gray-800 mb-2">
+        Filter by Sector Type
+      </label>
+      <select
+        id="sector-switcher"
+        onChange={handleSectorChange}
+        value={selectedValue}
+        className="w-full p-3 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        {SECTORS.map((sector) => (
+          <option key={sector.value} value={sector.value}>
+            {sector.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}

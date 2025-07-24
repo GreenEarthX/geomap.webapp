@@ -1,6 +1,16 @@
 import { ProductionItem, StorageItem, CCUSItem, PortItem, PipelineItem, CCUSReference } from '@/lib/types2';
 
-const formatFieldName = (key: string): string => {
+const displayNameMap: Partial<Record<'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline', Record<string, string>>> = {
+  Production: {
+    name: 'Plant Name',
+  },
+};
+
+const formatFieldName = (key: string, type: 'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline'): string => {
+  const customName = displayNameMap[type]?.[key];
+  if (customName) {
+    return customName;
+  }
   return key
     .split('_')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -260,7 +270,7 @@ export const generatePopupHtml = (
   const popupContent = allEntries
     .map(([key, value]) => {
       return `
-        <b class="font-semibold text-gray-800 text-xs">${formatFieldName(key)}:</b>
+        <b class="font-semibold text-gray-800 text-xs">${formatFieldName(key, type)}:</b>
         <span class="text-gray-600 text-xs">${formatValue(value)}</span>
       `;
     })

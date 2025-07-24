@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ReactElement } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -15,14 +15,13 @@ interface Feature {
     internal_id?: string;
     name?: string;
     status?: string;
-    type?: string; // This property is key for the fix
+    type?: string; // This property is key for filtering
     capacity_mw?: number | null;
     end_use?: string;
     start_year?: number | null;
     country?: string;
     process?: string;
-    // Add any other potential properties from your different data types
-    project_name?: string; 
+    project_name?: string;
   };
 }
 
@@ -55,7 +54,6 @@ export default function PlantListPage() {
         if (typeParam === 'CCUS') {
           combined = data.ccus?.features ?? [];
         } else if (typeParam === 'Production' || typeParam === 'Storage' || typeParam === 'Port') {
-          // Assuming 'hydrogen' and 'ports' are the sources
           const allFeatures = [
             ...(data.hydrogen?.features ?? []),
             ...(data.ports?.features ?? [])
@@ -64,12 +62,10 @@ export default function PlantListPage() {
             (f: Feature) => f.properties.type === typeParam
           );
         } else {
-          // This case handles when NO typeParam is present (shows all)
           combined = [
             ...(data.hydrogen?.features ?? []),
             ...(data.ccus?.features ?? []),
             ...(data.ports?.features ?? []),
-            // Add any other data sources here
           ];
         }
         setPlantList(combined);
@@ -104,12 +100,9 @@ export default function PlantListPage() {
     ),
   ].sort();
 
-  // ✅ FIXED: Now accepts the specific plant's type
   const handleVerify = (internal_id?: string, plantType?: string) => {
     if (!internal_id || !plantType) return;
-
-    // ✅ FIXED: Uses the passed-in plantType, not the URL's typeParam
-    const type = plantType.toLowerCase(); 
+    const type = plantType.toLowerCase();
 
     switch (type) {
         case 'production':
@@ -145,6 +138,10 @@ export default function PlantListPage() {
         <h1 className="text-2xl md:text-3xl font-bold text-blue-600 mt-2">
           GEX Database
         </h1>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 md:px-0">
+          <SectorSwitcher currentType={typeParam} />
       </div>
 
       <div className="max-w-7xl mx-auto bg-white rounded-lg shadow-sm p-4 md:p-6 mb-8">
@@ -237,7 +234,6 @@ export default function PlantListPage() {
                   <td className="px-4 py-3 text-sm sticky right-0 bg-white z-10">
                     <button
                       className="px-3 py-1.5 border border-blue-600 text-blue-600 rounded-full text-sm hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      // ✅ FIXED: Pass the specific plant type to the handler
                       onClick={() => handleVerify(p.properties.internal_id, p.properties.type)}
                       disabled={!p.properties.internal_id || !p.properties.type}
                     >
@@ -305,3 +301,57 @@ const SelectBox: React.FC<SelectBoxProps> = ({ label, options, value, onChange }
     ))}
   </select>
 );
+
+// --- SectorSwitcher Component Definition ---
+
+const SECTORS = [
+  { value: 'all', label: 'All Plants' },
+  { value: 'Production', label: 'Production Plants' },
+  { value: 'CCUS', label: 'CCUS Plants' },
+  { value: 'Storage', label: 'Storage Plants' },
+  { value: 'ports', label: 'Ports' }, // Corrected value for ports
+];
+
+interface SectorSwitcherProps {
+  currentType: string | null;
+}
+
+function SectorSwitcher({ currentType }: SectorSwitcherProps): ReactElement {
+  const router = useRouter();
+
+  const handleSectorChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedValue = event.target.value;
+
+    if (selectedValue === 'all') {
+      router.push('/plant-list');
+    } else if (selectedValue === 'ports') {
+      // ✅ Corrected: Navigates to the dedicated /ports page
+      router.push('/ports');
+    } else {
+      router.push(`/plant-list?type=${selectedValue}`);
+    }
+  };
+
+  // If the user is on /plant-list without a type, it's 'all'
+  const selectedValue = currentType || 'all';
+
+  return (
+    <div className="p-4 bg-white rounded-lg shadow-sm mb-8">
+      <label htmlFor="sector-switcher" className="block text-md font-semibold text-gray-800 mb-2">
+        Filter by Sector Type
+      </label>
+      <select
+        id="sector-switcher"
+        onChange={handleSectorChange}
+        value={selectedValue}
+        className="w-full p-3 bg-gray-50 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        {SECTORS.map((sector) => (
+          <option key={sector.value} value={sector.value}>
+            {sector.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}

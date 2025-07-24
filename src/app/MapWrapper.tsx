@@ -13,11 +13,25 @@ export default function MapWrapper() {
   const [isClient, setIsClient] = useState(false);
   const [showMap, setShowMap] = useState(false);
 
+  
+
   useEffect(() => {
     setIsClient(true); // ensures we are on the client
     const timer = setTimeout(() => setShowMap(true), 1000);
     return () => clearTimeout(timer);
   }, []);
+  
+
+  // ✅ Add this useEffect to control scrolling
+  useEffect(() => {
+    // When this component mounts, hide the body's scrollbar
+    document.body.style.overflow = 'hidden';
+
+    // When the component unmounts, restore the scrollbar
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []); // The empty dependency array ensures this runs only once on mount and unmount
 
   if (!isClient) return null; // prevent server-side render entirely
 

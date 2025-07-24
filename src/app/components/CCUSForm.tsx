@@ -16,7 +16,7 @@ interface FieldConfig {
   options?: ReadonlyArray<string>;
 }
 
-type SectionTitle = 'General Information' | 'Location' | 'Project Details' | 'Capacity' | 'Contact Information';
+type SectionTitle = 'General Information' | 'Location' | 'Specific Information' | 'Contact Information';
 
 interface SectionConfig {
   title: SectionTitle;
@@ -40,8 +40,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
   const [openSections, setOpenSections] = useState<Record<SectionTitle, boolean>>({
     'General Information': true,
     'Location': true,
-    'Project Details': true,
-    'Capacity': true,
+    'Specific Information': true,
     'Contact Information': true,
   });
 
@@ -227,23 +226,19 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     const sections: SectionConfig[] = [
       {
         title: 'General Information',
-        fields: ['name', 'project_name', 'owner', 'project_type', 'product'],
+        fields: ['name', 'project_name', 'owner', 'stakeholders', 'project_type', 'technology_fate', 'product', 'end_use_sector', 'website'],
+      },
+      {
+        title: 'Contact Information',
+        fields: [ 'contact', 'email'],
       },
       {
         title: 'Location',
         fields: ['country', 'city', 'street', 'zip'],
       },
       {
-        title: 'Project Details',
-        fields: ['technology_fate', 'project_status', 'operation_date'],
-      },
-      {
-        title: 'Capacity',
-        fields: ['capacity', 'end_use_sector', 'investment_capex'],
-      },
-      {
-        title: 'Contact Information',
-        fields: ['stakeholders', 'contact', 'email', 'website'],
+        title: 'Specific Information',
+        fields: [ 'project_status', 'operation_date', 'capacity',  'investment_capex'],
       },
     ];
 

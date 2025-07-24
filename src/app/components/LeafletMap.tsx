@@ -342,11 +342,11 @@ const LeafletMap = () => {
   }, [filtersVisible]);
 
   return (
-    <div className="relative w-full h-screen">
-      <div id="map" className="w-full h-full z-0"></div>
+    <div className=" w-full h-screen">
+      <div id="map" className="w-full h-full"></div>
 
       {/* Filter icon and layer button in a row, filter left of layer, same line */}
-      <div className="leaflet-top leaflet-right z-[700] flex flex-row items-start gap-2" style={{ position: 'fixed', top: 58, right: 55, height: 45 }}>
+      <div className="leaflet-top leaflet-right z-[999] flex flex-row items-start gap-2" style={{ position: 'absolute', top: 58, right: 55, height: 45 }}>
         {/* Filter button on the left */}
         <div className="leaflet-control leaflet-bar bg-white shadow border border-gray-200 flex items-center justify-center" style={{ width: 45, height: 45, cursor: 'pointer' }}>
           <button
@@ -372,7 +372,7 @@ const LeafletMap = () => {
         >
           <input type="text" placeholder="Search all fields..." value={search} onChange={(e) => setSearch(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px] max-w-[180px]" />
           <select value={selectedPlantName} onChange={handlePlantNameChange} className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[160px] max-w-[200px]">
-            <option value="">Filter by Project Name</option>
+            <option value="">Project List</option>
             {uniquePlantNames.map((name) => (
               <option key={name} value={name}>
                 {name.replace(/\b\w/g, l => l.toUpperCase())}

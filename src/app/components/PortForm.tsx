@@ -28,7 +28,7 @@ interface FieldConfig {
   options?: ReadonlyArray<string>;
 }
 
-type SectionTitle = 'General Information' | 'Location' | 'Contact Information' | 'Project Details' | 'Capacity & Investment';
+type SectionTitle = 'General Information' | 'Location' | 'Contact Information' | 'Specific Information' | 'Capacity & Investment';
 
 interface SectionConfig {
   title: SectionTitle;
@@ -97,7 +97,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     'General Information': true,
     'Location': true,
     'Contact Information': true,
-    'Project Details': true,
+    'Specific Information': true,
     'Capacity & Investment': true,
   });
 
@@ -255,11 +255,10 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     ];
 
     const sections: SectionConfig[] = [
-      { title: 'General Information', fields: ['project_name', 'project_type', 'port_code', 'partners', 'stakeholders'] },
+      { title: 'General Information', fields: ['project_name', 'project_type', 'technology_type', 'port_code',  'product_type', 'partners', 'stakeholders', 'website_url'] },
+      { title: 'Contact Information', fields: ['contact_name', 'email'] },
       { title: 'Location', fields: ['country', 'city', 'street', 'zip'] },
-      { title: 'Contact Information', fields: ['contact_name', 'email', 'website_url'] },
-      { title: 'Project Details', fields: ['status', 'product_type', 'technology_type', 'trade_type'] },
-      { title: 'Capacity & Investment', fields: ['capacity_value', 'capacity_unit', 'storage_capacity_value', 'storage_capacity_unit', 'investmentString'] },
+      { title: 'Specific Information', fields: ['status',  'trade_type', 'capacity_value', 'capacity_unit', 'storage_capacity_value', 'storage_capacity_unit', 'investmentString'] },
     ];
 
     return (

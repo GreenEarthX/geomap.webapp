@@ -36,7 +36,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
     'General Information': true,
     'Location': true,
-    'Project Details': true,
+    'Specific Information': true,
     'Storage Capacity': true,
     'Contact Information': true,
   });
@@ -255,24 +255,21 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
     const sections: SectionConfig[] = [
       {
         title: 'General Information',
-        fields: ['project_name', 'project_type', 'owner', 'stakeholders'],
+        fields: ['project_name', 'project_type', 'owner', 'stakeholders', 'primary_product', 'website_url'],
+      },
+      {
+        title: 'Contact Information',
+        fields: ['contact_name', 'email'],
       },
       {
         title: 'Location',
         fields: ['country', 'city', 'street', 'zip'],
       },
       {
-        title: 'Project Details',
-        fields: ['status', 'date_online', 'primary_product'],
+        title: 'Specific Information',
+        fields: ['status', 'date_online', 'storage_mass_kt_per_year'],
       },
-      {
-        title: 'Storage Capacity',
-        fields: ['storage_mass_kt_per_year'],
-      },
-      {
-        title: 'Contact Information',
-        fields: ['contact_name', 'email', 'website_url'],
-      },
+      
     ];
 
     // JSX rendering logic for fields, now with conditional for select dropdown
