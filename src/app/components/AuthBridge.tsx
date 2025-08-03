@@ -149,8 +149,13 @@ export default function AuthBridge({ onAuthChange }: AuthBridgeProps) {
   };
 
   const handleLogin = () => {
-    const onboardingUrl = `${process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000'}/auth/authenticate?redirect=${encodeURIComponent(window.location.href)}`;
-    window.location.href = onboardingUrl;
+    const onboardingUrl = process.env.NEXT_PUBLIC_ONBOARDING_URL;
+    if (!onboardingUrl) {
+      console.error('NEXT_PUBLIC_ONBOARDING_URL environment variable is not set');
+      return;
+    }
+    const redirectUrl = `${onboardingUrl}/auth/authenticate?redirect=${encodeURIComponent(window.location.href)}`;
+    window.location.href = redirectUrl;
   };
 
   const handleLogout = async () => {
@@ -162,8 +167,14 @@ export default function AuthBridge({ onAuthChange }: AuthBridgeProps) {
     onAuthChange?.(false);
 
     // Redirect to NextAuth signout endpoint, which will clear session and then redirect back
-    const onboardingUrl = process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000';
-    const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL || 'http://localhost:3001';
+    const onboardingUrl = process.env.NEXT_PUBLIC_ONBOARDING_URL;
+    const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL;
+    
+    if (!onboardingUrl || !geomapUrl) {
+      console.error('Environment variables NEXT_PUBLIC_ONBOARDING_URL or NEXT_PUBLIC_GEOMAP_URL are not set');
+      return;
+    }
+    
     window.location.href = `${onboardingUrl}/api/auth/signout?callbackUrl=${geomapUrl}`;
   };
 
