@@ -1,19 +1,24 @@
-# Simple Dockerfile for Geomap App
-FROM node:22-alpine
+# Dockerfile in geomap.webapp
+FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package files and install ALL dependencies (including dev deps for build)
+# Copy package files
 COPY package*.json ./
-RUN npm install
 
-# Copy source code
-COPY . .
+# Install dependencies
+RUN npm ci --only=production
 
-# Build the application
-RUN npm run build
+# Copy built application (standalone output)
+COPY .next/standalone ./
+COPY .next/static ./.next/static
+COPY public ./public
 
 EXPOSE 3000
 
-# Just use npm start - simple!
-CMD ["npm", "start"]
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
+
+
+# ✅ Fix: Use standalone server instead of npm start
+CMD ["node", "server.js"]
