@@ -101,27 +101,33 @@ export default function PlantListPage() {
   ].sort();
 
   const handleVerify = (internal_id?: string, plantType?: string) => {
-    if (!internal_id || !plantType) return;
-    const type = plantType.toLowerCase();
-
-    switch (type) {
-        case 'production':
-            router.push(`/plant-form/production/${internal_id}`);
-            break;
-        case 'storage':
-            router.push(`/plant-form/storage/${internal_id}`);
-            break;
-        case 'ccus':
-            router.push(`/plant-form/ccus/${internal_id}`);
-            break;
-        case 'port':
-            router.push(`/port-form/${internal_id}`);
-            break;
-        default:
-            console.error('Unknown plant type for verification:', plantType);
-            break;
-    }
-  };
+  if (!internal_id || !plantType) return;
+  const type = plantType.toLowerCase();
+  
+  const baseUrl = process.env.NEXT_PUBLIC_GEOMAP_URL ; // Different service URL
+  
+  let targetUrl = '';
+  switch (type) {
+    case 'production':
+      targetUrl = `${baseUrl}/plant-form/production/${internal_id}`;
+      break;
+    case 'storage':
+      targetUrl = `${baseUrl}/plant-form/storage/${internal_id}`;
+      break;
+    case 'ccus':
+      targetUrl = `${baseUrl}/plant-form/ccus/${internal_id}`;
+      break;
+    case 'port':
+      targetUrl = `${baseUrl}/port-form/${internal_id}`;
+      break;
+    default:
+      console.error('Unknown plant type for verification:', plantType);
+      return;
+  }
+  
+  // Direct browser navigation - NO router.push!
+  window.location.href = targetUrl;
+};
 
   return (
     <div className="min-h-screen bg-gray-100 font-sans">
