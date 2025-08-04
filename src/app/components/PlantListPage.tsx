@@ -103,9 +103,9 @@ export default function PlantListPage() {
   const handleVerify = (internal_id?: string, plantType?: string) => {
   if (!internal_id || !plantType) return;
   const type = plantType.toLowerCase();
-  
-  const baseUrl = process.env.NEXT_PUBLIC_GEOMAP_URL ; // Different service URL
-  
+
+  const baseUrl = process.env.NEXT_PUBLIC_GEOMAP_URL; // Different service URL
+
   let targetUrl = '';
   switch (type) {
     case 'production':

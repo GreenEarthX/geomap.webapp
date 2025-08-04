@@ -15,7 +15,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_PUBLIC_ONBOARDING_URL=http://onboarding-alb-382109254.us-west-1.elb.amazonaws.com
-ENV NEXT_PUBLIC_GEOMAP_URL=http://geomap-alb-123456789.us-west-1.elb.amazonaws.com
+ENV NEXT_PUBLIC_GEOMAP_URL=http://geomap-alb-837698733.us-west-1.elb.amazonaws.com
 
 RUN npm run build
 
