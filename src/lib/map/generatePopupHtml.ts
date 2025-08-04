@@ -298,13 +298,13 @@ export const generatePopupHtml = (
         break;
     }
     // Always use geomap-redirect endpoint for authentication and token injection
-    const onboardingUrl = process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000';
-    const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL || 'http://localhost:3001';
+    const onboardingUrl = process.env.ONBOARDING_APP_URL || 'http://localhost:3000';
+    const geomapUrl = process.env.GEOMAP_URL || 'http://localhost:3001';
     verifyUrl = `${onboardingUrl}/api/auth/geomap-redirect?redirect=${encodeURIComponent(`${geomapUrl}${formPath}`)}`;
   }
 
-  const onboardingUrl = process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000';
-  const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL || 'http://localhost:3001';
+  const onboardingUrl = process.env.ONBOARDING_APP_URL || 'http://localhost:3000';
+  const geomapUrl = process.env.GEOMAP_URL || 'http://localhost:3001';
   const loginUrl = `${onboardingUrl}/auth/authenticate?redirect=${encodeURIComponent(geomapUrl + formPath)}`;
   const verifyButton = verifyUrl
     ? (() => {
