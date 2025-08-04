@@ -139,7 +139,7 @@ export async function middleware(request: NextRequest) {
     } else {
       // ✅ FIX: Construct proper redirect URL using load balancer URL instead of internal IP
       const onboardingUrl = process.env.ONBOARDING_APP_URL;
-      const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL;
+      const geomapUrl = process.env.GEOMAP_URL;
       
       // Ensure onboarding URL has protocol
       if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
@@ -169,7 +169,7 @@ export async function middleware(request: NextRequest) {
       } else {
         // ✅ FIX: For insufficient permissions, redirect to authentication (not email verification)
         const onboardingUrl = process.env.ONBOARDING_APP_URL;
-        const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL;
+        const geomapUrl = process.env.GEOMAP_URL;
         
         // Ensure onboarding URL has protocol
         if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
@@ -210,7 +210,7 @@ export async function middleware(request: NextRequest) {
       } else {
         // ✅ FIX: Construct proper redirect URL for token expiration
         const onboardingUrl = process.env.ONBOARDING_APP_URL;
-        const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL;
+        const geomapUrl = process.env.GEOMAP_URL;
         
         // Ensure onboarding URL has protocol
         if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
@@ -238,7 +238,7 @@ export async function middleware(request: NextRequest) {
     } else {
       // ✅ FIX: Construct proper redirect URL for invalid token
       const onboardingUrl = process.env.ONBOARDING_APP_URL;
-      const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL;
+      const geomapUrl = process.env.GEOMAP_URL;
       
       // Ensure onboarding URL has protocol
       if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
