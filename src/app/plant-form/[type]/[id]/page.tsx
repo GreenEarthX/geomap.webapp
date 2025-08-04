@@ -24,7 +24,7 @@ export default async function PlantFormPage({ params }: PlantFormPageProps) {
 
   // Fetch data server-side with caching from map app's own API
   const { feature: initialLeafletFeature, error: initialError } = await cachedFetch(
-    `${process.env.NEXT_PUBLIC_GEOMAP_URL || 'http://localhost:3001'}/api/plant/${type}/${id}`
+    `${process.env.GEOMAP_URL || 'http://localhost:3001'}/api/plant/${type}/${id}`
 
   );
   console.log('[PlantFormPage] Fetched feature from API:', JSON.stringify(initialLeafletFeature, null, 2));
