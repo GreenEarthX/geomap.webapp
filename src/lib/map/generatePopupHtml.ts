@@ -321,19 +321,23 @@ export const generatePopupHtml = (
         } catch (e) { isAuthenticated = false; }
         const label = isAuthenticated ? 'Verify' : 'Login to verify';
         return `
-          <script>
-            window.isTokenValid = function() {
-              const token = localStorage.getItem('geomap-auth-token');
-              if (!token) return false;
-              try {
-                JSON.parse(atob(token.split('.')[1]));
-                return true;
-              } catch (e) { return false; }
-            };
-          </script>
           <button
             id="verify-btn-uniq"
-            onclick="event.stopPropagation(); if (window.isTokenValid && window.isTokenValid()) { window.open('${verifyUrl}', '_blank'); } else { window.open('${loginUrl}', '_blank'); }"
+            onclick="event.stopPropagation(); (function() {
+              const token = localStorage.getItem('geomap-auth-token');
+              if (token) {
+                try {
+                  JSON.parse(atob(token.split('.')[1]));
+                  const tokenParam = encodeURIComponent(token);
+                  const urlWithToken = '${verifyUrl}&token=' + tokenParam;
+                  window.open(urlWithToken, '_blank');
+                } catch (e) {
+                  window.open('${loginUrl}', '_blank');
+                }
+              } else {
+                window.open('${loginUrl}', '_blank');
+              }
+            })();"
             class="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 w-full"
             aria-label="Verify or Login"
           >
