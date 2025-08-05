@@ -16,6 +16,8 @@ COPY . .
 
 ENV NEXT_PUBLIC_ONBOARDING_URL=http://onboarding-alb-382109254.us-west-1.elb.amazonaws.com
 ENV NEXT_PUBLIC_GEOMAP_URL=http://geomap-alb-837698733.us-west-1.elb.amazonaws.com
+ENV ONBOARDING_APP_URL=http://onboarding-alb-382109254.us-west-1.elb.amazonaws.com
+ENV GEOMAP_URL=http://geomap-alb-837698733.us-west-1.elb.amazonaws.com
 
 RUN npm run build
 
