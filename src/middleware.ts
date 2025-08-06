@@ -95,7 +95,8 @@ export async function middleware(request: NextRequest) {
     '/api/ports',
     '/api/plant-form',
     '/plant-form',
-    '/port-form'
+    '/port-form',
+    '/admin/:path*'
   ];
 
   const isProtectedPath = protectedPaths.some(path => {
@@ -104,7 +105,7 @@ export async function middleware(request: NextRequest) {
       if (request.nextUrl.pathname.startsWith('/api/')) {
         return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method);
       }
-      // For form pages, protect all access
+      // For form pages and admin paths, protect all access
       return true;
     }
     return false;
@@ -136,6 +137,10 @@ export async function middleware(request: NextRequest) {
   if (!token) {
     if (request.nextUrl.pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    } else if (request.nextUrl.pathname.startsWith('/admin/')) {
+      // Redirect to sign-in page with original path
+      const redirectUrl = `${process.env.NEXT_PUBLIC_ONBOARDING_URL}/auth/authenticate?redirect=${encodeURIComponent(request.url)}`;
+      return NextResponse.redirect(redirectUrl);
     } else {
       // Redirect to onboarding app for authentication
       const redirectUrl = `${process.env.ONBOARDING_APP_URL}/auth/authenticate?redirect=${encodeURIComponent(request.url)}`;
@@ -150,9 +155,31 @@ export async function middleware(request: NextRequest) {
       if (request.nextUrl.pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
       } else {
-        // For insufficient permissions, redirect to authentication (not email verification)
+        // For insufficient permissions, redirect to authentication
         const redirectUrl = `${process.env.ONBOARDING_APP_URL}/auth/authenticate?redirect=${encodeURIComponent(request.url)}`;
         return NextResponse.redirect(redirectUrl);
+      }
+    }
+
+    // Additional admin email restriction for /admin/* paths
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',') || [];
+    if (request.nextUrl.pathname.startsWith('/admin/')) {
+      if (!adminEmails.includes(payload.email)) {
+        if (request.nextUrl.pathname.startsWith('/api/')) {
+          return NextResponse.json({ error: 'Admin access restricted' }, { status: 403 });
+        } else {
+          // Redirect to map with message for non-admin users
+          const response = NextResponse.redirect(new URL('/', request.url));
+          response.cookies.set('message', 'Nice try user :p', { path: '/', maxAge: 5 });
+          return response;
+        }
+      } else {
+        // Allow access for admin emails
+        const response = NextResponse.next();
+        response.headers.set('x-user-id', payload.userId);
+        response.headers.set('x-user-email', payload.email);
+        response.headers.set('x-user-name', payload.name || '');
+        return response;
       }
     }
     
@@ -183,7 +210,7 @@ export async function middleware(request: NextRequest) {
     if (request.nextUrl.pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     } else {
-      const redirectUrl = `${process.env.ONBOARDING_APP_URL}/auth/authenticate?redirect=${encodeURIComponent(request.url)}`;
+      const redirectUrl = `${process.env.ONBOARDING_APP_URL}/auth/signin?redirect=${encodeURIComponent(request.url)}`;
       return NextResponse.redirect(redirectUrl);
     }
   }
@@ -197,6 +224,7 @@ export const config = {
     '/api/ports/:path*',
     '/api/plant-form/:path*',
     '/plant-form/:path*',
-    '/port-form/:path*'
+    '/port-form/:path*',
+    '/admin/:path*'
   ]
 };
