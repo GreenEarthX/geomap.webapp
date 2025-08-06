@@ -56,21 +56,21 @@ export async function authFetch(url: string, options: AuthFetchOptions = {}): Pr
           // Refresh failed, redirect to login
           localStorage.removeItem('geomap-auth-token');
           localStorage.removeItem('geomap-refresh-token');
-          const onboardingUrl = `${process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000'}/auth/authenticate?redirect=${encodeURIComponent(window.location.href)}`;
+          const onboardingUrl = `${process.env.ONBOARDING_APP_URL || 'http://localhost:3000'}/auth/authenticate?redirect=${encodeURIComponent(window.location.href)}`;
           window.location.href = onboardingUrl;
           throw new Error('Authentication failed. Redirecting to login.');
         }
       } catch (error) {
         console.error('Token refresh failed:', error);
         // Redirect to login
-        const onboardingUrl = `${process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000'}/auth/authenticate?redirect=${encodeURIComponent(window.location.href)}`;
+        const onboardingUrl = `${process.env.ONBOARDING_APP_URL || 'http://localhost:3000'}/auth/authenticate?redirect=${encodeURIComponent(window.location.href)}`;
         window.location.href = onboardingUrl;
         throw new Error('Authentication failed. Redirecting to login.');
       }
     } else {
       // No refresh token available, redirect to login
       localStorage.removeItem('geomap-auth-token');
-      const onboardingUrl = `${process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000'}/auth/authenticate?redirect=${encodeURIComponent(window.location.href)}`;
+      const onboardingUrl = `${process.env.ONBOARDING_APP_URL || 'http://localhost:3000'}/auth/authenticate?redirect=${encodeURIComponent(window.location.href)}`;
       window.location.href = onboardingUrl;
       throw new Error('Authentication failed. Redirecting to login.');
     }

@@ -137,14 +137,27 @@ export async function middleware(request: NextRequest) {
   if (!token) {
     if (request.nextUrl.pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    } else if (request.nextUrl.pathname.startsWith('/admin/')) {
-      // Redirect to sign-in page with original path
-      const redirectUrl = `${process.env.NEXT_PUBLIC_ONBOARDING_URL}/auth/authenticate?redirect=${encodeURIComponent(request.url)}`;
-      return NextResponse.redirect(redirectUrl);
     } else {
-      // Redirect to onboarding app for authentication
-      const redirectUrl = `${process.env.ONBOARDING_APP_URL}/auth/authenticate?redirect=${encodeURIComponent(request.url)}`;
-      return NextResponse.redirect(redirectUrl);
+      // ✅ FIX: Construct proper redirect URL using load balancer URL instead of internal IP
+      const onboardingUrl = process.env.ONBOARDING_APP_URL;
+      const geomapUrl = process.env.GEOMAP_URL;
+      
+      // Ensure onboarding URL has protocol
+      if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
+        console.error('ONBOARDING_APP_URL must include protocol (http:// or https://)');
+        return NextResponse.next();
+      }
+      
+      // Construct current page URL using load balancer URL (not internal IP)
+      const currentPageUrl = geomapUrl 
+        ? `${geomapUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
+        : request.url;
+      
+      // Use URL constructor for proper formatting
+      const authUrl = new URL('/auth/authenticate', onboardingUrl);
+      authUrl.searchParams.set('redirect', currentPageUrl);
+      
+      return NextResponse.redirect(authUrl.toString());
     }
   }
   
@@ -155,9 +168,26 @@ export async function middleware(request: NextRequest) {
       if (request.nextUrl.pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
       } else {
-        // For insufficient permissions, redirect to authentication
-        const redirectUrl = `${process.env.ONBOARDING_APP_URL}/auth/authenticate?redirect=${encodeURIComponent(request.url)}`;
-        return NextResponse.redirect(redirectUrl);
+        // ✅ FIX: For insufficient permissions, redirect to authentication (not email verification)
+        const onboardingUrl = process.env.ONBOARDING_APP_URL;
+        const geomapUrl = process.env.GEOMAP_URL;
+        
+        // Ensure onboarding URL has protocol
+        if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
+          console.error('ONBOARDING_APP_URL must include protocol (http:// or https://)');
+          return NextResponse.next();
+        }
+        
+        // Construct current page URL using load balancer URL (not internal IP)
+        const currentPageUrl = geomapUrl 
+          ? `${geomapUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
+          : request.url;
+        
+        // Use URL constructor for proper formatting
+        const authUrl = new URL('/auth/authenticate', onboardingUrl);
+        authUrl.searchParams.set('redirect', currentPageUrl);
+        
+        return NextResponse.redirect(authUrl.toString());
       }
     }
 
@@ -201,8 +231,27 @@ export async function middleware(request: NextRequest) {
           code: 'TOKEN_EXPIRED' 
         }, { status: 401 });
       } else {
-        const redirectUrl = `${process.env.ONBOARDING_APP_URL}/auth/authenticate?redirect=${encodeURIComponent(request.url)}&reason=token_expired`;
-        return NextResponse.redirect(redirectUrl);
+        // ✅ FIX: Construct proper redirect URL for token expiration
+        const onboardingUrl = process.env.ONBOARDING_APP_URL;
+        const geomapUrl = process.env.GEOMAP_URL;
+        
+        // Ensure onboarding URL has protocol
+        if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
+          console.error('ONBOARDING_APP_URL must include protocol (http:// or https://)');
+          return NextResponse.next();
+        }
+        
+        // Construct current page URL using load balancer URL (not internal IP)
+        const currentPageUrl = geomapUrl 
+          ? `${geomapUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
+          : request.url;
+        
+        // Use URL constructor for proper formatting
+        const authUrl = new URL('/auth/authenticate', onboardingUrl);
+        authUrl.searchParams.set('redirect', currentPageUrl);
+        authUrl.searchParams.set('reason', 'token_expired');
+        
+        return NextResponse.redirect(authUrl.toString());
       }
     }
     
@@ -210,8 +259,26 @@ export async function middleware(request: NextRequest) {
     if (request.nextUrl.pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     } else {
-      const redirectUrl = `${process.env.ONBOARDING_APP_URL}/auth/signin?redirect=${encodeURIComponent(request.url)}`;
-      return NextResponse.redirect(redirectUrl);
+      // ✅ FIX: Construct proper redirect URL for invalid token
+      const onboardingUrl = process.env.ONBOARDING_APP_URL;
+      const geomapUrl = process.env.GEOMAP_URL;
+      
+      // Ensure onboarding URL has protocol
+      if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
+        console.error('ONBOARDING_APP_URL must include protocol (http:// or https://)');
+        return NextResponse.next();
+      }
+      
+      // Construct current page URL using load balancer URL (not internal IP)
+      const currentPageUrl = geomapUrl 
+        ? `${geomapUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
+        : request.url;
+      
+      // Use URL constructor for proper formatting
+      const authUrl = new URL('/auth/authenticate', onboardingUrl);
+      authUrl.searchParams.set('redirect', currentPageUrl);
+      
+      return NextResponse.redirect(authUrl.toString());
     }
   }
 }

@@ -1,47 +1,49 @@
+# -------- Base Image --------
 FROM node:18-alpine AS base
-
-# Install dependencies only when needed
-FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Install dependencies based on the preferred package manager
+# -------- Dependencies --------
+FROM base AS deps
 COPY package.json package-lock.json* ./
 RUN npm ci
 
-# Rebuild the source code only when needed
+# -------- Build --------
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build the application
+ENV NEXT_PUBLIC_ONBOARDING_URL=http://onboarding-alb-382109254.us-west-1.elb.amazonaws.com
+ENV NEXT_PUBLIC_GEOMAP_URL=http://geomap-alb-837698733.us-west-1.elb.amazonaws.com
+ENV ONBOARDING_APP_URL=http://onboarding-alb-382109254.us-west-1.elb.amazonaws.com
+ENV GEOMAP_URL=http://geomap-alb-837698733.us-west-1.elb.amazonaws.com
+
 RUN npm run build
 
-# Production image, copy all the files and run next
+# -------- Production --------
 FROM base AS runner
+
 WORKDIR /app
 
+# Create app folder and give it permissions
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 nextjs \
+  && mkdir -p /app/.next/cache \
+  && chown -R nextjs:nodejs /app
+
 ENV NODE_ENV production
+ENV PORT 3000
+ENV HOSTNAME "0.0.0.0"
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
+# Copy only the required files for production
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Automatically leverage output traces to reduce image size
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
+# Set user AFTER files are copied and permissions are set
 USER nextjs
 
 EXPOSE 3000
-
-ENV PORT 3000
-ENV HOSTNAME "0.0.0.0"
 
 CMD ["node", "server.js"]
