@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { PortItem } from '@/lib/types2';
 import { STATUS_OPTIONS, StatusType, PORT_PROJECT_TYPES_OPTIONS, PortProjectTypeType, PORT_PRODUCT_OPTIONS, PortProductType, PORT_TECHNOLOGY_OPTIONS, PortTechnologyType } from '@/lib/lookupTables';
 
@@ -42,7 +43,7 @@ interface PortFormProps {
   statusTooltip: React.ReactElement;
   projectTypeOptions: typeof PORT_PROJECT_TYPES_OPTIONS;
   productTypeOptions: typeof PORT_PRODUCT_OPTIONS;
-  technologyTypeOptions: typeof PORT_TECHNOLOGY_OPTIONS; // Added technologyTypeOptions
+  technologyTypeOptions: typeof PORT_TECHNOLOGY_OPTIONS;
 }
 
 const prepareDataForSave = (formData: PortFormData, originalData: PortFormProps['initialFeature']) => {
@@ -100,6 +101,9 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     'Specific Information': true,
     'Capacity & Investment': true,
   });
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [showRecaptcha, setShowRecaptcha] = useState(false);
+  const [recaptchaError, setRecaptchaError] = useState('');
 
   const getInitialFormData = (feature: PortFormProps['initialFeature']): PortFormData => {
     const investmentCosts = feature?.investment;
@@ -153,6 +157,53 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  const handleEditClick = async () => {
+    if (isEditing) {
+      (document.getElementById('port-form') as HTMLFormElement)?.requestSubmit();
+      setIsEditing(false);
+      setRecaptchaToken(null);
+      return;
+    }
+
+    setShowRecaptcha(true);
+  };
+
+  const handleRecaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token);
+    setRecaptchaError('');
+  };
+
+  useEffect(() => {
+    const verifyToken = async () => {
+      if (recaptchaToken) {
+        try {
+          const response = await fetch('/api/verify-recaptcha', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token: recaptchaToken }),
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            setIsEditing(true);
+            setShowRecaptcha(false);
+          } else {
+            setRecaptchaError('reCAPTCHA verification failed. Please try again.');
+            setRecaptchaToken(null);
+          }
+        } catch (error) {
+          console.error('reCAPTCHA verification error:', error);
+          setRecaptchaError('Failed to verify reCAPTCHA. Please try again.');
+          setRecaptchaToken(null);
+        }
+      }
+    };
+
+    verifyToken();
+  }, [recaptchaToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -218,6 +269,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       }, 3000);
 
       setIsEditing(false);
+      setRecaptchaToken(null);
       router.refresh();
     } catch (error) {
       console.error('Error saving new port data:', error);
@@ -245,7 +297,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       { name: 'website_url', label: 'Website', type: 'text', placeholder: 'Enter website URL' },
       { name: 'status', label: 'Status', type: 'select', options: statusOptions },
       { name: 'product_type', label: 'Product Type', type: 'select', options: productTypeOptions },
-      { name: 'technology_type', label: 'Technology Type', type: 'select', options: technologyTypeOptions }, // Changed to select
+      { name: 'technology_type', label: 'Technology Type', type: 'select', options: technologyTypeOptions },
       { name: 'trade_type', label: 'Trade Type', type: 'text', placeholder: 'e.g. Import' },
       { name: 'capacity_value', label: 'Capacity Value', type: 'text', placeholder: 'e.g., 5.5' },
       { name: 'capacity_unit', label: 'Capacity Unit', type: 'text', placeholder: 'e.g., Mtpa' },
@@ -255,10 +307,10 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     ];
 
     const sections: SectionConfig[] = [
-      { title: 'General Information', fields: ['project_name', 'project_type', 'technology_type', 'port_code',  'product_type', 'partners', 'stakeholders', 'website_url'] },
+      { title: 'General Information', fields: ['project_name', 'project_type', 'technology_type', 'port_code', 'product_type', 'partners', 'stakeholders', 'website_url'] },
       { title: 'Contact Information', fields: ['contact_name', 'email'] },
       { title: 'Location', fields: ['country', 'city', 'street', 'zip'] },
-      { title: 'Specific Information', fields: ['status',  'trade_type', 'capacity_value', 'capacity_unit', 'storage_capacity_value', 'storage_capacity_unit', 'investmentString'] },
+      { title: 'Specific Information', fields: ['status', 'trade_type', 'capacity_value', 'capacity_unit', 'storage_capacity_value', 'storage_capacity_unit', 'investmentString'] },
     ];
 
     return (
@@ -381,19 +433,40 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
           </div>
           <button
             type="button"
-            onClick={() => isEditing ? (document.getElementById('port-form') as HTMLFormElement)?.requestSubmit() : setIsEditing(true)}
-            className={`px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${isEditing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+            onClick={handleEditClick}
+            className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${isEditing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
           >
-            <svg className="w-5 h-5 mr-2 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-45' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {isEditing ? (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               ) : (
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               )}
             </svg>
-            {isEditing ? 'Save Changes' : 'Edit'}
+            {isEditing ? 'Save' : 'Edit'}
           </button>
         </div>
+
+        {showRecaptcha && !isEditing && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+              <h3 className="text-lg font-semibold mb-4">Please verify you're not a robot</h3>
+              <ReCAPTCHA
+                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6LeFz3MrAAAAAAHeQFSkH9YUVpR2XDiDxTHV9957'}
+                onChange={handleRecaptchaChange}
+              />
+              {recaptchaError && (
+                <p className="text-red-500 text-sm mt-2">{recaptchaError}</p>
+              )}
+              <button
+                onClick={() => setShowRecaptcha(false)}
+                className="mt-4 px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="mb-6 p-4 bg-blue-50 rounded-md border border-blue-100">
           <div className="flex items-center">
@@ -401,7 +474,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <p className="text-blue-700 text-sm">
-              {isEditing ? 'You are now editing this port. Make your changes and click Save Changes when done.' : 'Viewing port details. Click Edit to make changes.'}
+              {isEditing ? 'You are now editing this port. Make your changes and click Save when done.' : 'Viewing port details. Click Edit to make changes.'}
             </p>
           </div>
         </div>
@@ -432,6 +505,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
                   onClick={() => {
                     setFormData(getInitialFormData(initialFeature));
                     setIsEditing(false);
+                    setRecaptchaToken(null);
                   }}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200 shadow-sm hover:shadow-md"
                 >

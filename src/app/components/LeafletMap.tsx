@@ -77,6 +77,9 @@ const LeafletMap = () => {
   const [legendPinned, setLegendPinned] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [legendCollapsed, setLegendCollapsed] = useState(false);
+  const [showFilterHelp, setShowFilterHelp] = useState(false);
+
 
   const mapRef = useRef<L.Map | null>(null);
   const filterButtonRef = useRef<HTMLButtonElement>(null);
@@ -341,6 +344,19 @@ const LeafletMap = () => {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, [filtersVisible]);
 
+  useEffect(() => {
+  const handleClickOutside = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (!target.closest('.leaflet-control') && !target.closest('.fa-info-circle')) {
+      setShowFilterHelp(false);
+    }
+  };
+
+  document.addEventListener('mousedown', handleClickOutside);
+  return () => document.removeEventListener('mousedown', handleClickOutside);
+}, []);
+
+
   return (
     <div className=" w-full h-screen">
       <div id="map" className="w-full h-full"></div>
@@ -411,9 +427,40 @@ const LeafletMap = () => {
               </option>
             ))}
           </select>
-        </div>
-      )}
 
+{/* Info button INSIDE the filter bar */}
+        <div className="relative flex items-center">
+          <button
+            onClick={() => setShowFilterHelp(prev => !prev)}
+            className="text-gray-500 hover:text-black text-lg focus:outline-none"
+            title="Filter Help"
+          >
+            <i className="fas fa-info-circle" />
+          </button>
+        </div>
+      </div>
+    )}
+     {/* Help popup OUTSIDE the filter bar */}
+    {showFilterHelp && (
+      <div 
+        className="fixed z-[700] w-80 p-3 bg-white border border-gray-300 rounded-md shadow-lg text-sm text-gray-800"
+        style={{
+          top: '120px', // Adjust based on your filter bar height
+          left: '50%',
+          transform: 'translateX(-50%)'
+        }}
+      >
+        <div className="font-semibold mb-2">How to use filters</div>
+        <ul className="list-disc pl-5 space-y-1 text-xs">
+          <li><strong>Search:</strong> Type keywords to search across columns.</li>
+          <li><strong>Project:</strong> Jump to a specific name.</li>
+          <li><strong>Country:</strong> Filter by location.</li>
+          <li><strong>Status:</strong> Choose operational or planned only.</li>
+          <li><strong>End Use:</strong> Filter by usage sector.</li>
+          <li><strong>Sector:</strong> Filter Production / Storage / CCUS.</li>
+        </ul>
+      </div>
+    )}
       <div className={`fixed bottom-4 left-4 w-52 p-3 bg-white border-2 border-gray-300 rounded shadow-md z-[600] text-black text-xs transition-all duration-300 ${legendPinned || legendVisible ? 'opacity-100' : 'opacity-0'}`} onMouseEnter={() => setLegendVisible(true)} onMouseLeave={() => !legendPinned && setLegendVisible(false)}>
         <div className="flex justify-between items-center text-black">
           <strong>Legend</strong>

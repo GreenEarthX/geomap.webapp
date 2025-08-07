@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { ProductionItem } from '@/lib/types2';
 import { STATUS_OPTIONS, StatusType, PRODUCER_PROJECT_TYPES_OPTIONS, ProducerProjectTypeType, PRODUCER_END_USE_OPTIONS, ProducerEndUseType, PRODUCER_PRODUCT_OPTIONS, ProducerProductType, PRODUCER_TECHNOLOGY_OPTIONS, ProducerTechnologyType } from '@/lib/lookupTables';
 
@@ -45,6 +46,9 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
     'Capacity': true,
     'Contact Information': true,
   });
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [showRecaptcha, setShowRecaptcha] = useState(false);
+  const [recaptchaError, setRecaptchaError] = useState('');
 
   // Field order matching generatePopupHtml
   const fieldOrder: (keyof ProductionItem | 'capacity' | 'investment_capex')[] = [
@@ -143,8 +147,8 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
       const parsedNumber = parseFloat(parsedValue) || 0;
       setFormData((prev) => ({
         ...prev,
-        [`${name}_value`]: name === 'capacity' ? parsedNumber : prev.capacity_value,
-        [`${name}_unit`]: name === 'capacity' ? parsedUnit || prev.capacity_unit || '' : '',
+        [`${name}_value`]: name == 'capacity' ? parsedNumber : prev.capacity_value,
+        [`${name}_unit`]: name == 'capacity' ? parsedUnit || prev.capacity_unit || '' : '',
         [name]: value,
         ...(name === 'investment_capex' ? { investment_capex: value } : {}),
       }));
@@ -169,9 +173,56 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
     setFormData((prev) => ({ ...prev, end_use: updatedEndUse }));
   };
 
+  const handleEditClick = () => {
+    if (isEditing) {
+      (document.getElementById('production-form') as HTMLFormElement)?.requestSubmit();
+      setIsEditing(false);
+      setRecaptchaToken(null);
+      return;
+    }
+    setShowRecaptcha(true);
+  };
+
+  const handleRecaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token);
+    setRecaptchaError('');
+  };
+
+  useEffect(() => {
+    const verifyToken = async () => {
+      if (recaptchaToken) {
+        try {
+          const response = await fetch('/api/verify-recaptcha', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token: recaptchaToken }),
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            setIsEditing(true);
+            setShowRecaptcha(false);
+          } else {
+            setRecaptchaError('reCAPTCHA verification failed. Please try again.');
+            setRecaptchaToken(null);
+          }
+        } catch (error) {
+          console.error('reCAPTCHA verification error:', error);
+          setRecaptchaError('Failed to verify reCAPTCHA. Please try again.');
+          setRecaptchaToken(null);
+        }
+      }
+    };
+
+    verifyToken();
+  }, [recaptchaToken]);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsEditing(false);
+    setRecaptchaToken(null);
 
     const cleanStakeholdersArray = Array.isArray(formData.stakeholders)
       ? formData.stakeholders.filter(Boolean)
@@ -539,7 +590,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
           </div>
           <button
             type="button"
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={handleEditClick}
             className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${
               isEditing
                 ? 'bg-green-600 text-white hover:bg-green-700'
@@ -572,6 +623,27 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
           </button>
         </div>
 
+        {showRecaptcha && !isEditing && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+              <h3 className="text-lg font-semibold mb-4">Please verify you're not a robot</h3>
+              <ReCAPTCHA
+                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6LeFz3MrAAAAAAHeQFSkH9YUVpR2XDiDxTHV9957'}
+                onChange={handleRecaptchaChange}
+              />
+              {recaptchaError && (
+                <p className="text-red-500 text-sm mt-2">{recaptchaError}</p>
+              )}
+              <button
+                onClick={() => setShowRecaptcha(false)}
+                className="mt-4 px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="mb-6 p-4 bg-blue-50 rounded-md border border-blue-100">
           <div className="flex items-center">
             <svg
@@ -595,7 +667,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form id="production-form" onSubmit={handleSubmit}>
           {renderFields()}
           <div className="flex flex-col sm:flex-row justify-between mt-6 pt-4 border-t border-gray-200 gap-4">
             <div className="flex flex-col sm:flex-row gap-3">
@@ -647,6 +719,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
                   onClick={() => {
                     setFormData(initialFormData);
                     setIsEditing(false);
+                    setRecaptchaToken(null);
                   }}
                   className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200 shadow-sm hover:shadow-md"
                 >
