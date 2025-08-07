@@ -75,7 +75,7 @@ const LeafletMap = () => {
   const [statusTypes, setStatusTypes] = useState<{ sector: string; status: string }[]>([]);
   const [legendVisible, setLegendVisible] = useState(true);
   const [legendPinned, setLegendPinned] = useState(false);
-  const [filtersVisible, setFiltersVisible] = useState(true);
+  const [filtersVisible, setFiltersVisible] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [legendCollapsed, setLegendCollapsed] = useState(false);
   const [showFilterHelp, setShowFilterHelp] = useState(false);

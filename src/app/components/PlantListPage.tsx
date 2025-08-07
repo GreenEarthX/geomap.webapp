@@ -298,7 +298,7 @@ const SelectBox: React.FC<SelectBoxProps> = ({ label, options, value, onChange }
     className="p-3 border border-gray-300 rounded-md min-w-[140px] text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
   >
     <option value="" className="text-gray-500">
-      {`All ${label}s`}
+      {`All ${label}`}
     </option>
     {options.map((opt) => (
       <option key={opt} value={opt}>

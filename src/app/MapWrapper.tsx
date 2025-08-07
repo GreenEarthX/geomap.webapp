@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import { CSSProperties } from 'react';
 
 // Load LeafletMap with SSR disabled
 const LeafletMap = dynamic(() => import('./components/LeafletMap'), {
@@ -55,7 +56,7 @@ function DisclaimerScreen({ onAccept }: { onAccept: () => void }) {
           src="/gex-logo.png"
           alt="GEX Logo"
           width={100}
-          height={160}
+          height={140}
           style={disclaimerStyles.logo}
         />
         <h1 style={disclaimerStyles.title}>
@@ -208,16 +209,16 @@ const styles = {
 };
 
 
-const disclaimerStyles = {
+const disclaimerStyles: { container: CSSProperties; [key: string]: CSSProperties } = {
   container: {
     height: '100vh',
     width: '100vw',
     background: 'linear-gradient(to bottom right, #e0f7fa, #e8f5e9)',
     display: 'flex',
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'flex-start', // Align to top for slight offset
     fontFamily: 'Segoe UI, sans-serif',
-    padding: '20px',
+    padding: '10px', // Reverted to original padding
     boxSizing: 'border-box' as const,
     overflowY: 'auto' as const,
     animation: 'fadeIn 0.6s ease-in',
@@ -234,7 +235,7 @@ const disclaimerStyles = {
   overflowY: 'auto' as const,              // ⬅ scrolls if too tall
 },
   logo: {
-  marginBottom: '20px',
+  marginBottom: '10px',
   width: '40px',
   height: '40px',
 },
@@ -242,7 +243,7 @@ const disclaimerStyles = {
     fontSize: '18px',
     color: '#003B70',
     fontWeight: 700,
-    marginBottom: '24px',
+    marginBottom: '14px',
   },
   gex: {
     color: '#006CB5',
@@ -258,7 +259,7 @@ const disclaimerStyles = {
     overflowY: 'auto' as const,
   },
   warningIcon: {
-    fontSize: '24px',
+    fontSize: '20px',
     color: '#f44336',
     marginBottom: '10px',
     textAlign: 'center' as const,
