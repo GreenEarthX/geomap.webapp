@@ -10,8 +10,6 @@ import { MailIcon } from 'lucide-react'; // Optional: use lucide for icons
 
 const AuthBridge = dynamic(() => import('./AuthBridge'), { ssr: false });
 
-
-
 export default function GexHeader() {
   const [showContactModal, setShowContactModal] = useState(false);
 
@@ -21,7 +19,9 @@ export default function GexHeader() {
         <Link href="/">
           <Image src="/gex-logo.png" alt="GEX Logo" width={50} height={50} className="h-10 w-10 object-contain" />
         </Link>
-        <span className="text-xl font-bold text-blue-700 tracking-tight">GreenEarthX Map</span>
+        <Link href="/">
+          <span className="text-xl font-bold text-blue-700 tracking-tight">GreenEarthX Map</span>
+        </Link>
         <UserGuide />
       </div>
 
