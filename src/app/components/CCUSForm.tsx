@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { CCUSItem, CCUSReference } from '@/lib/types2';
 import { STATUS_OPTIONS, StatusType, CCUS_PROJECT_TYPES_OPTIONS, CCUSProjectTypeType, CCUS_END_USE_OPTIONS, CCUSEndUseType, CCUS_TECHNOLOGY_OPTIONS, CCUSTechnologyType } from '@/lib/lookupTables';
+import ConfirmationModal from './ConfirmationModal';
 
 // --- TYPE DEFINITIONS ---
 
@@ -47,6 +48,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [showRecaptcha, setShowRecaptcha] = useState(false);
   const [recaptchaError, setRecaptchaError] = useState('');
+  const [showModal, setShowModal] = useState(false);
 
   const initialFormData: Partial<CCUSItem> & { capacity?: string } = {
     id: initialFeature?.id ?? '',
@@ -167,7 +169,6 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     e.preventDefault();
     setIsEditing(false);
     setRecaptchaToken(null);
-
     const dataPayload = {
       plant_name: formData.name || null,
       project_name: formData.project_name || null,
@@ -201,13 +202,21 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
         longitude: String(formData.longitude || 0),
       },
     };
-
     try {
       const token = localStorage.getItem('geomap-auth-token');
       if (!token) {
         throw new Error('No authentication token found. Please log in again.');
       }
-      
+      // Extract connected user email and name from JWT
+      let connectedEmail = null;
+      let connectedUserName = null;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        connectedEmail = payload.email;
+        connectedUserName = payload.name || payload.email || 'User';
+      } catch (jwtError) {
+        console.warn('Could not extract email from JWT:', jwtError);
+      }
       const response = await fetch('/api/ccus', {
         method: 'POST',
         headers: { 
@@ -219,9 +228,26 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
           data: dataPayload,
         }),
       });
-
       if (!response.ok) {
         throw new Error(`Failed to save CCUS data: ${response.statusText}`);
+      }
+      setShowModal(true);
+      try {
+        if (connectedEmail) {
+          await fetch('/api/send-confirmation-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: connectedEmail,
+              connectedUserName,
+              plantName: formData.name || 'Unknown Plant',
+            }),
+          });
+        } else {
+          console.warn('No connected user email found, confirmation email not sent.');
+        }
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
       }
 
       const notification = document.createElement('div');
@@ -519,6 +545,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
             )}
           </div>
         </form>
+        <ConfirmationModal open={showModal} onClose={() => setShowModal(false)} />
       </div>
     </div>
   );

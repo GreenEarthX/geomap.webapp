@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { StorageItem } from '@/lib/types2';
 import { STATUS_OPTIONS, StatusType, STORAGE_PROJECT_TYPES_OPTIONS, StorageProjectTypeType } from '@/lib/lookupTables';
+import ConfirmationModal from './ConfirmationModal';
 
 // Updated FieldConfig to include options for the dropdown
 interface FieldConfig {
@@ -44,6 +45,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [showRecaptcha, setShowRecaptcha] = useState(false);
   const [recaptchaError, setRecaptchaError] = useState('');
+  const [showModal, setShowModal] = useState(false);
 
   const cleanStakeholders = (data: any): string[] => {
     if (!data) return [];
@@ -203,9 +205,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
     e.preventDefault();
     setIsEditing(false);
     setRecaptchaToken(null);
-
     const cleanStakeholdersArray = Array.isArray(formData.stakeholders) ? formData.stakeholders.filter(Boolean) : [];
-
     const dataPayload = {
       project_name: formData.project_name || null,
       project_type: formData.project_type || null,
@@ -232,13 +232,21 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
         longitude: String(formData.longitude || 0),
       },
     };
-
     try {
       const token = localStorage.getItem('geomap-auth-token');
       if (!token) {
         throw new Error('No authentication token found. Please log in again.');
       }
-      
+      // Extract connected user email and name from JWT
+      let connectedEmail = null;
+      let connectedUserName = null;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        connectedEmail = payload.email;
+        connectedUserName = payload.name || payload.email || 'User';
+      } catch (jwtError) {
+        console.warn('Could not extract email from JWT:', jwtError);
+      }
       const response = await fetch('/api/storage', {
         method: 'POST',
         headers: { 
@@ -250,11 +258,27 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
           data: dataPayload,
         }),
       });
-
       if (!response.ok) {
         throw new Error(`Failed to save Storage data: ${response.statusText}`);
       }
-
+      setShowModal(true);
+      try {
+        if (connectedEmail) {
+          await fetch('/api/send-confirmation-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: connectedEmail,
+              connectedUserName,
+              plantName: formData.project_name || 'Unknown Plant',
+            }),
+          });
+        } else {
+          console.warn('No connected user email found, confirmation email not sent.');
+        }
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+      }
       const notification = document.createElement('div');
       notification.className =
         'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-lg animate-fade-in-out';
@@ -523,6 +547,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
             )}
           </div>
         </form>
+        <ConfirmationModal open={showModal} onClose={() => setShowModal(false)} />
       </div>
     </div>
   );

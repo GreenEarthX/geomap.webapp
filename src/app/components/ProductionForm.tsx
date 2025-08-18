@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import ConfirmationModal from './ConfirmationModal';
 import { useParams, useRouter } from 'next/navigation';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { ProductionItem } from '@/lib/types2';
@@ -49,6 +50,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [showRecaptcha, setShowRecaptcha] = useState(false);
   const [recaptchaError, setRecaptchaError] = useState('');
+  const [showModal, setShowModal] = useState(false);
 
   // Field order matching generatePopupHtml
   const fieldOrder: (keyof ProductionItem | 'capacity' | 'investment_capex')[] = [
@@ -268,7 +270,19 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
       if (!token) {
         throw new Error('No authentication token found. Please log in again.');
       }
-      
+
+      // Debug: extract email from JWT token
+      let connectedEmail = null;
+      let connectedUserName = null;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        connectedEmail = payload.email;
+        connectedUserName = payload.name || payload.email || 'User';
+        console.log('Connected user email from JWT:', connectedEmail);
+      } catch (jwtError) {
+        console.warn('Could not extract email from JWT:', jwtError);
+      }
+
       const response = await fetch('/api/production', {
         method: 'POST',
         headers: { 
@@ -285,15 +299,25 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
         throw new Error(`Failed to save Production data: ${response.statusText}`);
       }
 
-      const notification = document.createElement('div');
-      notification.className =
-        'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-lg animate-fade-in-out';
-      notification.textContent = 'Changes saved successfully!';
-      document.body.appendChild(notification);
-      setTimeout(() => {
-        notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-        setTimeout(() => notification.remove(), 300);
-      }, 3000);
+      setShowModal(true);
+      try {
+        console.log('Confirmation email will be sent to connected user:', connectedEmail);
+        if (connectedEmail) {
+          await fetch('/api/send-confirmation-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: connectedEmail,
+              connectedUserName,
+              plantName: formData.name || 'Unknown Plant',
+            }),
+          });
+        } else {
+          console.warn('No connected user email found, confirmation email not sent.');
+        }
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+      }
 
       setFormData(initialFormData);
     } catch (error) {
@@ -577,166 +601,169 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100 font-sans">
-      <div className="bg-white p-6 sm:p-8 rounded-lg shadow-sm max-w-4xl w-full">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-blue-800">
-              {formData.name || 'Production Feature Details'}
-            </h2>
-            <p className="text-gray-500 capitalize text-sm sm:text-base">
-              Production Project
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleEditClick}
-            className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${
-              isEditing
-                ? 'bg-green-600 text-white hover:bg-green-700'
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            <svg
-              className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-45' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              {isEditing ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                />
-              )}
-            </svg>
-            {isEditing ? 'Save' : 'Edit'}
-          </button>
-        </div>
-
-        {showRecaptcha && !isEditing && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-              <h3 className="text-lg font-semibold mb-4">Please verify you're not a robot</h3>
-              <ReCAPTCHA
-                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6LeFz3MrAAAAAAHeQFSkH9YUVpR2XDiDxTHV9957'}
-                onChange={handleRecaptchaChange}
-              />
-              {recaptchaError && (
-                <p className="text-red-500 text-sm mt-2">{recaptchaError}</p>
-              )}
-              <button
-                onClick={() => setShowRecaptcha(false)}
-                className="mt-4 px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
-              >
-                Cancel
-              </button>
+    <>
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100 font-sans">
+        <div className="bg-white p-6 sm:p-8 rounded-lg shadow-sm max-w-4xl w-full">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-bold text-blue-800">
+                {formData.name || 'Production Feature Details'}
+              </h2>
+              <p className="text-gray-500 capitalize text-sm sm:text-base">
+                Production Project
+              </p>
             </div>
-          </div>
-        )}
-
-        <div className="mb-6 p-4 bg-blue-50 rounded-md border border-blue-100">
-          <div className="flex items-center">
-            <svg
-              className="w-5 h-5 text-blue-500 mr-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+            <button
+              type="button"
+              onClick={handleEditClick}
+              className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${
+                isEditing
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p className="text-blue-700 text-sm">
-              {isEditing
-                ? 'You are now editing this project. Make your changes and click Save when done.'
-                : 'Viewing project details. Click Edit to make changes.'}
-            </p>
-          </div>
-        </div>
-
-        <form id="production-form" onSubmit={handleSubmit}>
-          {renderFields()}
-          <div className="flex flex-col sm:flex-row justify-between mt-6 pt-4 border-t border-gray-200 gap-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={() => router.push('/')}
-                className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
+              <svg
+                className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-45' : ''}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
               >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                {isEditing ? (
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M9 5l7 7-7 7"
+                    d="M5 13l4 4L19 7"
                   />
-                </svg>
-                Back to Map
-              </button>
-              <button
-                type="button"
-                onClick={() => router.push('/plant-list?type=Production')}
-                className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
-              >
-                <svg
-                  className="w-5 h-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
+                ) : (
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M3 10h18M3 14h18m-18-8h18m-18 12h18"
+                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                   />
-                </svg>
-                Production Plant List
-              </button>
-            </div>
-            {isEditing && (
-              <div className="flex gap-3">
+                )}
+              </svg>
+              {isEditing ? 'Save' : 'Edit'}
+            </button>
+          </div>
+
+          {showRecaptcha && !isEditing && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                <h3 className="text-lg font-semibold mb-4">Please verify you're not a robot</h3>
+                <ReCAPTCHA
+                  sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6LeFz3MrAAAAAAHeQFSkH9YUVpR2XDiDxTHV9957'}
+                  onChange={handleRecaptchaChange}
+                />
+                {recaptchaError && (
+                  <p className="text-red-500 text-sm mt-2">{recaptchaError}</p>
+                )}
                 <button
-                  type="button"
-                  onClick={() => {
-                    setFormData(initialFormData);
-                    setIsEditing(false);
-                    setRecaptchaToken(null);
-                  }}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200 shadow-sm hover:shadow-md"
+                  onClick={() => setShowRecaptcha(false)}
+                  className="mt-4 px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
                 >
                   Cancel
                 </button>
+              </div>
+            </div>
+          )}
+
+          <div className="mb-6 p-4 bg-blue-50 rounded-md border border-blue-100">
+            <div className="flex items-center">
+              <svg
+                className="w-5 h-5 text-blue-500 mr-2"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <p className="text-blue-700 text-sm">
+                {isEditing
+                  ? 'You are now editing this project. Make your changes and click Save when done.'
+                  : 'Viewing project details. Click Edit to make changes.'}
+              </p>
+            </div>
+          </div>
+
+          <form id="production-form" onSubmit={handleSubmit}>
+            {renderFields()}
+            <div className="flex flex-col sm:flex-row justify-between mt-6 pt-4 border-t border-gray-200 gap-4">
+              <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  type="submit"
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                  type="button"
+                  onClick={() => router.push('/')}
+                  className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
                 >
-                  Save Changes
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
+                  Back to Map
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/plant-list?type=Production')}
+                  className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                >
+                  <svg
+                    className="w-5 h-5 mr-2"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 10h18M3 14h18m-18-8h18m-18 12h18"
+                    />
+                  </svg>
+                  Production Plant List
                 </button>
               </div>
-            )}
-          </div>
-        </form>
+              {isEditing && (
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData(initialFormData);
+                      setIsEditing(false);
+                      setRecaptchaToken(null);
+                    }}
+                    className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              )}
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+      <ConfirmationModal open={showModal} onClose={() => setShowModal(false)} />
+    </>
   );
 };
 

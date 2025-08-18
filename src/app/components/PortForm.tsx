@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { PortItem } from '@/lib/types2';
 import { STATUS_OPTIONS, StatusType, PORT_PROJECT_TYPES_OPTIONS, PortProjectTypeType, PORT_PRODUCT_OPTIONS, PortProductType, PORT_TECHNOLOGY_OPTIONS, PortTechnologyType } from '@/lib/lookupTables';
+import ConfirmationModal from './ConfirmationModal';
 
 // --- TYPE DEFINITIONS ---
 
@@ -104,6 +105,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [showRecaptcha, setShowRecaptcha] = useState(false);
   const [recaptchaError, setRecaptchaError] = useState('');
+  const [showModal, setShowModal] = useState(false);
 
   const getInitialFormData = (feature: PortFormProps['initialFeature']): PortFormData => {
     const investmentCosts = feature?.investment;
@@ -211,13 +213,21 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       alert('Error: Missing internal_id. Cannot save changes.');
       return;
     }
-
     try {
       const token = localStorage.getItem('geomap-auth-token');
       if (!token) {
         throw new Error('No authentication token found. Please log in again.');
       }
-      
+      // Extract connected user email and name from JWT
+      let connectedEmail = null;
+      let connectedUserName = null;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        connectedEmail = payload.email;
+        connectedUserName = payload.name || payload.email || 'User';
+      } catch (jwtError) {
+        console.warn('Could not extract email from JWT:', jwtError);
+      }
       const deleteResponse = await fetch('/api/delete-project', {
         method: 'POST',
         headers: { 
@@ -229,20 +239,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       if (!deleteResponse.ok && deleteResponse.status !== 404) {
         throw new Error(`Failed to deactivate the old project version. Code: ${deleteResponse.status}`);
       }
-    } catch (error) {
-      console.error('Error during deactivation step:', error);
-      alert(`An error occurred while updating the project: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      return;
-    }
-
-    const dataToSave = prepareDataForSave(formData, initialFeature);
-
-    try {
-      const token = localStorage.getItem('geomap-auth-token');
-      if (!token) {
-        throw new Error('No authentication token found. Please log in again.');
-      }
-      
+      const dataToSave = prepareDataForSave(formData, initialFeature);
       const createResponse = await fetch('/api/ports', {
         method: 'POST',
         headers: { 
@@ -258,6 +255,27 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
         const errorBody = await createResponse.json();
         throw new Error(`Failed to save new port data: ${errorBody.error || createResponse.statusText}`);
       }
+      setShowModal(true);
+      try {
+        if (connectedEmail) {
+          await fetch('/api/send-confirmation-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: connectedEmail,
+              connectedUserName,
+              plantName: formData.project_name || 'Unknown Plant',
+            }),
+          });
+        } else {
+          console.warn('No connected user email found, confirmation email not sent.');
+        }
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+      }
+      setIsEditing(false);
+      setRecaptchaToken(null);
+      router.refresh();
 
       const notification = document.createElement('div');
       notification.className = 'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-lg animate-fade-in-out';
@@ -267,10 +285,6 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
         notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
         setTimeout(() => notification.remove(), 300);
       }, 3000);
-
-      setIsEditing(false);
-      setRecaptchaToken(null);
-      router.refresh();
     } catch (error) {
       console.error('Error saving new port data:', error);
       alert(`An error occurred while saving the project: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -521,6 +535,8 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
             )}
           </div>
         </form>
+
+        <ConfirmationModal open={showModal} onClose={() => setShowModal(false)} />
       </div>
     </div>
   );
