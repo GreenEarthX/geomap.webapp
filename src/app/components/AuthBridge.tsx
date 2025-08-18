@@ -9,6 +9,7 @@ export default function AuthBridge({ onAuthChange }: AuthBridgeProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [logoutReady, setLogoutReady] = useState(false);
 
   useEffect(() => {
     checkAuthStatus();
@@ -178,6 +179,16 @@ export default function AuthBridge({ onAuthChange }: AuthBridgeProps) {
     window.location.href = `${onboardingUrl}/api/auth/signout?callbackUrl=${geomapUrl}`;
   };
 
+  const handleLogoutClick = () => {
+    if (!logoutReady) {
+      setLogoutReady(true);
+      setTimeout(() => setLogoutReady(false), 3000); // Reset after 3s if not confirmed
+    } else {
+      handleLogout();
+      setLogoutReady(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="auth-loading flex items-center gap-2 px-3 py-2 text-sm text-gray-600">
@@ -196,7 +207,7 @@ export default function AuthBridge({ onAuthChange }: AuthBridgeProps) {
             <span>Welcome, {user?.name || user?.email}</span>
           </div>
           <button 
-            onClick={handleLogout} 
+            onClick={handleLogoutClick}
             className="auth-button logout px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
           >
             Logout
