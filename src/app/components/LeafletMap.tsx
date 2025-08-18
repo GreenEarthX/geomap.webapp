@@ -494,11 +494,6 @@ const LeafletMap = () => {
         <div className="mt-2 text-xs italic text-black">Use the measuring tool on the left to calculate distances</div>
       </div>
 
-      <button onClick={() => (window.location.href = '/plant-widget')} className="fixed top-1/2 right-4 -translate-y-1/2 z-[600] bg-blue-600/80 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm hover:bg-blue-600 transition-colors">
-        <span>Plant List</span>
-        <i className="fa fa-arrow-right" />
-      </button>
-
       <button onClick={handleFindMe} className="fixed bottom-20 right-4 z-[600] bg-white text-blue-600 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-lg transition-transform hover:scale-105" title="Find My Location">
         <i className="fas fa-location-arrow" />
       </button>

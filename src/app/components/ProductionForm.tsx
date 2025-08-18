@@ -247,7 +247,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
       website_url: formData.website_url || null,
       status: {
         current_status: formData.status || null,
-        date_online: formData.date_online || null,
+        date_online: formData.date_online ? String(formData.date_online).slice(0, 4) : null,
       },
       coordinates: {
           latitude: String(formData.latitude || 0),
@@ -352,7 +352,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
       { name: 'zip', label: 'Zip Code', type: 'text', placeholder: 'Enter zip code' },
       { name: 'technology', label: 'Technology', type: 'select', options: technologyTypeOptions },
       { name: 'status', label: 'Status', type: 'select', options: statusOptions },
-      { name: 'date_online', label: 'Date Online', type: 'text', placeholder: 'Enter date online' },
+      { name: 'date_online', label: 'Operational Start Date', type: 'number', placeholder: 'YYYY' },
       { name: 'capacity', label: 'Capacity', type: 'text', placeholder: 'e.g. 100 MW', isCombined: true },
       { name: 'end_use', label: 'End Use', type: 'multiselect', options: endUseOptions },
       { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },

@@ -183,7 +183,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       website_url: formData.website || null,
       status_date: {
         project_status: formData.project_status || null,
-        operation_date: formData.operation_date || null,
+        operation_date: formData.operation_date ? String(formData.operation_date).slice(0, 4) : null,
       },
       project_type: formData.project_type || null,
       product: formData.product || null,
@@ -290,7 +290,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       { name: 'zip', label: 'Zip Code', type: 'text', placeholder: 'Enter zip code' },
       { name: 'technology_fate', label: 'Technology (Fate of Carbon)', type: 'select', options: technologyTypeOptions },
       { name: 'project_status', label: 'Status', type: 'select', options: statusOptions },
-      { name: 'operation_date', label: 'Operation Date', type: 'text', placeholder: 'Enter operation date' },
+      { name: 'operation_date', label: 'Operational Start Date', type: 'number', placeholder: 'YYYY' },
       { name: 'capacity', label: 'Capacity', type: 'text', placeholder: 'e.g. 10 Mt CO2/yr', isCombined: true },
       { name: 'end_use_sector', label: 'End Use Sector', type: 'select', options: endUseSectorOptions },
       { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },
@@ -398,6 +398,24 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
                             </option>
                           ))}
                         </select>
+                      ) : field.type === 'number' && field.name === 'operation_date' ? (
+                        <input
+                          type="number"
+                          name="operation_date"
+                          value={formData.operation_date ?? ''}
+                          onChange={e => {
+                            const val = e.target.value;
+                            // Only allow 4-digit years
+                            if (/^\d{0,4}$/.test(val)) {
+                              setFormData(prev => ({ ...prev, operation_date: val }));
+                            }
+                          }}
+                          min={1900}
+                          max={2100}
+                          step={1}
+                          placeholder="YYYY"
+                          className="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-black bg-white hover:border-gray-400"
+                        />
                       ) : (
                         <input
                           type={field.type}

@@ -36,6 +36,15 @@ export default function GexHeader() {
         </button>
 
         <AuthBridge />
+
+        {/* Plant List Button - moved to the far right */}
+        <button
+          onClick={() => (window.location.href = '/plant-widget')}
+          className="bg-blue-600/80 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm hover:bg-blue-600 transition-colors ml-2"
+        >
+          <span>Plant List</span>
+          <i className="fa fa-arrow-right" />
+        </button>
       </div>
 
       {/* Email Contact Modal */}

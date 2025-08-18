@@ -220,7 +220,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
       website_url: formData.website_url || null,
       status: {
         current_status: formData.status || null,
-        date_online: formData.date_online || null,
+        date_online: formData.date_online ? String(formData.date_online).slice(0, 4) : null,
       },
       primary_product: formData.primary_product || null,
       capacities: {
@@ -319,7 +319,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
       { name: 'street', label: 'Street', type: 'text', placeholder: 'Enter street' },
       { name: 'zip', label: 'Zip Code', type: 'text', placeholder: 'Enter zip code' },
       { name: 'status', label: 'Status', type: 'select', options: statusOptions },
-      { name: 'date_online', label: 'Date Online', type: 'text', placeholder: 'Enter date online' },
+      { name: 'date_online', label: 'Operational Start Date', type: 'number', placeholder: 'YYYY' },
       { name: 'primary_product', label: 'Primary Product', type: 'text', placeholder: 'Enter primary product' },
       { name: 'storage_mass_kt_per_year', label: 'Storage Capacity', type: 'text', placeholder: 'e.g. 72 kt H2/year', isCombined: true },
       { name: 'contact_name', label: 'Contact Name', type: 'text', placeholder: 'Enter contact name' },
