@@ -95,7 +95,8 @@ export async function middleware(request: NextRequest) {
     '/api/ports',
     '/api/plant-form',
     '/plant-form',
-    '/port-form'
+    '/port-form',
+    '/admin/:path*'
   ];
 
   const isProtectedPath = protectedPaths.some(path => {
@@ -104,7 +105,7 @@ export async function middleware(request: NextRequest) {
       if (request.nextUrl.pathname.startsWith('/api/')) {
         return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method);
       }
-      // For form pages, protect all access
+      // For form pages and admin paths, protect all access
       return true;
     }
     return false;
@@ -189,6 +190,28 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(authUrl.toString());
       }
     }
+
+    // Additional admin email restriction for /admin/* paths
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',') || [];
+    if (request.nextUrl.pathname.startsWith('/admin/')) {
+      if (!adminEmails.includes(payload.email)) {
+        if (request.nextUrl.pathname.startsWith('/api/')) {
+          return NextResponse.json({ error: 'Admin access restricted' }, { status: 403 });
+        } else {
+          // Redirect to map with message for non-admin users
+          const response = NextResponse.redirect(new URL('/', request.url));
+          response.cookies.set('message', 'Nice try user :p', { path: '/', maxAge: 5 });
+          return response;
+        }
+      } else {
+        // Allow access for admin emails
+        const response = NextResponse.next();
+        response.headers.set('x-user-id', payload.userId);
+        response.headers.set('x-user-email', payload.email);
+        response.headers.set('x-user-name', payload.name || '');
+        return response;
+      }
+    }
     
     // Add user info to request headers for API routes
     const response = NextResponse.next();
@@ -268,6 +291,7 @@ export const config = {
     '/api/ports/:path*',
     '/api/plant-form/:path*',
     '/plant-form/:path*',
-    '/port-form/:path*'
+    '/port-form/:path*',
+    '/admin/:path*'
   ]
 };

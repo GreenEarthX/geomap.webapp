@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import ReCAPTCHA from 'react-google-recaptcha';
 import { CCUSItem, CCUSReference } from '@/lib/types2';
 import { STATUS_OPTIONS, StatusType, CCUS_PROJECT_TYPES_OPTIONS, CCUSProjectTypeType, CCUS_END_USE_OPTIONS, CCUSEndUseType, CCUS_TECHNOLOGY_OPTIONS, CCUSTechnologyType } from '@/lib/lookupTables';
 
@@ -30,7 +31,7 @@ interface CCUSFormProps {
   statusTooltip: React.ReactElement;
   projectTypeOptions: typeof CCUS_PROJECT_TYPES_OPTIONS;
   endUseSectorOptions: typeof CCUS_END_USE_OPTIONS;
-  technologyTypeOptions: typeof CCUS_TECHNOLOGY_OPTIONS; // Added technologyTypeOptions
+  technologyTypeOptions: typeof CCUS_TECHNOLOGY_OPTIONS;
 }
 
 const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, projectTypeOptions, endUseSectorOptions, technologyTypeOptions }: CCUSFormProps) => {
@@ -43,6 +44,9 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     'Specific Information': true,
     'Contact Information': true,
   });
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [showRecaptcha, setShowRecaptcha] = useState(false);
+  const [recaptchaError, setRecaptchaError] = useState('');
 
   const initialFormData: Partial<CCUSItem> & { capacity?: string } = {
     id: initialFeature?.id ?? '',
@@ -113,9 +117,56 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     }
   };
 
+  const handleEditClick = async () => {
+    if (isEditing) {
+      setIsEditing(false);
+      setRecaptchaToken(null);
+      return;
+    }
+
+    setShowRecaptcha(true);
+  };
+
+  const handleRecaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token);
+    setRecaptchaError('');
+  };
+
+  useEffect(() => {
+    const verifyToken = async () => {
+      if (recaptchaToken) {
+        try {
+          const response = await fetch('/api/verify-recaptcha', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ token: recaptchaToken }),
+          });
+
+          const data = await response.json();
+          if (data.success) {
+            setIsEditing(true);
+            setShowRecaptcha(false);
+          } else {
+            setRecaptchaError('reCAPTCHA verification failed. Please try again.');
+            setRecaptchaToken(null);
+          }
+        } catch (error) {
+          console.error('reCAPTCHA verification error:', error);
+          setRecaptchaError('Failed to verify reCAPTCHA. Please try again.');
+          setRecaptchaToken(null);
+        }
+      }
+    };
+
+    verifyToken();
+  }, [recaptchaToken]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsEditing(false);
+    setRecaptchaToken(null);
 
     const dataPayload = {
       plant_name: formData.name || null,
@@ -211,7 +262,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       { name: 'city', label: 'City', type: 'text', placeholder: 'City location' },
       { name: 'street', label: 'Street', type: 'text', placeholder: 'Enter street' },
       { name: 'zip', label: 'Zip Code', type: 'text', placeholder: 'Enter zip code' },
-      { name: 'technology_fate', label: 'Technology (Fate of Carbon)', type: 'select', options: technologyTypeOptions }, // Changed to select
+      { name: 'technology_fate', label: 'Technology (Fate of Carbon)', type: 'select', options: technologyTypeOptions },
       { name: 'project_status', label: 'Status', type: 'select', options: statusOptions },
       { name: 'operation_date', label: 'Operation Date', type: 'text', placeholder: 'Enter operation date' },
       { name: 'capacity', label: 'Capacity', type: 'text', placeholder: 'e.g. 10 Mt CO2/yr', isCombined: true },
@@ -230,7 +281,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       },
       {
         title: 'Contact Information',
-        fields: [ 'contact', 'email'],
+        fields: ['contact', 'email'],
       },
       {
         title: 'Location',
@@ -238,7 +289,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       },
       {
         title: 'Specific Information',
-        fields: [ 'project_status', 'operation_date', 'capacity',  'investment_capex'],
+        fields: ['project_status', 'operation_date', 'capacity', 'investment_capex'],
       },
     ];
 
@@ -394,13 +445,37 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
               CCUS Project
             </p>
           </div>
-          <button onClick={() => setIsEditing(!isEditing)} className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${isEditing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+          <button 
+            onClick={handleEditClick} 
+            className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${isEditing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+          >
             <svg className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-45' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {isEditing ? (<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/>) : (<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>)}
             </svg>
             {isEditing ? 'Save' : 'Edit'}
           </button>
         </div>
+
+        {showRecaptcha && !isEditing && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+              <h3 className="text-lg font-semibold mb-4">Please verify you're not a robot</h3>
+              <ReCAPTCHA
+                sitekey={process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY || '6LeFz3MrAAAAAAHeQFSkH9YUVpR2XDiDxTHV9957'}
+                onChange={handleRecaptchaChange}
+              />
+              {recaptchaError && (
+                <p className="text-red-500 text-sm mt-2">{recaptchaError}</p>
+              )}
+              <button
+                onClick={() => setShowRecaptcha(false)}
+                className="mt-4 px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="mb-6 p-4 bg-blue-50 rounded-md border border-blue-100">
           <div className="flex items-center">
