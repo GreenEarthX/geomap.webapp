@@ -7,7 +7,22 @@ import { StorageItem } from '@/lib/types2';
 import { STATUS_OPTIONS, StatusType, STORAGE_PROJECT_TYPES_OPTIONS, StorageProjectTypeType } from '@/lib/lookupTables';
 import ConfirmationModal from './ConfirmationModal';
 
-// Updated FieldConfig to include options for the dropdown and updated_at
+// Helper to get connected user email from JWT
+function getConnectedEmail() {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('geomap-auth-token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.email;
+      } catch (e) {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
 interface FieldConfig {
   name: keyof StorageItem | 'storage_mass_kt_per_year' | 'updated_at';
   label: string;
@@ -23,7 +38,6 @@ interface SectionConfig {
   fields: (keyof StorageItem | 'storage_mass_kt_per_year' | 'updated_at')[];
 }
 
-// Updated StorageFormProps to accept status options, project type options, and a tooltip
 interface StorageFormProps {
   initialFeature: StorageItem | null;
   initialError: string | null;
@@ -33,6 +47,8 @@ interface StorageFormProps {
 }
 
 const StorageForm = ({ initialFeature, initialError, statusOptions, statusTooltip, projectTypeOptions }: StorageFormProps) => {
+  const [editLimitReached, setEditLimitReached] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -145,7 +161,26 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
     }
   }, [initialFeature, statusOptions, projectTypeOptions]);
 
-  // Generic input handler for both text inputs and select dropdowns
+  // Check edit limit on mount
+  useEffect(() => {
+    async function checkEditLimit() {
+      const connectedEmail = getConnectedEmail();
+      if (!connectedEmail) return;
+      try {
+        const res = await fetch(`/api/user-edit-limit?email=${encodeURIComponent(connectedEmail)}&sector=Storage`);
+        const data = await res.json();
+        if (data.count >= 3) {
+          setEditLimitReached(true);
+        } else {
+          setEditLimitReached(false);
+        }
+      } catch (err) {
+        setEditLimitReached(false);
+      }
+    }
+    checkEditLimit();
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === 'storage_mass_kt_per_year') {
@@ -170,9 +205,27 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
     }
   };
 
-  const handleEditClick = () => {
+  const handleEditClick = async () => {
+    // Always check edit limit on click
+    const connectedEmail = getConnectedEmail();
+    if (!connectedEmail) {
+      setShowLimitModal(true);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/user-edit-limit?email=${encodeURIComponent(connectedEmail)}&sector=Storage`);
+      const data = await res.json();
+      if (typeof data.count === 'number' && data.count >= 3) {
+        setEditLimitReached(true);
+        setShowLimitModal(true);
+        return;
+      } else {
+        setEditLimitReached(false);
+      }
+    } catch (err) {
+      setEditLimitReached(false);
+    }
     if (isEditing) {
-      // Set updated_at to today in DB format before submit
       setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
       (document.getElementById('storage-form') as HTMLFormElement)?.requestSubmit();
       setIsEditing(false);
@@ -513,13 +566,32 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
               Storage Project
             </p>
           </div>
-          <button onClick={handleEditClick} className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${isEditing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+          <button 
+            onClick={handleEditClick} 
+            disabled={editLimitReached}
+            className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${
+              isEditing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'
+            } ${editLimitReached ? 'cursor-not-allowed opacity-50' : ''}`}
+          >
             <svg className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-45' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {isEditing ? ( <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/> ) : ( <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>)}
             </svg>
             {isEditing ? 'Save' : 'Edit'}
           </button>
         </div>
+
+        {editLimitReached && (
+          <div className="mb-6 p-4 bg-orange-100 border-l-4 border-orange-500 text-orange-700 rounded-md">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-orange-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm">
+                You can't edit, You already reached the limit of project editing.
+              </p>
+            </div>
+          </div>
+        )}
 
         {showRecaptcha && !isEditing && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -567,7 +639,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
               </button>
               <button type="button" onClick={() => router.push('/plant-list?type=Storage')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
                 <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-18-8h18m-18 12h18"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-18-8h18Chengem-18 12h18"/>
                 </svg>
                 Storage Plant List
               </button>
@@ -585,6 +657,13 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
           </div>
         </form>
         <ConfirmationModal open={showModal} onClose={() => setShowModal(false)} />
+        {showLimitModal && (
+          <ConfirmationModal
+            open={showLimitModal}
+            onClose={() => setShowLimitModal(false)}
+            message="You can't edit, you reached the limit of 3 edits. You can contact the support team for further info!"
+          />
+        )}
       </div>
     </div>
   );

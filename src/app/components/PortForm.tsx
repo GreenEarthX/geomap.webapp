@@ -7,10 +7,25 @@ import { PortItem } from '@/lib/types2';
 import { STATUS_OPTIONS, StatusType, PORT_PROJECT_TYPES_OPTIONS, PortProjectTypeType, PORT_PRODUCT_OPTIONS, PortProductType, PORT_TECHNOLOGY_OPTIONS, PortTechnologyType } from '@/lib/lookupTables';
 import ConfirmationModal from './ConfirmationModal';
 
-// --- TYPE DEFINITIONS ---
+// Helper to get connected user email from JWT
+function getConnectedEmail() {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('geomap-auth-token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.email;
+      } catch (e) {
+        return null;
+      }
+    }
+  }
+  return null;
+}
 
+// --- TYPE DEFINITIONS ---
 type PortFormData = Omit<Partial<PortItem>, 'capacity_value' | 'storage_capacity_value' | 'stakeholders'> & {
-  stakeholders?: string;
+  stakeholders?: string[];
   contact_name?: string;
   website_url?: string;
   project_type?: string;
@@ -61,7 +76,7 @@ const prepareDataForSave = (formData: PortFormData, originalData: PortFormProps[
   dataToSave.project_type = formData.project_type || null;
   dataToSave.port_code = formData.port_code || null;
   dataToSave.partners = formData.partners || null;
-  dataToSave.stakeholders = formData.stakeholders || null;
+  dataToSave.stakeholders = formData.stakeholders?.filter(Boolean) || null;
   dataToSave.contact_name = formData.contact_name || null;
   dataToSave.email = formData.email || null;
   dataToSave.country = formData.country || null;
@@ -95,6 +110,8 @@ const prepareDataForSave = (formData: PortFormData, originalData: PortFormProps[
 };
 
 const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, projectTypeOptions, productTypeOptions, technologyTypeOptions }: PortFormProps) => {
+  const [editLimitReached, setEditLimitReached] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -120,7 +137,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       type: 'port',
       port_code: feature?.port_code ?? '',
       partners: feature?.partners ?? '',
-      stakeholders: feature?.stakeholders ?? '',
+      stakeholders: feature?.stakeholders ? String(feature.stakeholders).split(',').map(s => s.trim()).filter(Boolean) : [],
       contact_name: feature?.contact_name ?? '',
       email: feature?.email ?? '',
       country: feature?.country ?? '',
@@ -158,13 +175,37 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     }
   }, [initialFeature, statusOptions, projectTypeOptions, productTypeOptions, technologyTypeOptions]);
 
+  // Check edit limit on mount
+  useEffect(() => {
+    async function checkEditLimit() {
+      const connectedEmail = getConnectedEmail();
+      if (!connectedEmail) return;
+      try {
+        const res = await fetch(`/api/user-edit-limit?email=${encodeURIComponent(connectedEmail)}&sector=Port`);
+        const data = await res.json();
+        if (data.count >= 3) {
+          setEditLimitReached(true);
+        } else {
+          setEditLimitReached(false);
+        }
+      } catch (err) {
+        setEditLimitReached(false);
+      }
+    }
+    checkEditLimit();
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'stakeholders') {
+      const stakeholdersArray = value.split(',').map(s => s.trim()).filter(Boolean);
+      setFormData(prev => ({ ...prev, [name]: stakeholdersArray }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const formatDbDate = (date: Date) => {
-    // Format: YYYY-MM-DD HH:mm:ss.SSSSSS+00
     const pad = (n: number, z = 2) => ('00' + n).slice(-z);
     const year = date.getUTCFullYear();
     const month = pad(date.getUTCMonth() + 1);
@@ -172,20 +213,37 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     const hour = pad(date.getUTCHours());
     const min = pad(date.getUTCMinutes());
     const sec = pad(date.getUTCSeconds());
-    const ms = pad(date.getUTCMilliseconds(), 3) + '000'; // pad to microseconds
+    const ms = pad(date.getUTCMilliseconds(), 3) + '000';
     return `${year}-${month}-${day} ${hour}:${min}:${sec}.${ms}+00`;
   };
 
   const handleEditClick = async () => {
+    // Always check edit limit on click
+    const connectedEmail = getConnectedEmail();
+    if (!connectedEmail) {
+      setShowLimitModal(true);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/user-edit-limit?email=${encodeURIComponent(connectedEmail)}&sector=Port`);
+      const data = await res.json();
+      if (typeof data.count === 'number' && data.count >= 3) {
+        setEditLimitReached(true);
+        setShowLimitModal(true);
+        return;
+      } else {
+        setEditLimitReached(false);
+      }
+    } catch (err) {
+      setEditLimitReached(false);
+    }
     if (isEditing) {
-      // Set updated_at to today in DB format before submit
       setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
       (document.getElementById('port-form') as HTMLFormElement)?.requestSubmit();
       setIsEditing(false);
       setRecaptchaToken(null);
       return;
     }
-
     setShowRecaptcha(true);
   };
 
@@ -301,7 +359,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       notification.textContent = 'Changes saved successfully!';
       document.body.appendChild(notification);
       setTimeout(() => {
-        notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+        notification.className += ' opacity-0 transition-opacity duration-300';
         setTimeout(() => notification.remove(), 300);
       }, 3000);
     } catch (error) {
@@ -320,7 +378,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       { name: 'project_type', label: 'Project Type', type: 'select', options: projectTypeOptions },
       { name: 'port_code', label: 'Port Code', type: 'text', placeholder: 'Alphanumeric, 5 characters' },
       { name: 'partners', label: 'Owner (Partners)', type: 'text', placeholder: 'Enter partners' },
-      { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Enter stakeholders' },
+      { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },
       { name: 'contact_name', label: 'Name (Contact)', type: 'text', placeholder: 'Enter contact name' },
       { name: 'email', label: 'Email', type: 'email', placeholder: 'Enter email' },
       { name: 'country', label: 'Country', type: 'text', placeholder: 'Country location' },
@@ -408,7 +466,11 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
                         <input
                           type={field.type}
                           name={field.name}
-                          value={String(formData[field.name as keyof PortFormData] ?? '')}
+                          value={
+                            field.name === 'stakeholders'
+                              ? Array.isArray(formData[field.name]) ? (formData[field.name] as string[]).join(', ') : ''
+                              : String(formData[field.name as keyof PortFormData] ?? '')
+                          }
                           onChange={handleInputChange}
                           disabled={!isEditing || field.disabled}
                           placeholder={field.placeholder}
@@ -468,7 +530,10 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
           <button
             type="button"
             onClick={handleEditClick}
-            className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${isEditing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}
+            disabled={editLimitReached}
+            className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${
+              isEditing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'
+            } ${editLimitReached ? 'cursor-not-allowed opacity-50' : ''}`}
           >
             <svg className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-45' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {isEditing ? (
@@ -480,6 +545,19 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
             {isEditing ? 'Save' : 'Edit'}
           </button>
         </div>
+
+        {editLimitReached && (
+          <div className="mb-6 p-4 bg-orange-100 border-l-4 border-orange-500 text-orange-700 rounded-md">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-orange-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm">
+                You can't edit, You already reached the limit of project editing.
+              </p>
+            </div>
+          </div>
+        )}
 
         {showRecaptcha && !isEditing && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -557,6 +635,13 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
         </form>
 
         <ConfirmationModal open={showModal} onClose={() => setShowModal(false)} />
+        {showLimitModal && (
+          <ConfirmationModal
+            open={showLimitModal}
+            onClose={() => setShowLimitModal(false)}
+            message="You can't edit, you reached the limit of 3 edits. You can contact the support team for further info!"
+          />
+        )}
       </div>
     </div>
   );

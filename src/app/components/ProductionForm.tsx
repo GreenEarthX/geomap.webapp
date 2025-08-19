@@ -41,6 +41,8 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editLimitReached, setEditLimitReached] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const [openSections, setOpenSections] = useState<Record<SectionTitle, boolean>>({
     'General Information': false,
     'Location': false,
@@ -189,9 +191,61 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
     setFormData((prev) => ({ ...prev, end_use: updatedEndUse }));
   };
 
-  const handleEditClick = () => {
+  // Helper to get connected user email (from JWT or context)
+  // Always get connected email from JWT token
+  let connectedEmail: string | null = null;
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('geomap-auth-token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        connectedEmail = payload.email;
+      } catch (e) {
+        connectedEmail = null;
+      }
+    }
+  }
+  const plantId = initialFeature?.internal_id || id;
+
+  // Check edit limit on mount
+  useEffect(() => {
+    async function checkEditLimit() {
+      if (!connectedEmail) return;
+      try {
+        const res = await fetch(`/api/user-edit-limit?email=${encodeURIComponent(connectedEmail)}&sector=Production`);
+        const data = await res.json();
+        if (data.count >= 3) {
+          setEditLimitReached(true);
+        } else {
+          setEditLimitReached(false);
+        }
+      } catch (err) {
+        setEditLimitReached(false);
+      }
+    }
+    checkEditLimit();
+  }, [connectedEmail]);
+
+  const handleEditClick = async () => {
+    // Always check edit limit on click
+    if (!connectedEmail) {
+      setShowLimitModal(true);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/user-edit-limit?email=${encodeURIComponent(connectedEmail)}&sector=Production`);
+      const data = await res.json();
+      if (typeof data.count === 'number' && data.count >= 3) {
+        setEditLimitReached(true);
+        setShowLimitModal(true);
+        return;
+      } else {
+        setEditLimitReached(false);
+      }
+    } catch (err) {
+      setEditLimitReached(false);
+    }
     if (isEditing) {
-      // Set updated_at to today in DB format before submit
       setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
       (document.getElementById('production-form') as HTMLFormElement)?.requestSubmit();
       setIsEditing(false);
@@ -641,11 +695,12 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
           <button
             type="button"
             onClick={handleEditClick}
+            disabled={editLimitReached}
             className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${
               isEditing
                 ? 'bg-green-600 text-white hover:bg-green-700'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
+            } ${editLimitReached ? 'cursor-not-allowed opacity-50' : ''}`}
           >
             <svg
               className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-45' : ''}`}
@@ -672,6 +727,19 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
             {isEditing ? 'Save' : 'Edit'}
           </button>
         </div>
+
+        {editLimitReached && (
+          <div className="mb-6 p-4 bg-orange-100 border-l-4 border-orange-500 text-orange-700 rounded-md">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-orange-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm">
+                You can't edit, You already reached the limit of project editing.
+              </p>
+            </div>
+          </div>
+        )}
 
         {showRecaptcha && !isEditing && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -786,6 +854,13 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
           </div>
         </form>
         <ConfirmationModal open={showModal} onClose={() => setShowModal(false)} />
+        {showLimitModal && (
+          <ConfirmationModal
+            open={showLimitModal}
+            onClose={() => setShowLimitModal(false)}
+            message="You can't edit, you reached the limit of 3 edits. You can contact the support team for further info!"
+          />
+        )}
       </div>
     </div>
   );

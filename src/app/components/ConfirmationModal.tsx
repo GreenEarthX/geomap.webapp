@@ -3,9 +3,10 @@ import React from 'react';
 interface ConfirmationModalProps {
   open: boolean;
   onClose: () => void;
+  message?: string;
 }
 
-const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ open, onClose }) => {
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ open, onClose, message }) => {
   if (!open) return null;
   return (
     <div style={{
@@ -28,10 +29,9 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({ open, onClose }) 
         boxShadow: '0 2px 16px rgba(0,0,0,0.15)',
         textAlign: 'center',
       }}>
-        <h2 style={{ color: '#0072BC', marginBottom: 16 }}>Submission Received</h2>
+        <h2 style={{ color: '#0072BC', marginBottom: 16 }}>Notice</h2>
         <p style={{ color: '#333', marginBottom: 24 }}>
-          Your changes have been submitted and will be reviewed by our team for verification.<br />
-          You will receive a confirmation email shortly.
+          {message || 'Your changes have been submitted and will be reviewed by our team for verification. You will receive a confirmation email shortly.'}
         </p>
         <button
           style={{
