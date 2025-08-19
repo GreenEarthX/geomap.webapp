@@ -10,19 +10,20 @@ import ConfirmationModal from './ConfirmationModal';
 // --- TYPE DEFINITIONS ---
 
 interface FieldConfig {
-  name: keyof CCUSItem | 'capacity';
+  name: keyof CCUSItem | 'capacity' | 'updated_at';
   label: string;
   type: string;
   placeholder?: string;
   isCombined?: boolean;
   options?: ReadonlyArray<string>;
+  disabled?: boolean;
 }
 
 type SectionTitle = 'General Information' | 'Location' | 'Specific Information' | 'Contact Information';
 
 interface SectionConfig {
   title: SectionTitle;
-  fields: (keyof CCUSItem | 'capacity')[];
+  fields: (keyof CCUSItem | 'capacity' | 'updated_at')[];
 }
 
 interface CCUSFormProps {
@@ -40,17 +41,29 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [openSections, setOpenSections] = useState<Record<SectionTitle, boolean>>({
-    'General Information': true,
-    'Location': true,
-    'Specific Information': true,
-    'Contact Information': true,
+    'General Information': false,
+    'Location': false,
+    'Specific Information': false,
+    'Contact Information': false,
   });
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [showRecaptcha, setShowRecaptcha] = useState(false);
   const [recaptchaError, setRecaptchaError] = useState('');
   const [showModal, setShowModal] = useState(false);
 
-  const initialFormData: Partial<CCUSItem> & { capacity?: string } = {
+  const formatDbDate = (date: Date) => {
+    const pad = (n: number, z = 2) => ('00' + n).slice(-z);
+    const year = date.getUTCFullYear();
+    const month = pad(date.getUTCMonth() + 1);
+    const day = pad(date.getUTCDate());
+    const hour = pad(date.getUTCHours());
+    const min = pad(date.getUTCMinutes());
+    const sec = pad(date.getUTCSeconds());
+    const ms = pad(date.getUTCMilliseconds(), 3) + '000';
+    return `${year}-${month}-${day} ${hour}:${min}:${sec}.${ms}+00`;
+  };
+
+  const initialFormData: Partial<CCUSItem> & { capacity?: string; updated_at?: string | null } = {
     id: initialFeature?.id ?? '',
     internal_id: initialFeature?.internal_id ?? id ?? '',
     name: initialFeature?.name ?? 'Placeholder Feature',
@@ -80,9 +93,10 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     references: initialFeature?.references ?? [],
     latitude: initialFeature?.latitude ?? 0,
     longitude: initialFeature?.longitude ?? 0,
+    updated_at: initialFeature?.updated_at ?? null,
   };
 
-  const [formData, setFormData] = useState<Partial<CCUSItem> & { capacity?: string }>(initialFormData);
+  const [formData, setFormData] = useState<Partial<CCUSItem> & { capacity?: string; updated_at?: string | null }>(initialFormData);
 
   useEffect(() => {
     if (initialFeature) {
@@ -121,6 +135,9 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
 
   const handleEditClick = async () => {
     if (isEditing) {
+      // Set updated_at to today in DB format before submit
+      setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
+      (document.getElementById('ccus-form') as HTMLFormElement)?.requestSubmit();
       setIsEditing(false);
       setRecaptchaToken(null);
       return;
@@ -150,6 +167,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
           if (data.success) {
             setIsEditing(true);
             setShowRecaptcha(false);
+            setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
           } else {
             setRecaptchaError('reCAPTCHA verification failed. Please try again.');
             setRecaptchaToken(null);
@@ -167,8 +185,6 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsEditing(false);
-    setRecaptchaToken(null);
     const dataPayload = {
       plant_name: formData.name || null,
       project_name: formData.project_name || null,
@@ -201,6 +217,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
         latitude: String(formData.latitude || 0),
         longitude: String(formData.longitude || 0),
       },
+      updated_at: formData.updated_at || null,
     };
     try {
       const token = localStorage.getItem('geomap-auth-token');
@@ -298,6 +315,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       { name: 'contact', label: 'Contact Name', type: 'text', placeholder: 'Enter contact name' },
       { name: 'email', label: 'Email', type: 'email', placeholder: 'Enter email' },
       { name: 'website', label: 'Website', type: 'text', placeholder: 'Enter website URL' },
+      { name: 'updated_at', label: 'Updated record', type: 'text', disabled: true },
     ];
 
     const sections: SectionConfig[] = [
@@ -315,7 +333,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       },
       {
         title: 'Specific Information',
-        fields: ['project_status', 'operation_date', 'capacity', 'investment_capex'],
+        fields: ['project_status', 'operation_date', 'capacity', 'investment_capex', 'updated_at'],
       },
     ];
 
@@ -425,13 +443,15 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
                               ? formData.stakeholders ?? ''
                               : field.name === 'capacity'
                               ? formData.capacity ?? ''
+                              : field.name === 'updated_at'
+                              ? formData.updated_at ?? ''
                               : String(formData[field.name as keyof CCUSItem] ?? '')
                           }
                           onChange={handleInputChange}
-                          disabled={!isEditing}
+                          disabled={!isEditing || field.disabled}
                           placeholder={field.placeholder}
                           className={`w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-black ${
-                            isEditing ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
+                            isEditing && !field.disabled ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
                           }`}
                         />
                       )}
@@ -534,7 +554,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
           </div>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form id="ccus-form" onSubmit={handleSubmit}>
           {renderFields()}
           <div className="flex flex-col sm:flex-row justify-between mt-6 pt-4 border-t border-gray-200 gap-4">
             <div className="flex flex-col sm:flex-row gap-3">
@@ -553,7 +573,7 @@ const CCUSForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
             </div>
             {isEditing && (
               <div className="flex gap-3">
-                <button type="button" onClick={() => { setFormData(initialFormData); setIsEditing(false); }} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200 shadow-sm hover:shadow-md">
+                <button type="button" onClick={() => { setFormData(initialFormData); setIsEditing(false); setRecaptchaToken(null); }} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200 shadow-sm hover:shadow-md">
                   Cancel
                 </button>
                 <button type="submit" className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md">

@@ -7,19 +7,20 @@ import { StorageItem } from '@/lib/types2';
 import { STATUS_OPTIONS, StatusType, STORAGE_PROJECT_TYPES_OPTIONS, StorageProjectTypeType } from '@/lib/lookupTables';
 import ConfirmationModal from './ConfirmationModal';
 
-// Updated FieldConfig to include options for the dropdown
+// Updated FieldConfig to include options for the dropdown and updated_at
 interface FieldConfig {
-  name: keyof StorageItem | 'storage_mass_kt_per_year';
+  name: keyof StorageItem | 'storage_mass_kt_per_year' | 'updated_at';
   label: string;
   type: string;
   placeholder?: string;
   isCombined?: boolean;
   options?: ReadonlyArray<string>;
+  disabled?: boolean;
 }
 
 interface SectionConfig {
   title: string;
-  fields: (keyof StorageItem | 'storage_mass_kt_per_year')[];
+  fields: (keyof StorageItem | 'storage_mass_kt_per_year' | 'updated_at')[];
 }
 
 // Updated StorageFormProps to accept status options, project type options, and a tooltip
@@ -36,11 +37,10 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
-    'General Information': true,
-    'Location': true,
-    'Specific Information': true,
-    'Storage Capacity': true,
-    'Contact Information': true,
+    'General Information': false,
+    'Location': false,
+    'Specific Information': false,
+    'Contact Information': false,
   });
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [showRecaptcha, setShowRecaptcha] = useState(false);
@@ -88,8 +88,21 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
     return [];
   };
 
+  const formatDbDate = (date: Date) => {
+    const pad = (n: number, z = 2) => ('00' + n).slice(-z);
+    const year = date.getUTCFullYear();
+    const month = pad(date.getUTCMonth() + 1);
+    const day = pad(date.getUTCDate());
+    const hour = pad(date.getUTCHours());
+    const min = pad(date.getUTCMinutes());
+    const sec = pad(date.getUTCSeconds());
+    const ms = pad(date.getUTCMilliseconds(), 3) + '000';
+    return `${year}-${month}-${day} ${hour}:${min}:${sec}.${ms}+00`;
+  };
+
   const initialFormData: Partial<StorageItem> & {
     storage_mass_kt_per_year?: string;
+    updated_at?: string | null;
   } = {
     id: initialFeature?.id ?? '',
     internal_id: initialFeature?.internal_id ?? id ?? '',
@@ -115,10 +128,12 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
       : '',
     latitude: initialFeature?.latitude ?? 0,
     longitude: initialFeature?.longitude ?? 0,
+    updated_at: initialFeature?.updated_at ?? null,
   };
 
   const [formData, setFormData] = useState<Partial<StorageItem> & {
     storage_mass_kt_per_year?: string;
+    updated_at?: string | null;
   }>(initialFormData);
 
   useEffect(() => {
@@ -157,6 +172,8 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
 
   const handleEditClick = () => {
     if (isEditing) {
+      // Set updated_at to today in DB format before submit
+      setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
       (document.getElementById('storage-form') as HTMLFormElement)?.requestSubmit();
       setIsEditing(false);
       setRecaptchaToken(null);
@@ -186,6 +203,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
           if (data.success) {
             setIsEditing(true);
             setShowRecaptcha(false);
+            setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
           } else {
             setRecaptchaError('reCAPTCHA verification failed. Please try again.');
             setRecaptchaToken(null);
@@ -203,8 +221,6 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsEditing(false);
-    setRecaptchaToken(null);
     const cleanStakeholdersArray = Array.isArray(formData.stakeholders) ? formData.stakeholders.filter(Boolean) : [];
     const dataPayload = {
       project_name: formData.project_name || null,
@@ -231,6 +247,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
         latitude: String(formData.latitude || 0),
         longitude: String(formData.longitude || 0),
       },
+      updated_at: formData.updated_at || null,
     };
     try {
       const token = localStorage.getItem('geomap-auth-token');
@@ -308,7 +325,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
   };
 
   const renderFields = () => {
-    // Field definitions, now with status and project_type as select types
+    // Field definitions, now with status, project_type, and updated_at
     const fields: FieldConfig[] = [
       { name: 'project_name', label: 'Project Name', type: 'text', placeholder: 'Enter project name' },
       { name: 'project_type', label: 'Project Type', type: 'select', options: projectTypeOptions },
@@ -322,6 +339,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
       { name: 'date_online', label: 'Operational Start Date', type: 'number', placeholder: 'YYYY' },
       { name: 'primary_product', label: 'Primary Product', type: 'text', placeholder: 'Enter primary product' },
       { name: 'storage_mass_kt_per_year', label: 'Storage Capacity', type: 'text', placeholder: 'e.g. 72 kt H2/year', isCombined: true },
+      { name: 'updated_at', label: 'Updated record', type: 'text', disabled: true },
       { name: 'contact_name', label: 'Contact Name', type: 'text', placeholder: 'Enter contact name' },
       { name: 'email', label: 'Email', type: 'email', placeholder: 'Enter email' },
       { name: 'website_url', label: 'Website', type: 'text', placeholder: 'Enter website URL' },
@@ -342,9 +360,8 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
       },
       {
         title: 'Specific Information',
-        fields: ['status', 'date_online', 'storage_mass_kt_per_year'],
+        fields: ['status', 'date_online', 'storage_mass_kt_per_year', 'updated_at'],
       },
-      
     ];
 
     // JSX rendering logic for fields, now with conditional for select dropdown
@@ -403,6 +420,24 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
                             </option>
                           ))}
                         </select>
+                      ) : field.type === 'number' && field.name === 'date_online' ? (
+                        <input
+                          type="number"
+                          name="date_online"
+                          value={formData.date_online ?? ''}
+                          onChange={e => {
+                            const val = e.target.value;
+                            // Only allow 4-digit years
+                            if (/^\d{0,4}$/.test(val)) {
+                              setFormData(prev => ({ ...prev, date_online: val }));
+                            }
+                          }}
+                          min={1900}
+                          max={2100}
+                          step={1}
+                          placeholder="YYYY"
+                          className="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-black bg-white hover:border-gray-400"
+                        />
                       ) : (
                         <input
                           type={field.type}
@@ -412,13 +447,15 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
                               ? Array.isArray(formData[field.name]) ? (formData[field.name] as string[]).join(', ') : ''
                               : field.name === 'storage_mass_kt_per_year'
                               ? formData.storage_mass_kt_per_year ?? ''
+                              : field.name === 'updated_at'
+                              ? formData.updated_at ?? ''
                               : String(formData[field.name as keyof StorageItem] ?? '')
                           }
                           onChange={handleInputChange}
-                          disabled={!isEditing}
+                          disabled={!isEditing || field.disabled}
                           placeholder={field.placeholder}
                           className={`w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-black ${
-                            isEditing ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
+                            isEditing && !field.disabled ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
                           }`}
                         />
                       )}

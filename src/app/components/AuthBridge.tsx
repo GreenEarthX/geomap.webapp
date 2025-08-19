@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 
 interface AuthBridgeProps {
-  onAuthChange?: (isAuthenticated: boolean) => void;
+  onAuthChange?: (isAuthenticated: boolean, user?: any) => void;
 }
 
 export default function AuthBridge({ onAuthChange }: AuthBridgeProps) {
@@ -95,9 +95,9 @@ export default function AuthBridge({ onAuthChange }: AuthBridgeProps) {
         
         if (response.ok) {
           const data = await response.json();
-          setIsAuthenticated(true);
-          setUser(data.user);
-          onAuthChange?.(true);
+            setIsAuthenticated(true);
+            setUser(data.user);
+            onAuthChange?.(true, data.user);
         } else {
           handleAuthFailure();
         }
@@ -142,11 +142,11 @@ export default function AuthBridge({ onAuthChange }: AuthBridgeProps) {
   };
 
   const handleAuthFailure = () => {
-    localStorage.removeItem('geomap-auth-token');
-    localStorage.removeItem('geomap-refresh-token');
-    setIsAuthenticated(false);
-    setUser(null);
-    onAuthChange?.(false);
+  localStorage.removeItem('geomap-auth-token');
+  localStorage.removeItem('geomap-refresh-token');
+  setIsAuthenticated(false);
+  setUser(null);
+  onAuthChange?.(false, null);
   };
 
   const handleLogin = () => {

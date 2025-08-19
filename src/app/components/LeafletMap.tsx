@@ -77,7 +77,7 @@ const LeafletMap = () => {
   const [legendPinned, setLegendPinned] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [legendCollapsed, setLegendCollapsed] = useState(false);
+  const [legendCollapsed, setLegendCollapsed] = useState(true); // Start collapsed
   const [showFilterHelp, setShowFilterHelp] = useState(false);
 
 
@@ -464,34 +464,43 @@ const LeafletMap = () => {
       <div className={`fixed bottom-4 left-4 w-52 p-3 bg-white border-2 border-gray-300 rounded shadow-md z-[600] text-black text-xs transition-all duration-300 ${legendPinned || legendVisible ? 'opacity-100' : 'opacity-0'}`} onMouseEnter={() => setLegendVisible(true)} onMouseLeave={() => !legendPinned && setLegendVisible(false)}>
         <div className="flex justify-between items-center text-black">
           <strong>Legend</strong>
-          <button onClick={toggleLegendPin} className={`text-sm ${legendPinned ? 'text-blue-600' : 'text-black'}`} title={legendPinned ? 'Unpin Legend' : 'Pin Legend'}>
-            <i className={`fa fa-thumbtack ${legendPinned ? 'rotate-45' : ''}`} />
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setLegendCollapsed(lc => !lc)} className="text-sm" title={legendCollapsed ? 'Expand Legend' : 'Collapse Legend'}>
+              <i className={`fa fa-chevron-${legendCollapsed ? 'up' : 'down'}`} />
+            </button>
+            <button onClick={toggleLegendPin} className={`text-sm ${legendPinned ? 'text-blue-600' : 'text-black'}`} title={legendPinned ? 'Unpin Legend' : 'Pin Legend'}>
+              <i className={`fa fa-thumbtack ${legendPinned ? 'rotate-45' : ''}`} />
+            </button>
+          </div>
         </div>
-        <div className="mt-2 text-black max-h-48 overflow-y-auto pr-1 custom-scroll">
-          {statusTypes.map(({ sector, status }, index) => {
-            let icon = 'question';
-            if (sector.toLowerCase() === 'production') icon = 'bolt';
-            else if (sector.toLowerCase() === 'storage') icon = 'database';
-            else if (sector.toLowerCase() === 'ccus') icon = 'leaf';
-            else if (sector.toLowerCase() === 'port') icon = 'ship';
-            else if (sector.toLowerCase() === 'pipeline') {
-              return (
-                <div key={`${sector}-${status}-${index}`} className="flex items-center mt-1">
-                  <div style={{ width: 18, height: 4, backgroundColor: statusColorMap[status.toLowerCase()] || statusColorMap['other/unknown'], marginRight: 5 }}></div>
-                  <span>Pipeline - {status.replace(/\b\w/g, l => l.toUpperCase())}</span>
-                </div>
-              );
-            }
-            return (
-              <div key={`${sector}-${status}-${index}`} className="flex items-center mt-1">
-                <i className={`fa fa-${icon} fa-fw`} style={{ color: statusColorMap[status.toLowerCase()] || statusColorMap['other/unknown'], marginRight: 5 }}></i>
-                <span>{`${sector.replace(/\b\w/g, l => l.toUpperCase())} - ${status.replace(/\b\w/g, l => l.toUpperCase())}`}</span>
-              </div>
-            );
-          })}
-        </div>
-        <div className="mt-2 text-xs italic text-black">Use the measuring tool on the left to calculate distances</div>
+        {!legendCollapsed && (
+          <>
+            <div className="mt-2 text-black max-h-48 overflow-y-auto pr-1 custom-scroll">
+              {statusTypes.map(({ sector, status }, index) => {
+                let icon = 'question';
+                if (sector.toLowerCase() === 'production') icon = 'industry';
+                else if (sector.toLowerCase() === 'storage') icon = 'database';
+                else if (sector.toLowerCase() === 'ccus') icon = 'cloud';
+                else if (sector.toLowerCase() === 'port') icon = 'ship';
+                else if (sector.toLowerCase() === 'pipeline') {
+                  return (
+                    <div key={`${sector}-${status}-${index}`} className="flex items-center mt-1">
+                      <div style={{ width: 18, height: 4, backgroundColor: statusColorMap[status.toLowerCase()] || statusColorMap['other/unknown'], marginRight: 5 }}></div>
+                      <span>Pipeline - {status.replace(/\b\w/g, l => l.toUpperCase())}</span>
+                    </div>
+                  );
+                }
+                return (
+                  <div key={`${sector}-${status}-${index}`} className="flex items-center mt-1">
+                    <i className={`fa fa-${icon} fa-fw`} style={{ color: statusColorMap[status.toLowerCase()] || statusColorMap['other/unknown'], marginRight: 5 }}></i>
+                    <span>{`${sector.replace(/\b\w/g, l => l.toUpperCase())} - ${status.replace(/\b\w/g, l => l.toUpperCase())}`}</span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="mt-2 text-xs italic text-black">Use the measuring tool on the left to calculate distances</div>
+          </>
+        )}
       </div>
 
       <button onClick={handleFindMe} className="fixed bottom-20 right-4 z-[600] bg-white text-blue-600 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-lg transition-transform hover:scale-105" title="Find My Location">

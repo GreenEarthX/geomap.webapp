@@ -19,6 +19,7 @@ type PortFormData = Omit<Partial<PortItem>, 'capacity_value' | 'storage_capacity
   capacity_value: string;
   storage_capacity_value: string;
   investmentString?: string;
+  updated_at?: string | null;
 };
 
 interface FieldConfig {
@@ -30,7 +31,7 @@ interface FieldConfig {
   options?: ReadonlyArray<string>;
 }
 
-type SectionTitle = 'General Information' | 'Location' | 'Contact Information' | 'Specific Information' | 'Capacity & Investment';
+type SectionTitle = 'General Information' | 'Location' | 'Contact Information' | 'Specific Information';
 
 interface SectionConfig {
   title: SectionTitle;
@@ -88,6 +89,8 @@ const prepareDataForSave = (formData: PortFormData, originalData: PortFormProps[
   const storageVal = parseFloat(formData.storage_capacity_value || '');
   dataToSave.storage_capacity_tonnes = { value: isNaN(storageVal) ? null : storageVal, unit: formData.storage_capacity_unit || null };
 
+  dataToSave.updated_at = formData.updated_at || null;
+
   return dataToSave;
 };
 
@@ -96,11 +99,10 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [openSections, setOpenSections] = useState<Record<SectionTitle, boolean>>({
-    'General Information': true,
-    'Location': true,
-    'Contact Information': true,
-    'Specific Information': true,
-    'Capacity & Investment': true,
+    'General Information': false,
+    'Location': false,
+    'Contact Information': false,
+    'Specific Information': false,
   });
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [showRecaptcha, setShowRecaptcha] = useState(false);
@@ -137,6 +139,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       investmentString: investmentCosts ? `${investmentCosts} MUSD` : '',
       latitude: feature?.latitude ?? 0,
       longitude: feature?.longitude ?? 0,
+      updated_at: feature?.updated_at ?? null,
     };
   };
 
@@ -160,8 +163,23 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const formatDbDate = (date: Date) => {
+    // Format: YYYY-MM-DD HH:mm:ss.SSSSSS+00
+    const pad = (n: number, z = 2) => ('00' + n).slice(-z);
+    const year = date.getUTCFullYear();
+    const month = pad(date.getUTCMonth() + 1);
+    const day = pad(date.getUTCDate());
+    const hour = pad(date.getUTCHours());
+    const min = pad(date.getUTCMinutes());
+    const sec = pad(date.getUTCSeconds());
+    const ms = pad(date.getUTCMilliseconds(), 3) + '000'; // pad to microseconds
+    return `${year}-${month}-${day} ${hour}:${min}:${sec}.${ms}+00`;
+  };
+
   const handleEditClick = async () => {
     if (isEditing) {
+      // Set updated_at to today in DB format before submit
+      setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
       (document.getElementById('port-form') as HTMLFormElement)?.requestSubmit();
       setIsEditing(false);
       setRecaptchaToken(null);
@@ -192,6 +210,7 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
           if (data.success) {
             setIsEditing(true);
             setShowRecaptcha(false);
+            setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
           } else {
             setRecaptchaError('reCAPTCHA verification failed. Please try again.');
             setRecaptchaToken(null);
@@ -318,13 +337,14 @@ const PortForm = ({ initialFeature, initialError, statusOptions, statusTooltip, 
       { name: 'storage_capacity_value', label: 'Storage Capacity Value', type: 'text', placeholder: 'e.g., 2.1' },
       { name: 'storage_capacity_unit', label: 'Storage Capacity Unit', type: 'text', placeholder: 'e.g., Tonnes' },
       { name: 'investmentString', label: 'Investment (CAPEX)', type: 'text', placeholder: 'e.g. 500 MUSD' },
+      { name: 'updated_at', label: 'Updated record', type: 'text', disabled: true },
     ];
 
     const sections: SectionConfig[] = [
       { title: 'General Information', fields: ['project_name', 'project_type', 'technology_type', 'port_code', 'product_type', 'partners', 'stakeholders', 'website_url'] },
       { title: 'Contact Information', fields: ['contact_name', 'email'] },
       { title: 'Location', fields: ['country', 'city', 'street', 'zip'] },
-      { title: 'Specific Information', fields: ['status', 'trade_type', 'capacity_value', 'capacity_unit', 'storage_capacity_value', 'storage_capacity_unit', 'investmentString'] },
+      { title: 'Specific Information', fields: ['status', 'trade_type', 'capacity_value', 'capacity_unit', 'storage_capacity_value', 'storage_capacity_unit', 'investmentString', 'updated_at'] },
     ];
 
     return (
