@@ -22,6 +22,9 @@ const ContactUsModal = ({ isOpen, onClose }: ContactUsModalProps) => {
   const [email, setEmail] = useState("");
   const [topic, setTopic] = useState(topics[0]);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState<string|null>(null);
+  const [error, setError] = useState<string|null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -30,9 +33,34 @@ const ContactUsModal = ({ isOpen, onClose }: ContactUsModalProps) => {
 
   if (!isOpen || !mounted) return null;
 
-  const subject = encodeURIComponent(`GEX Map - ${topic}`);
-  const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`);
-  const mailto = `mailto:maryem.hadjwannes@gmail.com?subject=${subject}&body=${body}`;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setSuccess(null);
+    setError(null);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, topic, message }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccess('Your message has been sent!');
+        setName("");
+        setEmail("");
+        setTopic(topics[0]);
+        setMessage("");
+      } else {
+        setError(data.error || 'Failed to send message.');
+      }
+    } catch (err) {
+      setError('Failed to send message.');
+    }
+    setLoading(false);
+  };
+
 
   return createPortal(
     <div className="fixed inset-0 z-[1000] bg-black bg-opacity-50 flex items-center justify-center p-4">
@@ -46,13 +74,14 @@ const ContactUsModal = ({ isOpen, onClose }: ContactUsModalProps) => {
         </div>
 
         {/* Form */}
-        <div className="p-6 space-y-4">
+        <form className="p-6 space-y-4" onSubmit={handleSubmit}>
           <input
             type="text"
             placeholder="Your name"
             className="w-full border rounded-md px-3 py-2"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            required
           />
           <input
             type="email"
@@ -60,6 +89,7 @@ const ContactUsModal = ({ isOpen, onClose }: ContactUsModalProps) => {
             className="w-full border rounded-md px-3 py-2"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
           />
           <select
             className="w-full border rounded-md px-3 py-2"
@@ -76,24 +106,28 @@ const ContactUsModal = ({ isOpen, onClose }: ContactUsModalProps) => {
             className="w-full border rounded-md px-3 py-2"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            required
           />
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t flex justify-between items-center">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:text-gray-800"
-          >
-            Cancel
-          </button>
-          <a
-            href={mailto}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Send Email
-          </a>
-        </div>
+          {success && <div className="text-green-600">{success}</div>}
+          {error && <div className="text-red-600">{error}</div>}
+          <div className="flex justify-between items-center pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+              disabled={loading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              disabled={loading}
+            >
+              {loading ? 'Sending...' : 'Send Email'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>,
     document.getElementById("modal-root") as HTMLElement

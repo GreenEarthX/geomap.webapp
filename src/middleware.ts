@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 
 interface AuthToken {
@@ -14,12 +15,9 @@ interface AuthToken {
 
 async function verifyJWT(token: string): Promise<AuthToken | null> {
   try {
-    // Validate token format first
     if (!token || typeof token !== 'string' || token.trim() === '') {
       throw new Error('Token is empty or invalid');
     }
-
-    // Use Web Crypto API instead of Node.js crypto for Edge Runtime compatibility
     const secret = process.env.GEOMAP_JWT_SECRET!;
     const encoder = new TextEncoder();
     const key = await crypto.subtle.importKey(
@@ -29,68 +27,49 @@ async function verifyJWT(token: string): Promise<AuthToken | null> {
       false,
       ['verify']
     );
-
-    // Split the JWT token
     const parts = token.trim().split('.');
     if (parts.length !== 3) {
       throw new Error(`Invalid token format: expected 3 parts, got ${parts.length}. Token: ${token.substring(0, 50)}...`);
     }
-
     const [headerB64, payloadB64, signatureB64] = parts;
-    
-    // Verify signature
     const data = encoder.encode(`${headerB64}.${payloadB64}`);
     const signature = Uint8Array.from(atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
-    
     const isValid = await crypto.subtle.verify('HMAC', key, signature, data);
     if (!isValid) {
       throw new Error('Invalid signature');
     }
-
-    // Decode payload
     const payloadJson = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
     const payload = JSON.parse(payloadJson) as AuthToken;
-
-    // Check expiration
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
       const error = new Error('Token expired');
       (error as any).name = 'TokenExpiredError';
       throw error;
     }
-
-    // Verify issuer and audience
     if (payload.iss !== 'onboarding-app' || payload.aud !== 'geomap-app') {
       throw new Error('Invalid issuer or audience');
     }
-
-    // Ensure it's an access token (or no type specified for backward compatibility)
     if (payload.type && payload.type !== 'access') {
       console.error('Token type rejection:', { tokenType: payload.type, expected: 'access' });
       throw new Error(`Invalid token type: expected 'access', got '${payload.type}'`);
     }
-
     return payload;
   } catch (error) {
     console.error('JWT verification failed:', error);
     if ((error as any).name === 'TokenExpiredError') {
-      throw error; // Re-throw to handle specifically
+      throw error;
     }
     return null;
   }
 }
 
 export async function middleware(request: NextRequest) {
-  // Prevent redirect loops - if we're coming from the onboarding app, don't redirect again
   const referer = request.headers.get('referer');
   if (referer && referer.includes(process.env.ONBOARDING_APP_URL || 'localhost:3000')) {
-    console.log('Request from onboarding app, allowing through to prevent redirect loop');
     return NextResponse.next();
   }
-
-  // Only protect modification routes
   const protectedPaths = [
     '/api/ccus',
-    '/api/production', 
+    '/api/production',
     '/api/storage',
     '/api/ports',
     '/api/plant-form',
@@ -98,113 +77,71 @@ export async function middleware(request: NextRequest) {
     '/port-form',
     '/admin/:path*'
   ];
-
   const isProtectedPath = protectedPaths.some(path => {
     if (request.nextUrl.pathname.startsWith(path)) {
-      // For API routes, protect POST, PUT, PATCH, DELETE
       if (request.nextUrl.pathname.startsWith('/api/')) {
         return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method);
       }
-      // For form pages and admin paths, protect all access
       return true;
     }
     return false;
   });
-
   if (!isProtectedPath) {
     return NextResponse.next();
   }
-
   let token = request.headers.get('authorization')?.replace('Bearer ', '') ||
-               request.cookies.get('geomap-auth-token')?.value ||
-               request.nextUrl.searchParams.get('token');
-  
-  // Handle cases where token is the string "null" or "undefined"
+    request.cookies.get('geomap-auth-token')?.value ||
+    request.nextUrl.searchParams.get('token');
   if (token === 'null' || token === 'undefined') {
     token = null;
   }
-  
-  console.log('Middleware token extraction debug:', {
-    authHeader: request.headers.get('authorization'),
-    cookie: request.cookies.get('geomap-auth-token')?.value,
-    urlParam: request.nextUrl.searchParams.get('token'),
-    finalToken: token,
-    tokenLength: token?.length,
-    tokenParts: token?.split('.').length,
-    tokenPreview: token ? token.substring(0, 50) + '...' : null
-  });
-  
   if (!token) {
     if (request.nextUrl.pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     } else {
-      // ✅ FIX: Construct proper redirect URL using load balancer URL instead of internal IP
       const onboardingUrl = process.env.ONBOARDING_APP_URL;
       const geomapUrl = process.env.GEOMAP_URL;
-      
-      // Ensure onboarding URL has protocol
       if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
-        console.error('ONBOARDING_APP_URL must include protocol (http:// or https://)');
         return NextResponse.next();
       }
-      
-      // Construct current page URL using load balancer URL (not internal IP)
-      const currentPageUrl = geomapUrl 
+      const currentPageUrl = geomapUrl
         ? `${geomapUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
         : request.url;
-      
-      // Use URL constructor for proper formatting
       const authUrl = new URL('/auth/authenticate', onboardingUrl);
       authUrl.searchParams.set('redirect', currentPageUrl);
-      
       return NextResponse.redirect(authUrl.toString());
     }
   }
-  
   try {
     const payload = await verifyJWT(token);
-    
     if (!payload || !payload.verified || !payload.permissions.includes('edit')) {
       if (request.nextUrl.pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
       } else {
-        // ✅ FIX: For insufficient permissions, redirect to authentication (not email verification)
         const onboardingUrl = process.env.ONBOARDING_APP_URL;
         const geomapUrl = process.env.GEOMAP_URL;
-        
-        // Ensure onboarding URL has protocol
         if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
-          console.error('ONBOARDING_APP_URL must include protocol (http:// or https://)');
           return NextResponse.next();
         }
-        
-        // Construct current page URL using load balancer URL (not internal IP)
-        const currentPageUrl = geomapUrl 
+        const currentPageUrl = geomapUrl
           ? `${geomapUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
           : request.url;
-        
-        // Use URL constructor for proper formatting
         const authUrl = new URL('/auth/authenticate', onboardingUrl);
         authUrl.searchParams.set('redirect', currentPageUrl);
-        
         return NextResponse.redirect(authUrl.toString());
       }
     }
-
-    // Additional admin email restriction for /admin/* paths
     const adminEmails = process.env.ADMIN_EMAILS?.split(',') || [];
     if (request.nextUrl.pathname.startsWith('/admin/')) {
       if (!adminEmails.includes(payload.email)) {
         if (request.nextUrl.pathname.startsWith('/api/')) {
           return NextResponse.json({ error: 'Admin access restricted' }, { status: 403 });
         } else {
-          // Redirect to map with message for non-admin users
           const response = NextResponse.redirect(new URL('/', request.url));
           response.cookies.set('message', 'Nice try user :p', { path: '/', maxAge: 5 });
           return response;
         }
       } else {
-        // Allow access for admin emails
         const response = NextResponse.next();
         response.headers.set('x-user-id', payload.userId);
         response.headers.set('x-user-email', payload.email);
@@ -212,72 +149,43 @@ export async function middleware(request: NextRequest) {
         return response;
       }
     }
-    
-    // Add user info to request headers for API routes
     const response = NextResponse.next();
     response.headers.set('x-user-id', payload.userId);
     response.headers.set('x-user-email', payload.email);
     response.headers.set('x-user-name', payload.name || '');
-    
     return response;
   } catch (error) {
-    console.error('Token verification failed:', error);
-    
     if ((error as any).name === 'TokenExpiredError') {
-      // Token expired - redirect to refresh or re-auth
       if (request.nextUrl.pathname.startsWith('/api/')) {
-        return NextResponse.json({ 
-          error: 'Token expired', 
-          code: 'TOKEN_EXPIRED' 
-        }, { status: 401 });
+        return NextResponse.json({ error: 'Token expired', code: 'TOKEN_EXPIRED' }, { status: 401 });
       } else {
-        // ✅ FIX: Construct proper redirect URL for token expiration
         const onboardingUrl = process.env.ONBOARDING_APP_URL;
         const geomapUrl = process.env.GEOMAP_URL;
-        
-        // Ensure onboarding URL has protocol
         if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
-          console.error('ONBOARDING_APP_URL must include protocol (http:// or https://)');
           return NextResponse.next();
         }
-        
-        // Construct current page URL using load balancer URL (not internal IP)
-        const currentPageUrl = geomapUrl 
+        const currentPageUrl = geomapUrl
           ? `${geomapUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
           : request.url;
-        
-        // Use URL constructor for proper formatting
         const authUrl = new URL('/auth/authenticate', onboardingUrl);
         authUrl.searchParams.set('redirect', currentPageUrl);
         authUrl.searchParams.set('reason', 'token_expired');
-        
         return NextResponse.redirect(authUrl.toString());
       }
     }
-    
-    // For any other token error (including invalid format), redirect to authentication
     if (request.nextUrl.pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     } else {
-      // ✅ FIX: Construct proper redirect URL for invalid token
       const onboardingUrl = process.env.ONBOARDING_APP_URL;
       const geomapUrl = process.env.GEOMAP_URL;
-      
-      // Ensure onboarding URL has protocol
       if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
-        console.error('ONBOARDING_APP_URL must include protocol (http:// or https://)');
         return NextResponse.next();
       }
-      
-      // Construct current page URL using load balancer URL (not internal IP)
-      const currentPageUrl = geomapUrl 
+      const currentPageUrl = geomapUrl
         ? `${geomapUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
         : request.url;
-      
-      // Use URL constructor for proper formatting
       const authUrl = new URL('/auth/authenticate', onboardingUrl);
       authUrl.searchParams.set('redirect', currentPageUrl);
-      
       return NextResponse.redirect(authUrl.toString());
     }
   }
@@ -286,7 +194,7 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/api/ccus/:path*',
-    '/api/production/:path*', 
+    '/api/production/:path*',
     '/api/storage/:path*',
     '/api/ports/:path*',
     '/api/plant-form/:path*',

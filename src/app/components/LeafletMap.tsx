@@ -93,7 +93,7 @@ const LeafletMap = () => {
     'feasibility study': 'cadetblue',
     feed: 'orange',
     fid: 'darkred',
-    'fid/construction': 'darkpurple',
+    'FID': 'darkpurple',
     operational: 'darkgreen',
     'other/unknown': 'grey',
     'under construction': 'blue',
