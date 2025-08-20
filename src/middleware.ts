@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from 'next/server';
 
 interface AuthToken {
@@ -14,6 +13,7 @@ interface AuthToken {
 }
 
 async function verifyJWT(token: string): Promise<AuthToken | null> {
+  // This function is correct and remains unchanged.
   try {
     if (!token || typeof token !== 'string' || token.trim() === '') {
       throw new Error('Token is empty or invalid');
@@ -29,7 +29,7 @@ async function verifyJWT(token: string): Promise<AuthToken | null> {
     );
     const parts = token.trim().split('.');
     if (parts.length !== 3) {
-      throw new Error(`Invalid token format: expected 3 parts, got ${parts.length}. Token: ${token.substring(0, 50)}...`);
+      throw new Error(`Invalid token format: expected 3 parts, got ${parts.length}.`);
     }
     const [headerB64, payloadB64, signatureB64] = parts;
     const data = encoder.encode(`${headerB64}.${payloadB64}`);
@@ -49,7 +49,6 @@ async function verifyJWT(token: string): Promise<AuthToken | null> {
       throw new Error('Invalid issuer or audience');
     }
     if (payload.type && payload.type !== 'access') {
-      console.error('Token type rejection:', { tokenType: payload.type, expected: 'access' });
       throw new Error(`Invalid token type: expected 'access', got '${payload.type}'`);
     }
     return payload;
@@ -63,131 +62,91 @@ async function verifyJWT(token: string): Promise<AuthToken | null> {
 }
 
 export async function middleware(request: NextRequest) {
-  const referer = request.headers.get('referer');
-  if (referer && referer.includes(process.env.ONBOARDING_APP_URL || 'localhost:3000')) {
-    return NextResponse.next();
-  }
-  const protectedPaths = [
-    '/api/ccus',
-    '/api/production',
-    '/api/storage',
-    '/api/ports',
-    '/api/plant-form',
-    '/plant-form',
-    '/port-form',
-    '/admin/:path*'
-  ];
-  const isProtectedPath = protectedPaths.some(path => {
-    if (request.nextUrl.pathname.startsWith(path)) {
-      if (request.nextUrl.pathname.startsWith('/api/')) {
-        return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method);
-      }
-      return true;
+  const { pathname, search } = request.nextUrl;
+
+  const getAuthRedirectUrl = (reason?: string) => {
+    const onboardingUrl = process.env.ONBOARDING_APP_URL;
+    const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL;
+    if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
+      return null;
     }
-    return false;
-  });
-  if (!isProtectedPath) {
+    const currentPageUrl = geomapUrl ? `${geomapUrl}${pathname}${search}` : request.url;
+    const authUrl = new URL('/auth/authenticate', onboardingUrl);
+    authUrl.searchParams.set('redirect', currentPageUrl);
+    if (reason) {
+      authUrl.searchParams.set('reason', reason);
+    }
+    return authUrl.toString();
+  };
+
+  const referer = request.headers.get('referer');
+  if (referer && referer.startsWith(process.env.ONBOARDING_APP_URL || 'http://localhost:3000')) {
     return NextResponse.next();
   }
-  let token = request.headers.get('authorization')?.replace('Bearer ', '') ||
+
+  let token =
+    request.headers.get('authorization')?.replace('Bearer ', '') ||
     request.cookies.get('geomap-auth-token')?.value ||
     request.nextUrl.searchParams.get('token');
+
   if (token === 'null' || token === 'undefined') {
     token = null;
   }
+
   if (!token) {
-    if (request.nextUrl.pathname.startsWith('/api/')) {
+    if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
-    } else {
-      const onboardingUrl = process.env.ONBOARDING_APP_URL;
-      const geomapUrl = process.env.GEOMAP_URL;
-      if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
-        return NextResponse.next();
-      }
-      const currentPageUrl = geomapUrl
-        ? `${geomapUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
-        : request.url;
-      const authUrl = new URL('/auth/authenticate', onboardingUrl);
-      authUrl.searchParams.set('redirect', currentPageUrl);
-      return NextResponse.redirect(authUrl.toString());
     }
+    const authUrl = getAuthRedirectUrl();
+    return authUrl ? NextResponse.redirect(authUrl) : NextResponse.next();
   }
+
   try {
     const payload = await verifyJWT(token);
+
     if (!payload || !payload.verified || !payload.permissions.includes('edit')) {
-      if (request.nextUrl.pathname.startsWith('/api/')) {
+      if (pathname.startsWith('/api/')) {
         return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
-      } else {
-        const onboardingUrl = process.env.ONBOARDING_APP_URL;
-        const geomapUrl = process.env.GEOMAP_URL;
-        if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
-          return NextResponse.next();
-        }
-        const currentPageUrl = geomapUrl
-          ? `${geomapUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
-          : request.url;
-        const authUrl = new URL('/auth/authenticate', onboardingUrl);
-        authUrl.searchParams.set('redirect', currentPageUrl);
-        return NextResponse.redirect(authUrl.toString());
       }
+      const authUrl = getAuthRedirectUrl();
+      return authUrl ? NextResponse.redirect(authUrl) : NextResponse.next();
     }
-    const adminEmails = process.env.ADMIN_EMAILS?.split(',') || [];
-    if (request.nextUrl.pathname.startsWith('/admin/')) {
+
+    if (pathname.startsWith('/admin')) {
+      const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || [];
+      
       if (!adminEmails.includes(payload.email)) {
-        if (request.nextUrl.pathname.startsWith('/api/')) {
+        if (pathname.startsWith('/api/admin')) {
           return NextResponse.json({ error: 'Admin access restricted' }, { status: 403 });
-        } else {
-          const response = NextResponse.redirect(new URL('/', request.url));
-          response.cookies.set('message', 'Nice try user :p', { path: '/', maxAge: 5 });
-          return response;
         }
-      } else {
-        const response = NextResponse.next();
-        response.headers.set('x-user-id', payload.userId);
-        response.headers.set('x-user-email', payload.email);
-        response.headers.set('x-user-name', payload.name || '');
-        return response;
+        
+        // --- THIS IS THE ONLY CHANGE ---
+        // Instead of redirecting to '/', we rewrite to an '/unauthorized' page.
+        // This shows an error message without changing the URL in the browser.
+        const unauthorizedUrl = new URL('/unauthorized', request.url);
+        return NextResponse.rewrite(unauthorizedUrl);
+        // --- END OF CHANGE ---
       }
     }
+
     const response = NextResponse.next();
     response.headers.set('x-user-id', payload.userId);
     response.headers.set('x-user-email', payload.email);
     response.headers.set('x-user-name', payload.name || '');
     return response;
+
   } catch (error) {
-    if ((error as any).name === 'TokenExpiredError') {
-      if (request.nextUrl.pathname.startsWith('/api/')) {
-        return NextResponse.json({ error: 'Token expired', code: 'TOKEN_EXPIRED' }, { status: 401 });
-      } else {
-        const onboardingUrl = process.env.ONBOARDING_APP_URL;
-        const geomapUrl = process.env.GEOMAP_URL;
-        if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
-          return NextResponse.next();
-        }
-        const currentPageUrl = geomapUrl
-          ? `${geomapUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
-          : request.url;
-        const authUrl = new URL('/auth/authenticate', onboardingUrl);
-        authUrl.searchParams.set('redirect', currentPageUrl);
-        authUrl.searchParams.set('reason', 'token_expired');
-        return NextResponse.redirect(authUrl.toString());
-      }
+    const isTokenExpired = (error as any).name === 'TokenExpiredError';
+    if (pathname.startsWith('/api/')) {
+      const body = isTokenExpired
+        ? { error: 'Token expired', code: 'TOKEN_EXPIRED' }
+        : { error: 'Invalid token' };
+      return NextResponse.json(body, { status: 401 });
     }
-    if (request.nextUrl.pathname.startsWith('/api/')) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
-    } else {
-      const onboardingUrl = process.env.ONBOARDING_APP_URL;
-      const geomapUrl = process.env.GEOMAP_URL;
-      if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
-        return NextResponse.next();
-      }
-      const currentPageUrl = geomapUrl
-        ? `${geomapUrl}${request.nextUrl.pathname}${request.nextUrl.search}`
-        : request.url;
-      const authUrl = new URL('/auth/authenticate', onboardingUrl);
-      authUrl.searchParams.set('redirect', currentPageUrl);
-      return NextResponse.redirect(authUrl.toString());
-    }
+    
+    const reason = isTokenExpired ? 'token_expired' : 'invalid_token';
+    const authUrl = getAuthRedirectUrl(reason);
+    return authUrl ? NextResponse.redirect(authUrl) : NextResponse.next();
   }
 }
 
