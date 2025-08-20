@@ -13,7 +13,6 @@ interface AuthToken {
 }
 
 async function verifyJWT(token: string): Promise<AuthToken | null> {
-  // This function is correct and remains unchanged.
   try {
     if (!token || typeof token !== 'string' || token.trim() === '') {
       throw new Error('Token is empty or invalid');
@@ -33,11 +32,12 @@ async function verifyJWT(token: string): Promise<AuthToken | null> {
     }
     const [headerB64, payloadB64, signatureB64] = parts;
     const data = encoder.encode(`${headerB64}.${payloadB64}`);
-    const signature = Uint8Array.from(atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')), c => c.charCodeAt(0));
+    const signature = Uint8Array.from(
+      atob(signatureB64.replace(/-/g, '+').replace(/_/g, '/')),
+      c => c.charCodeAt(0)
+    );
     const isValid = await crypto.subtle.verify('HMAC', key, signature, data);
-    if (!isValid) {
-      throw new Error('Invalid signature');
-    }
+    if (!isValid) throw new Error('Invalid signature');
     const payloadJson = atob(payloadB64.replace(/-/g, '+').replace(/_/g, '/'));
     const payload = JSON.parse(payloadJson) as AuthToken;
     if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
@@ -54,9 +54,7 @@ async function verifyJWT(token: string): Promise<AuthToken | null> {
     return payload;
   } catch (error) {
     console.error('JWT verification failed:', error);
-    if ((error as any).name === 'TokenExpiredError') {
-      throw error;
-    }
+    if ((error as any).name === 'TokenExpiredError') throw error;
     return null;
   }
 }
@@ -67,15 +65,11 @@ export async function middleware(request: NextRequest) {
   const getAuthRedirectUrl = (reason?: string) => {
     const onboardingUrl = process.env.ONBOARDING_APP_URL;
     const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL;
-    if (!onboardingUrl || !onboardingUrl.startsWith('http')) {
-      return null;
-    }
+    if (!onboardingUrl || !onboardingUrl.startsWith('http')) return null;
     const currentPageUrl = geomapUrl ? `${geomapUrl}${pathname}${search}` : request.url;
     const authUrl = new URL('/auth/authenticate', onboardingUrl);
     authUrl.searchParams.set('redirect', currentPageUrl);
-    if (reason) {
-      authUrl.searchParams.set('reason', reason);
-    }
+    if (reason) authUrl.searchParams.set('reason', reason);
     return authUrl.toString();
   };
 
@@ -91,6 +85,11 @@ export async function middleware(request: NextRequest) {
 
   if (token === 'null' || token === 'undefined') {
     token = null;
+  }
+
+  // --- 🟢 Allow public API routes (no auth needed) ---
+  if (pathname.startsWith('/api/ports') || pathname.startsWith('/api/leafletmap')) {
+    return NextResponse.next();
   }
 
   if (!token) {
@@ -114,18 +113,12 @@ export async function middleware(request: NextRequest) {
 
     if (pathname.startsWith('/admin')) {
       const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || [];
-      
       if (!adminEmails.includes(payload.email)) {
         if (pathname.startsWith('/api/admin')) {
           return NextResponse.json({ error: 'Admin access restricted' }, { status: 403 });
         }
-        
-        // --- THIS IS THE ONLY CHANGE ---
-        // Instead of redirecting to '/', we rewrite to an '/unauthorized' page.
-        // This shows an error message without changing the URL in the browser.
         const unauthorizedUrl = new URL('/unauthorized', request.url);
         return NextResponse.rewrite(unauthorizedUrl);
-        // --- END OF CHANGE ---
       }
     }
 
@@ -143,7 +136,6 @@ export async function middleware(request: NextRequest) {
         : { error: 'Invalid token' };
       return NextResponse.json(body, { status: 401 });
     }
-    
     const reason = isTokenExpired ? 'token_expired' : 'invalid_token';
     const authUrl = getAuthRedirectUrl(reason);
     return authUrl ? NextResponse.redirect(authUrl) : NextResponse.next();
@@ -152,13 +144,14 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/api/ccus/:path*',
-    '/api/production/:path*',
-    '/api/storage/:path*',
-    '/api/ports/:path*',
+    //'/api/ccus/:path*',
+    //'/api/production/:path*',
+    //'/api/storage/:path*',
+    // ❌ removed '/api/ports'
     '/api/plant-form/:path*',
     '/plant-form/:path*',
     '/port-form/:path*',
-    '/admin/:path*'
+    '/admin/:path*',
+    '/api/admin/:path*'
   ]
 };
