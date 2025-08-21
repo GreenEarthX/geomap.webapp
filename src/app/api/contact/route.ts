@@ -1,18 +1,15 @@
 import { NextResponse } from 'next/server';
-import { sendConfirmationEmail } from '../../lib/email';
+import { sendContactEmail } from '../../lib/emailContact';
 
 export async function POST(request: Request) {
   const { name, email, topic, message } = await request.json();
   const myEmail = process.env.EMAIL_USER || '';
+
   try {
-    await sendConfirmationEmail(
-      myEmail,
-      name || email || 'User',
-      `Contact Topic: ${topic}\nMessage: ${message}\nUser Email: ${email}`
-    );
+    await sendContactEmail(myEmail, name || 'User', topic, message, email);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Email send error:', error);
-    return NextResponse.json({ success: false, error: 'Failed to send email.' }, { status: 500 });
+    console.error('Contact email error:', error);
+    return NextResponse.json({ success: false, error: 'Failed to send contact email.' }, { status: 500 });
   }
 }
