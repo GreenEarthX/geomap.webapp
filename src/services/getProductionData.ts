@@ -29,6 +29,7 @@ interface RawProductionItem {
   latitude: number | null;
   longitude: number | null;
   type: string;
+  updated_at: string | null;
 }
 
 export async function getProductionData(): Promise<GeoJSONFeatureCollection> {
@@ -74,7 +75,8 @@ export async function getProductionData(): Promise<GeoJSONFeatureCollection> {
           THEN (data->'coordinates'->>'longitude')::double precision
           ELSE NULL
         END AS longitude,
-        sector AS type
+        sector AS type,
+        modified_at as updated_at
       FROM project_map
       WHERE sector = 'Production' AND active = 1;
     `);
@@ -112,6 +114,7 @@ export async function getProductionData(): Promise<GeoJSONFeatureCollection> {
         latitude: item.latitude,
         longitude: item.longitude,
         type: item.type,
+        updated_at: item.updated_at ?? null,
       } as ProductionItem,
     });
 

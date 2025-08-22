@@ -27,6 +27,7 @@ export interface ProductionItem {
   type: string;
   project_status: string | null;
   operation_date: string | null;
+  updated_at?: string | null;
 }
 
 export interface StorageItem {
@@ -59,8 +60,7 @@ export interface StorageItem {
   investment_capex: string | null;
   project_status: string | null;
   operation_date: string | null;
-  //data: JSON | null ;
-  
+  updated_at?: string | null;
 }
 
 export interface CCUSReference {
@@ -95,6 +95,7 @@ export interface CCUSItem {
   latitude: number | null;
   longitude: number | null;
   type: string;
+  updated_at?: string | null;
 }
 
 // In lib/types2.ts
@@ -129,6 +130,7 @@ export interface PortItem {
   capacity_unit: string | null;
   storage_capacity_value: number | null;
   storage_capacity_unit: string | null;
+  updated_at?: string | null;
 }
 
 export interface PipelineItem {

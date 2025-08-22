@@ -39,7 +39,8 @@ export async function getStorageData(): Promise<GeoJSONFeatureCollection> {
       THEN (data->'coordinates'->>'longitude')::double precision
       ELSE NULL
     END AS longitude,
-    sector AS type
+    sector AS type,
+    modified_at as updated_at
   FROM project_map
   WHERE sector = 'Storage' AND active = 1;
     `);
@@ -72,6 +73,7 @@ export async function getStorageData(): Promise<GeoJSONFeatureCollection> {
         latitude: item.latitude,
         longitude: item.longitude,
         type: item.type,
+        updated_at: item.updated_at ?? null,
       } as StorageItem,
     });
 

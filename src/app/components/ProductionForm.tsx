@@ -1,6 +1,7 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
+import ConfirmationModal from './ConfirmationModal';
 import { useParams, useRouter } from 'next/navigation';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { ProductionItem } from '@/lib/types2';
@@ -9,19 +10,20 @@ import { STATUS_OPTIONS, StatusType, PRODUCER_PROJECT_TYPES_OPTIONS, ProducerPro
 // --- TYPE DEFINITIONS ---
 
 interface FieldConfig {
-  name: keyof ProductionItem | 'capacity' | 'investment_capex';
+  name: keyof ProductionItem | 'capacity' | 'investment_capex' | 'updated_at';
   label: string;
   type: string;
   placeholder?: string;
   isCombined?: boolean;
   options?: ReadonlyArray<string>;
+  disabled?: boolean;
 }
 
-type SectionTitle = 'General Information' | 'Location' | 'Specific Information' | 'Capacity' | 'Contact Information';
+type SectionTitle = 'General Information' | 'Location' | 'Specific Information' | 'Contact Information';
 
 interface SectionConfig {
   title: SectionTitle;
-  fields: (keyof ProductionItem | 'capacity' | 'investment_capex')[];
+  fields: (keyof ProductionItem | 'capacity' | 'investment_capex' | 'updated_at')[];
 }
 
 interface ProductionFormProps {
@@ -39,19 +41,21 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editLimitReached, setEditLimitReached] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const [openSections, setOpenSections] = useState<Record<SectionTitle, boolean>>({
-    'General Information': true,
-    'Location': true,
-    'Specific Information': true,
-    'Capacity': true,
-    'Contact Information': true,
+    'General Information': false,
+    'Location': false,
+    'Specific Information': false,
+    'Contact Information': false,
   });
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [showRecaptcha, setShowRecaptcha] = useState(false);
   const [recaptchaError, setRecaptchaError] = useState('');
+  const [showModal, setShowModal] = useState(false);
 
   // Field order matching generatePopupHtml
-  const fieldOrder: (keyof ProductionItem | 'capacity' | 'investment_capex')[] = [
+  const fieldOrder: (keyof ProductionItem | 'capacity' | 'investment_capex' | 'updated_at')[] = [
     'name',
     'project_name',
     'owner',
@@ -72,6 +76,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
     'contact_name',
     'email',
     'website_url',
+    'updated_at',
   ];
 
   const cleanArrayField = (data: any): string[] => {
@@ -93,7 +98,19 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
     return [];
   };
 
-  const initialFormData: Partial<ProductionItem> & { capacity?: string; investment_capex?: string } = {
+  const formatDbDate = (date: Date) => {
+    const pad = (n: number, z = 2) => ('00' + n).slice(-z);
+    const year = date.getUTCFullYear();
+    const month = pad(date.getUTCMonth() + 1);
+    const day = pad(date.getUTCDate());
+    const hour = pad(date.getUTCHours());
+    const min = pad(date.getUTCMinutes());
+    const sec = pad(date.getUTCSeconds());
+    const ms = pad(date.getUTCMilliseconds(), 3) + '000';
+    return `${year}-${month}-${day} ${hour}:${min}:${sec}.${ms}+00`;
+  };
+
+  const initialFormData: Partial<ProductionItem> & { capacity?: string; investment_capex?: string; updated_at?: string | null } = {
     id: initialFeature?.id ?? '',
     internal_id: initialFeature?.internal_id ?? id ?? '',
     name: initialFeature?.name ?? 'Placeholder Feature',
@@ -123,9 +140,10 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
     investment_capex: initialFeature?.investment_capex ?? '',
     latitude: initialFeature?.latitude ?? 0,
     longitude: initialFeature?.longitude ?? 0,
+    updated_at: initialFeature?.updated_at ?? null,
   };
 
-  const [formData, setFormData] = useState<Partial<ProductionItem> & { capacity?: string; investment_capex?: string }>(initialFormData);
+  const [formData, setFormData] = useState<Partial<ProductionItem> & { capacity?: string; investment_capex?: string; updated_at?: string | null }>(initialFormData);
 
   useEffect(() => {
     if (initialFeature) {
@@ -173,8 +191,62 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
     setFormData((prev) => ({ ...prev, end_use: updatedEndUse }));
   };
 
-  const handleEditClick = () => {
+  // Helper to get connected user email (from JWT or context)
+  // Always get connected email from JWT token
+  let connectedEmail: string | null = null;
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('geomap-auth-token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        connectedEmail = payload.email;
+      } catch (e) {
+        connectedEmail = null;
+      }
+    }
+  }
+  const plantId = initialFeature?.internal_id || id;
+
+  // Check edit limit on mount
+  useEffect(() => {
+    async function checkEditLimit() {
+      if (!connectedEmail) return;
+      try {
+        const res = await fetch(`/api/user-edit-limit?email=${encodeURIComponent(connectedEmail)}&sector=Production`);
+        const data = await res.json();
+        if (data.count >= 3) {
+          setEditLimitReached(true);
+        } else {
+          setEditLimitReached(false);
+        }
+      } catch (err) {
+        setEditLimitReached(false);
+      }
+    }
+    checkEditLimit();
+  }, [connectedEmail]);
+
+  const handleEditClick = async () => {
+    // Always check edit limit on click
+    if (!connectedEmail) {
+      setShowLimitModal(true);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/user-edit-limit?email=${encodeURIComponent(connectedEmail)}&sector=Production`);
+      const data = await res.json();
+      if (typeof data.count === 'number' && data.count >= 3) {
+        setEditLimitReached(true);
+        setShowLimitModal(true);
+        return;
+      } else {
+        setEditLimitReached(false);
+      }
+    } catch (err) {
+      setEditLimitReached(false);
+    }
     if (isEditing) {
+      setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
       (document.getElementById('production-form') as HTMLFormElement)?.requestSubmit();
       setIsEditing(false);
       setRecaptchaToken(null);
@@ -204,6 +276,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
           if (data.success) {
             setIsEditing(true);
             setShowRecaptcha(false);
+            setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
           } else {
             setRecaptchaError('reCAPTCHA verification failed. Please try again.');
             setRecaptchaToken(null);
@@ -221,9 +294,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsEditing(false);
-    setRecaptchaToken(null);
-
     const cleanStakeholdersArray = Array.isArray(formData.stakeholders)
       ? formData.stakeholders.filter(Boolean)
       : [];
@@ -245,7 +315,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
       website_url: formData.website_url || null,
       status: {
         current_status: formData.status || null,
-        date_online: formData.date_online || null,
+        date_online: formData.date_online ? String(formData.date_online).slice(0, 4) : null,
       },
       coordinates: {
           latitude: String(formData.latitude || 0),
@@ -261,6 +331,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
       },
       end_use: cleanEndUseArray.length ? cleanEndUseArray : null,
       investment_capex: formData.investment_capex || null,
+      updated_at: formData.updated_at || null,
     };
 
     try {
@@ -268,7 +339,19 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
       if (!token) {
         throw new Error('No authentication token found. Please log in again.');
       }
-      
+
+      // Debug: extract email from JWT token
+      let connectedEmail = null;
+      let connectedUserName = null;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        connectedEmail = payload.email;
+        connectedUserName = payload.name || payload.email || 'User';
+        console.log('Connected user email from JWT:', connectedEmail);
+      } catch (jwtError) {
+        console.warn('Could not extract email from JWT:', jwtError);
+      }
+
       const response = await fetch('/api/production', {
         method: 'POST',
         headers: { 
@@ -285,6 +368,26 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
         throw new Error(`Failed to save Production data: ${response.statusText}`);
       }
 
+      setShowModal(true);
+      try {
+        console.log('Confirmation email will be sent to connected user:', connectedEmail);
+        if (connectedEmail) {
+          await fetch('/api/send-confirmation-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: connectedEmail,
+              connectedUserName,
+              plantName: formData.name || 'Unknown Plant',
+            }),
+          });
+        } else {
+          console.warn('No connected user email found, confirmation email not sent.');
+        }
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+      }
+
       const notification = document.createElement('div');
       notification.className =
         'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-lg animate-fade-in-out';
@@ -294,8 +397,6 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
         notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
         setTimeout(() => notification.remove(), 300);
       }, 3000);
-
-      setFormData(initialFormData);
     } catch (error) {
       console.error('Error saving Production data:', error);
       const notification = document.createElement('div');
@@ -328,7 +429,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
       { name: 'zip', label: 'Zip Code', type: 'text', placeholder: 'Enter zip code' },
       { name: 'technology', label: 'Technology', type: 'select', options: technologyTypeOptions },
       { name: 'status', label: 'Status', type: 'select', options: statusOptions },
-      { name: 'date_online', label: 'Date Online', type: 'text', placeholder: 'Enter date online' },
+      { name: 'date_online', label: 'Operational Start Date', type: 'number', placeholder: 'YYYY' },
       { name: 'capacity', label: 'Capacity', type: 'text', placeholder: 'e.g. 100 MW', isCombined: true },
       { name: 'end_use', label: 'End Use', type: 'multiselect', options: endUseOptions },
       { name: 'stakeholders', label: 'Stakeholders', type: 'text', placeholder: 'Comma-separated stakeholders' },
@@ -336,6 +437,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
       { name: 'contact_name', label: 'Contact Name', type: 'text', placeholder: 'Enter contact name' },
       { name: 'email', label: 'Email', type: 'email', placeholder: 'Enter email' },
       { name: 'website_url', label: 'Website', type: 'text', placeholder: 'Enter website URL' },
+      { name: 'updated_at', label: 'Updated record', type: 'text', disabled: true },
     ];
 
     const sections: SectionConfig[] = [
@@ -353,7 +455,7 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
       },
       {
         title: 'Specific Information',
-        fields: ['status', 'date_online', 'capacity', 'investment_capex'],
+        fields: ['status', 'date_online', 'capacity', 'investment_capex', 'updated_at'],
       },
     ];
 
@@ -484,13 +586,15 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
                               ? formData.capacity ?? ''
                               : field.name === 'investment_capex'
                               ? formData.investment_capex ?? ''
+                              : field.name === 'updated_at'
+                              ? formData.updated_at ?? ''
                               : String(formData[field.name] ?? '')
                           }
                           onChange={handleInputChange}
-                          disabled={!isEditing}
+                          disabled={!isEditing || field.disabled}
                           placeholder={field.placeholder}
                           className={`w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-black ${
-                            isEditing ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
+                            isEditing && !field.disabled ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
                           }`}
                         />
                       )}
@@ -591,11 +695,12 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
           <button
             type="button"
             onClick={handleEditClick}
+            disabled={editLimitReached}
             className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${
               isEditing
                 ? 'bg-green-600 text-white hover:bg-green-700'
                 : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
+            } ${editLimitReached ? 'cursor-not-allowed opacity-50' : ''}`}
           >
             <svg
               className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-45' : ''}`}
@@ -622,6 +727,19 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
             {isEditing ? 'Save' : 'Edit'}
           </button>
         </div>
+
+        {editLimitReached && (
+          <div className="mb-6 p-4 bg-orange-100 border-l-4 border-orange-500 text-orange-700 rounded-md">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-orange-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm">
+                You can't edit, You already reached the limit of project editing.
+              </p>
+            </div>
+          </div>
+        )}
 
         {showRecaptcha && !isEditing && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -735,6 +853,14 @@ const ProductionForm: React.FC<ProductionFormProps> = ({ initialFeature, initial
             )}
           </div>
         </form>
+        <ConfirmationModal open={showModal} onClose={() => setShowModal(false)} />
+        {showLimitModal && (
+          <ConfirmationModal
+            open={showLimitModal}
+            onClose={() => setShowLimitModal(false)}
+            message="You can't edit, you reached the limit of 3 edits. You can contact the support team for further info!"
+          />
+        )}
       </div>
     </div>
   );

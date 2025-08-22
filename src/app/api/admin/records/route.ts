@@ -95,7 +95,8 @@ export async function GET(request: Request) {
       const query = `
         SELECT pm.id, pm.internal_id, pm.data, pm.file_link, pm.tab, pm.line, 
                pm.created_at, pm.sector, pm.active, pm.created_by, pm.modified_by, 
-               pm.modified_at, pm.created_by_name, pm.modified_by_name
+               pm.modified_at, pm.created_by_name, pm.modified_by_name,
+               (SELECT ml.id FROM modification_log ml WHERE ml.internal_id = pm.internal_id ORDER BY ml.timestamp DESC LIMIT 1) AS modification_id
         FROM project_map pm
         ${whereClause}
         ORDER BY pm.created_at DESC
@@ -119,6 +120,7 @@ export async function GET(request: Request) {
           modified_at: row.modified_at,
           created_by_name: row.created_by_name,
           modified_by_name: row.modified_by_name,
+          modification_id: row.modification_id,
         },
         modification: null,
       }));

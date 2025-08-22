@@ -28,6 +28,7 @@ export async function GET() {
           id,
           internal_id,
           line as line_number,
+          modified_at as updated_at,
           data->>'ref' AS ref_id,
           data->>'project_name' AS project_name,
           data->>'project_type' AS project_type,

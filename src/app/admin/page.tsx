@@ -20,6 +20,7 @@ interface ProjectMap {
   modified_at: string | null;
   created_by_name: string | null;
   modified_by_name: string | null;
+  modification_id: number | null;
 }
 
 interface ModificationLog {
@@ -112,7 +113,6 @@ export default function AdminPage() {
     setIsHistoryLoading(true);
     setError(null);
     try {
-      // Call the new, dedicated history API route
       const response = await fetch(`/api/admin/history?internalId=${internalId}`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('geomap-auth-token')}`,
@@ -129,13 +129,11 @@ export default function AdminPage() {
       const data = await response.json();
       setHistoryRecords(Array.isArray(data.records) ? data.records : []);
     } catch (err) {
-      // Set the error state specific to the history modal
       setError(err instanceof Error ? err.message : 'Error fetching history.');
     } finally {
       setIsHistoryLoading(false);
     }
   };
-
 
   useEffect(() => {
     if (selectedHistoryInternalId) {
@@ -247,6 +245,10 @@ export default function AdminPage() {
               <span className="font-medium">Created By:</span>{' '}
               {record.project.created_by_name || record.project.created_by || 'N/A'}
             </div>
+            <div>
+              <span className="font-medium">Modification ID:</span>{' '}
+              {record.project.modification_id || 'N/A'}
+            </div>
           </div>
         </div>
       </div>
@@ -315,19 +317,28 @@ export default function AdminPage() {
   const nextPage = () => page < totalPages && setPage(page + 1);
   const prevPage = () => page > 1 && setPage(page - 1);
 
-  if (error && !selectedHistoryInternalId) { // Only show full page error if not in history modal
+  if (error && !selectedHistoryInternalId) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100">
         <div className="bg-white p-6 sm:p-8 rounded-lg shadow-sm max-w-lg w-full">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
               <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-blue-800 mb-2">Error Loading Data</h2>
             <p className="text-gray-600 mb-6">{error}</p>
-            <button type="button" onClick={() => fetchRecords()} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
+            <button
+              type="button"
+              onClick={() => fetchRecords()}
+              className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md"
+            >
               Try Again
             </button>
           </div>
@@ -340,7 +351,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gray-100 font-sans py-10 px-4 sm:px-6">
       <div className="text-center mb-10">
         <div className="relative w-20 h-20 mx-auto">
-          <Image src="/gex-logo-2.png" alt="GEX Logo" fill className="object-contain" priority/>
+          <Image src="/gex-logo-2.png" alt="GEX Logo" fill className="object-contain" priority />
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-blue-800 mt-5">Admin Records Dashboard</h1>
         <p className="text-gray-600 text-sm sm:text-base mt-2">Review and manage all project records</p>
@@ -350,11 +361,21 @@ export default function AdminPage() {
         <div className="mb-6 grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Project Name</label>
-            <input type="text" value={filters.projectName} onChange={(e) => handleFilterChange('projectName', e.target.value)} placeholder="Enter project name" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            <input
+              type="text"
+              value={filters.projectName}
+              onChange={(e) => handleFilterChange('projectName', e.target.value)}
+              placeholder="Enter project name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Sector</label>
-            <select value={filters.sector} onChange={(e) => handleFilterChange('sector', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select
+              value={filters.sector}
+              onChange={(e) => handleFilterChange('sector', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <option value="">All Sectors</option>
               <option value="production">Production</option>
               <option value="storage">Storage</option>
@@ -365,7 +386,11 @@ export default function AdminPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-            <select value={filters.active} onChange={(e) => handleFilterChange('active', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <select
+              value={filters.active}
+              onChange={(e) => handleFilterChange('active', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
               <option value="">All Statuses</option>
               <option value="1">Active</option>
               <option value="0">Inactive</option>
@@ -373,7 +398,13 @@ export default function AdminPage() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Modified By</label>
-            <input type="text" value={filters.modifiedBy} onChange={(e) => handleFilterChange('modifiedBy', e.target.value)} placeholder="Enter email or name" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"/>
+            <input
+              type="text"
+              value={filters.modifiedBy}
+              onChange={(e) => handleFilterChange('modifiedBy', e.target.value)}
+              placeholder="Enter email or name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
         </div>
 
@@ -387,8 +418,22 @@ export default function AdminPage() {
               <table className="w-full table-auto border-collapse max-w-full">
                 <thead className="bg-blue-50">
                   <tr>
-                    {['Internal ID', 'Project Name', 'Sector', 'Status', 'Modified By', 'Timestamp', 'Actions'].map((header, index) => (
-                      <th key={index} className={`px-4 py-3 text-left text-sm font-semibold text-blue-800 ${header === 'Actions' ? 'sticky right-0 bg-blue-50 z-10' : ''} ${header === 'Internal ID' ? 'max-w-[150px] truncate' : ''}`}>
+                    {[
+                      'Modification ID',
+                      'Internal ID',
+                      'Project Name',
+                      'Sector',
+                      'Status',
+                      'Modified By',
+                      'Timestamp',
+                      'Actions',
+                    ].map((header, index) => (
+                      <th
+                        key={index}
+                        className={`px-4 py-3 text-left text-sm font-semibold text-blue-800 ${
+                          header === 'Actions' ? 'sticky right-0 bg-blue-50 z-10' : ''
+                        } ${header === 'Internal ID' ? 'max-w-[150px] truncate' : ''}`}
+                      >
                         {header}
                       </th>
                     ))}
@@ -397,16 +442,40 @@ export default function AdminPage() {
                 <tbody>
                   {paginatedRecords.map((item) => (
                     <tr key={item.project.id} className="border-b border-gray-200 hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-700">{item.project.modification_id || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm text-gray-700 max-w-[150px] truncate">{item.project.internal_id}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{item.project.data?.project_name || 'Not Available'}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{item.project.sector || 'Not Available'}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{item.project.active === 1 ? 'Active' : 'Inactive'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{item.project.modified_by_name || item.project.modified_by || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{item.project.modified_at ? format(new Date(item.project.modified_at), 'PPp') : format(new Date(item.project.created_at), 'PPp')}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {item.project.modified_by_name || item.project.modified_by || 'N/A'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {item.project.modified_at
+                          ? format(new Date(item.project.modified_at), 'PPp')
+                          : format(new Date(item.project.created_at), 'PPp')}
+                      </td>
                       <td className="px-4 py-3 text-sm sticky right-0 bg-white z-10 flex gap-2">
-                        <button className="px-3 py-1.5 border border-blue-600 text-blue-600 rounded-full text-sm hover:bg-blue-600 hover:text-white transition-colors" onClick={() => setSelectedInternalId(item.project.internal_id)}>Review</button>
-                        <button className="px-3 py-1.5 border border-purple-600 text-purple-600 rounded-full text-sm hover:bg-purple-600 hover:text-white transition-colors" onClick={() => setSelectedHistoryInternalId(item.project.internal_id)}>History</button>
-                        <button className={`px-3 py-1.5 rounded-full text-sm transition-colors ${item.project.active === 1 ? 'border border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white' : 'border border-green-600 text-green-600 hover:bg-green-600 hover:text-white'}`} onClick={() => handleActivate(item.project.id, item.project.internal_id)}>
+                        <button
+                          className="px-3 py-1.5 border border-blue-600 text-blue-600 rounded-full text-sm hover:bg-blue-600 hover:text-white transition-colors"
+                          onClick={() => setSelectedInternalId(item.project.internal_id)}
+                        >
+                          Review
+                        </button>
+                        <button
+                          className="px-3 py-1.5 border border-purple-600 text-purple-600 rounded-full text-sm hover:bg-purple-600 hover:text-white transition-colors"
+                          onClick={() => setSelectedHistoryInternalId(item.project.internal_id)}
+                        >
+                          History
+                        </button>
+                        <button
+                          className={`px-3 py-1.5 rounded-full text-sm transition-colors ${
+                            item.project.active === 1
+                              ? 'border border-gray-600 text-gray-600 hover:bg-gray-600 hover:text-white'
+                              : 'border border-green-600 text-green-600 hover:bg-green-600 hover:text-white'
+                          }`}
+                          onClick={() => handleActivate(item.project.id, item.project.internal_id)}
+                        >
                           {item.project.active === 1 ? 'Deactivate' : 'Activate'}
                         </button>
                       </td>
@@ -418,9 +487,21 @@ export default function AdminPage() {
             <div className="flex justify-between items-center mt-4 text-sm text-gray-600">
               <span>Showing {records.length} of {totalRecords} records</span>
               <div className="flex gap-2">
-                <button onClick={prevPage} disabled={page === 1} className="px-3 py-1 border border-blue-600 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">← Prev</button>
+                <button
+                  onClick={prevPage}
+                  disabled={page === 1}
+                  className="px-3 py-1 border border-blue-600 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ← Prev
+                </button>
                 <span>Page {page} of {totalPages}</span>
-                <button onClick={nextPage} disabled={page === totalPages} className="px-3 py-1 border border-blue-600 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Next →</button>
+                <button
+                  onClick={nextPage}
+                  disabled={page === totalPages}
+                  className="px-3 py-1 border border-blue-600 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next →
+                </button>
               </div>
             </div>
           </>
@@ -432,22 +513,39 @@ export default function AdminPage() {
           <div className="bg-white rounded-lg shadow-lg max-w-5xl w-full max-h-[80vh] flex flex-col">
             <div className="flex justify-between items-center p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-blue-800">Review Records for Internal Id: {selectedInternalId}</h2>
-              <button onClick={() => setSelectedInternalId(null)} className="text-gray-500 hover:text-gray-700 transition-colors">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              <button
+                onClick={() => setSelectedInternalId(null)}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {records.filter((record) => record.project.internal_id === selectedInternalId).map((record, index) => (
-                <div key={`${record.project.id}-${index}`} className="border-b border-gray-200 pb-4 last:border-b-0">
-                  <div className="flex justify-between items-center mb-3">
-                    <h3 className="text-sm font-semibold text-blue-800">Record ID: {record.project.id} - <span className={record.project.active === 1 ? 'text-green-600' : 'text-gray-500'}>{record.project.active === 1 ? 'Active' : 'Inactive'}</span></h3>
+              {records
+                .filter((record) => record.project.internal_id === selectedInternalId)
+                .map((record, index) => (
+                  <div key={`${record.project.id}-${index}`} className="border-b border-gray-200 pb-4 last:border-b-0">
+                    <div className="flex justify-between items-center mb-3">
+                      <h3 className="text-sm font-semibold text-blue-800">
+                        Record ID: {record.project.id} -{' '}
+                        <span className={record.project.active === 1 ? 'text-green-600' : 'text-gray-500'}>
+                          {record.project.active === 1 ? 'Active' : 'Inactive'}
+                        </span>
+                      </h3>
+                    </div>
+                    {renderRecordDetails(record)}
                   </div>
-                  {renderRecordDetails(record)}
-                </div>
-              ))}
+                ))}
             </div>
             <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
-              <button onClick={() => setSelectedInternalId(null)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200">Close</button>
+              <button
+                onClick={() => setSelectedInternalId(null)}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
@@ -458,8 +556,16 @@ export default function AdminPage() {
           <div className="bg-white rounded-lg shadow-lg max-w-5xl w-full max-h-[80vh] flex flex-col">
             <div className="flex justify-between items-center p-6 border-b border-gray-200">
               <h2 className="text-xl font-bold text-purple-800">History for Internal Id: {selectedHistoryInternalId}</h2>
-              <button onClick={() => { setSelectedHistoryInternalId(null); setError(null); }} className="text-gray-500 hover:text-gray-700 transition-colors">
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              <button
+                onClick={() => {
+                  setSelectedHistoryInternalId(null);
+                  setError(null);
+                }}
+                className="text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -468,14 +574,21 @@ export default function AdminPage() {
               ) : error ? (
                 <div className="text-center text-red-600">{error}</div>
               ) : historyRecords.length === 0 ? (
-                 <div className="text-center text-gray-600">No history found.</div>
+                <div className="text-center text-gray-600">No history found.</div>
               ) : (
                 historyRecords.map((item, index) => (
-                  <div key={`${item.modification.id}-${index}`} className="border-b border-gray-200 pb-4 last:border-b-0">
+                  <div
+                    key={`${item.modification.id}-${index}`}
+                    className="border-b border-gray-200 pb-4 last:border-b-0"
+                  >
                     {renderHistory(item.modification)}
                     <div className="ml-4 mt-2 space-y-2">
-                      <p><strong>Action:</strong> {item.modification.action}</p>
-                      <p><strong>User:</strong> {item.modification.user_name || item.modification.user_email || 'N/A'}</p>
+                      <p>
+                        <strong>Action:</strong> {item.modification.action}
+                      </p>
+                      <p>
+                        <strong>User:</strong> {item.modification.user_name || item.modification.user_email || 'N/A'}
+                      </p>
                       {item.modification.old_data && item.modification.new_data && (
                         <div>
                           <h4 className="text-sm font-medium text-purple-700 mb-2">Changes:</h4>
@@ -488,14 +601,27 @@ export default function AdminPage() {
               )}
             </div>
             <div className="flex justify-end gap-3 p-6 border-t border-gray-200">
-              <button onClick={() => { setSelectedHistoryInternalId(null); setError(null); }} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200">Close</button>
+              <button
+                onClick={() => {
+                  setSelectedHistoryInternalId(null);
+                  setError(null);
+                }}
+                className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-all duration-200"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <button onClick={() => router.push('/')} className="fixed top-1/2 left-4 transform -translate-y-1/2 bg-blue-600/80 text-white rounded-full px-4 py-2 text-sm flex items-center gap-2 hover:bg-blue-600 transition-colors duration-200 shadow-lg z-50">
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+      <button
+        onClick={() => router.push('/')}
+        className="fixed top-1/2 left-4 transform -translate-y-1/2 bg-blue-600/80 text-white rounded-full px-4 py-2 text-sm flex items-center gap-2 hover:bg-blue-600 transition-colors duration-200 shadow-lg z-50"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
         <span>Map</span>
       </button>
     </div>

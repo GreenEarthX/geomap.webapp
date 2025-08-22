@@ -28,6 +28,7 @@ interface RawCCUSItem {
   references: CCUSReference[] | null;
   latitude: number | null;
   longitude: number | null;
+  updated_at?: string | null;
   type: string;
 }
 
@@ -93,7 +94,8 @@ export async function getCCUSData(): Promise<GeoJSONFeatureCollection> {
           THEN (data->'coordinates'->>'longitude')::double precision
           ELSE NULL
         END AS longitude,
-        sector AS type
+        sector AS type,
+        modified_at as updated_at
       FROM project_map
       WHERE sector = 'CCUS' AND active = 1;
     `);
@@ -130,6 +132,7 @@ export async function getCCUSData(): Promise<GeoJSONFeatureCollection> {
         references: item.references ?? [],
         latitude: item.latitude,
         longitude: item.longitude,
+        updated_at: item.updated_at ?? null,
         type: item.type,
       } as CCUSItem,
     });

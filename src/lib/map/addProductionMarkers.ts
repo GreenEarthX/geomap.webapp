@@ -24,7 +24,7 @@ export const addProductionMarkers = (
     const icon = L.AwesomeMarkers.icon({
       markerColor: statusColorMap[props.status?.toLowerCase() || 'other/unknown'] || statusColorMap['other/unknown'],
       iconColor: 'white',
-      icon: 'bolt',
+      icon: 'industry',
       prefix: 'fa',
     });
 

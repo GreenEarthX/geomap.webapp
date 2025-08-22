@@ -5,23 +5,39 @@ import { useParams, useRouter } from 'next/navigation';
 import ReCAPTCHA from 'react-google-recaptcha';
 import { StorageItem } from '@/lib/types2';
 import { STATUS_OPTIONS, StatusType, STORAGE_PROJECT_TYPES_OPTIONS, StorageProjectTypeType } from '@/lib/lookupTables';
+import ConfirmationModal from './ConfirmationModal';
 
-// Updated FieldConfig to include options for the dropdown
+// Helper to get connected user email from JWT
+function getConnectedEmail() {
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('geomap-auth-token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        return payload.email;
+      } catch (e) {
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
 interface FieldConfig {
-  name: keyof StorageItem | 'storage_mass_kt_per_year';
+  name: keyof StorageItem | 'storage_mass_kt_per_year' | 'updated_at';
   label: string;
   type: string;
   placeholder?: string;
   isCombined?: boolean;
   options?: ReadonlyArray<string>;
+  disabled?: boolean;
 }
 
 interface SectionConfig {
   title: string;
-  fields: (keyof StorageItem | 'storage_mass_kt_per_year')[];
+  fields: (keyof StorageItem | 'storage_mass_kt_per_year' | 'updated_at')[];
 }
 
-// Updated StorageFormProps to accept status options, project type options, and a tooltip
 interface StorageFormProps {
   initialFeature: StorageItem | null;
   initialError: string | null;
@@ -31,19 +47,21 @@ interface StorageFormProps {
 }
 
 const StorageForm = ({ initialFeature, initialError, statusOptions, statusTooltip, projectTypeOptions }: StorageFormProps) => {
+  const [editLimitReached, setEditLimitReached] = useState(false);
+  const [showLimitModal, setShowLimitModal] = useState(false);
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [openSections, setOpenSections] = useState<{ [key: string]: boolean }>({
-    'General Information': true,
-    'Location': true,
-    'Specific Information': true,
-    'Storage Capacity': true,
-    'Contact Information': true,
+    'General Information': false,
+    'Location': false,
+    'Specific Information': false,
+    'Contact Information': false,
   });
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [showRecaptcha, setShowRecaptcha] = useState(false);
   const [recaptchaError, setRecaptchaError] = useState('');
+  const [showModal, setShowModal] = useState(false);
 
   const cleanStakeholders = (data: any): string[] => {
     if (!data) return [];
@@ -86,8 +104,21 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
     return [];
   };
 
+  const formatDbDate = (date: Date) => {
+    const pad = (n: number, z = 2) => ('00' + n).slice(-z);
+    const year = date.getUTCFullYear();
+    const month = pad(date.getUTCMonth() + 1);
+    const day = pad(date.getUTCDate());
+    const hour = pad(date.getUTCHours());
+    const min = pad(date.getUTCMinutes());
+    const sec = pad(date.getUTCSeconds());
+    const ms = pad(date.getUTCMilliseconds(), 3) + '000';
+    return `${year}-${month}-${day} ${hour}:${min}:${sec}.${ms}+00`;
+  };
+
   const initialFormData: Partial<StorageItem> & {
     storage_mass_kt_per_year?: string;
+    updated_at?: string | null;
   } = {
     id: initialFeature?.id ?? '',
     internal_id: initialFeature?.internal_id ?? id ?? '',
@@ -113,10 +144,12 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
       : '',
     latitude: initialFeature?.latitude ?? 0,
     longitude: initialFeature?.longitude ?? 0,
+    updated_at: initialFeature?.updated_at ?? null,
   };
 
   const [formData, setFormData] = useState<Partial<StorageItem> & {
     storage_mass_kt_per_year?: string;
+    updated_at?: string | null;
   }>(initialFormData);
 
   useEffect(() => {
@@ -128,7 +161,26 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
     }
   }, [initialFeature, statusOptions, projectTypeOptions]);
 
-  // Generic input handler for both text inputs and select dropdowns
+  // Check edit limit on mount
+  useEffect(() => {
+    async function checkEditLimit() {
+      const connectedEmail = getConnectedEmail();
+      if (!connectedEmail) return;
+      try {
+        const res = await fetch(`/api/user-edit-limit?email=${encodeURIComponent(connectedEmail)}&sector=Storage`);
+        const data = await res.json();
+        if (data.count >= 3) {
+          setEditLimitReached(true);
+        } else {
+          setEditLimitReached(false);
+        }
+      } catch (err) {
+        setEditLimitReached(false);
+      }
+    }
+    checkEditLimit();
+  }, []);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     if (name === 'storage_mass_kt_per_year') {
@@ -153,8 +205,28 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
     }
   };
 
-  const handleEditClick = () => {
+  const handleEditClick = async () => {
+    // Always check edit limit on click
+    const connectedEmail = getConnectedEmail();
+    if (!connectedEmail) {
+      setShowLimitModal(true);
+      return;
+    }
+    try {
+      const res = await fetch(`/api/user-edit-limit?email=${encodeURIComponent(connectedEmail)}&sector=Storage`);
+      const data = await res.json();
+      if (typeof data.count === 'number' && data.count >= 3) {
+        setEditLimitReached(true);
+        setShowLimitModal(true);
+        return;
+      } else {
+        setEditLimitReached(false);
+      }
+    } catch (err) {
+      setEditLimitReached(false);
+    }
     if (isEditing) {
+      setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
       (document.getElementById('storage-form') as HTMLFormElement)?.requestSubmit();
       setIsEditing(false);
       setRecaptchaToken(null);
@@ -184,6 +256,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
           if (data.success) {
             setIsEditing(true);
             setShowRecaptcha(false);
+            setFormData(prev => ({ ...prev, updated_at: formatDbDate(new Date()) }));
           } else {
             setRecaptchaError('reCAPTCHA verification failed. Please try again.');
             setRecaptchaToken(null);
@@ -201,11 +274,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsEditing(false);
-    setRecaptchaToken(null);
-
     const cleanStakeholdersArray = Array.isArray(formData.stakeholders) ? formData.stakeholders.filter(Boolean) : [];
-
     const dataPayload = {
       project_name: formData.project_name || null,
       project_type: formData.project_type || null,
@@ -220,7 +289,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
       website_url: formData.website_url || null,
       status: {
         current_status: formData.status || null,
-        date_online: formData.date_online || null,
+        date_online: formData.date_online ? String(formData.date_online).slice(0, 4) : null,
       },
       primary_product: formData.primary_product || null,
       capacities: {
@@ -231,14 +300,23 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
         latitude: String(formData.latitude || 0),
         longitude: String(formData.longitude || 0),
       },
+      updated_at: formData.updated_at || null,
     };
-
     try {
       const token = localStorage.getItem('geomap-auth-token');
       if (!token) {
         throw new Error('No authentication token found. Please log in again.');
       }
-      
+      // Extract connected user email and name from JWT
+      let connectedEmail = null;
+      let connectedUserName = null;
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        connectedEmail = payload.email;
+        connectedUserName = payload.name || payload.email || 'User';
+      } catch (jwtError) {
+        console.warn('Could not extract email from JWT:', jwtError);
+      }
       const response = await fetch('/api/storage', {
         method: 'POST',
         headers: { 
@@ -250,11 +328,27 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
           data: dataPayload,
         }),
       });
-
       if (!response.ok) {
         throw new Error(`Failed to save Storage data: ${response.statusText}`);
       }
-
+      setShowModal(true);
+      try {
+        if (connectedEmail) {
+          await fetch('/api/send-confirmation-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: connectedEmail,
+              connectedUserName,
+              plantName: formData.project_name || 'Unknown Plant',
+            }),
+          });
+        } else {
+          console.warn('No connected user email found, confirmation email not sent.');
+        }
+      } catch (emailError) {
+        console.error('Error sending confirmation email:', emailError);
+      }
       const notification = document.createElement('div');
       notification.className =
         'fixed top-4 right-4 bg-green-600 text-white px-4 py-2 rounded-md shadow-lg animate-fade-in-out';
@@ -284,7 +378,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
   };
 
   const renderFields = () => {
-    // Field definitions, now with status and project_type as select types
+    // Field definitions, now with status, project_type, and updated_at
     const fields: FieldConfig[] = [
       { name: 'project_name', label: 'Project Name', type: 'text', placeholder: 'Enter project name' },
       { name: 'project_type', label: 'Project Type', type: 'select', options: projectTypeOptions },
@@ -295,9 +389,10 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
       { name: 'street', label: 'Street', type: 'text', placeholder: 'Enter street' },
       { name: 'zip', label: 'Zip Code', type: 'text', placeholder: 'Enter zip code' },
       { name: 'status', label: 'Status', type: 'select', options: statusOptions },
-      { name: 'date_online', label: 'Date Online', type: 'text', placeholder: 'Enter date online' },
+      { name: 'date_online', label: 'Operational Start Date', type: 'number', placeholder: 'YYYY' },
       { name: 'primary_product', label: 'Primary Product', type: 'text', placeholder: 'Enter primary product' },
       { name: 'storage_mass_kt_per_year', label: 'Storage Capacity', type: 'text', placeholder: 'e.g. 72 kt H2/year', isCombined: true },
+      { name: 'updated_at', label: 'Updated record', type: 'text', disabled: true },
       { name: 'contact_name', label: 'Contact Name', type: 'text', placeholder: 'Enter contact name' },
       { name: 'email', label: 'Email', type: 'email', placeholder: 'Enter email' },
       { name: 'website_url', label: 'Website', type: 'text', placeholder: 'Enter website URL' },
@@ -318,9 +413,8 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
       },
       {
         title: 'Specific Information',
-        fields: ['status', 'date_online', 'storage_mass_kt_per_year'],
+        fields: ['status', 'date_online', 'storage_mass_kt_per_year', 'updated_at'],
       },
-      
     ];
 
     // JSX rendering logic for fields, now with conditional for select dropdown
@@ -379,6 +473,24 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
                             </option>
                           ))}
                         </select>
+                      ) : field.type === 'number' && field.name === 'date_online' ? (
+                        <input
+                          type="number"
+                          name="date_online"
+                          value={formData.date_online ?? ''}
+                          onChange={e => {
+                            const val = e.target.value;
+                            // Only allow 4-digit years
+                            if (/^\d{0,4}$/.test(val)) {
+                              setFormData(prev => ({ ...prev, date_online: val }));
+                            }
+                          }}
+                          min={1900}
+                          max={2100}
+                          step={1}
+                          placeholder="YYYY"
+                          className="w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-black bg-white hover:border-gray-400"
+                        />
                       ) : (
                         <input
                           type={field.type}
@@ -388,13 +500,15 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
                               ? Array.isArray(formData[field.name]) ? (formData[field.name] as string[]).join(', ') : ''
                               : field.name === 'storage_mass_kt_per_year'
                               ? formData.storage_mass_kt_per_year ?? ''
+                              : field.name === 'updated_at'
+                              ? formData.updated_at ?? ''
                               : String(formData[field.name as keyof StorageItem] ?? '')
                           }
                           onChange={handleInputChange}
-                          disabled={!isEditing}
+                          disabled={!isEditing || field.disabled}
                           placeholder={field.placeholder}
                           className={`w-full p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 text-black ${
-                            isEditing ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
+                            isEditing && !field.disabled ? 'bg-white hover:border-gray-400' : 'bg-gray-50 cursor-not-allowed'
                           }`}
                         />
                       )}
@@ -452,13 +566,32 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
               Storage Project
             </p>
           </div>
-          <button onClick={handleEditClick} className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${isEditing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'}`}>
+          <button 
+            onClick={handleEditClick} 
+            disabled={editLimitReached}
+            className={`flex items-center px-4 py-2 rounded-md transition-all duration-200 shadow-sm hover:shadow-md ${
+              isEditing ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-blue-600 text-white hover:bg-blue-700'
+            } ${editLimitReached ? 'cursor-not-allowed opacity-50' : ''}`}
+          >
             <svg className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-45' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {isEditing ? ( <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/> ) : ( <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>)}
             </svg>
             {isEditing ? 'Save' : 'Edit'}
           </button>
         </div>
+
+        {editLimitReached && (
+          <div className="mb-6 p-4 bg-orange-100 border-l-4 border-orange-500 text-orange-700 rounded-md">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-orange-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm">
+                You can't edit, You already reached the limit of project editing.
+              </p>
+            </div>
+          </div>
+        )}
 
         {showRecaptcha && !isEditing && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -506,7 +639,7 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
               </button>
               <button type="button" onClick={() => router.push('/plant-list?type=Storage')} className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-all duration-200 shadow-sm hover:shadow-md">
                 <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-18-8h18m-18 12h18"/>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-18-8h18Chengem-18 12h18"/>
                 </svg>
                 Storage Plant List
               </button>
@@ -523,6 +656,14 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
             )}
           </div>
         </form>
+        <ConfirmationModal open={showModal} onClose={() => setShowModal(false)} />
+        {showLimitModal && (
+          <ConfirmationModal
+            open={showLimitModal}
+            onClose={() => setShowLimitModal(false)}
+            message="You can't edit, you reached the limit of 3 edits. You can contact the support team for further info!"
+          />
+        )}
       </div>
     </div>
   );
