@@ -31,12 +31,12 @@ export default function PlantTypeWidgetsPage() {
       color: 'bg-orange-600', // Added a new color for the port widget
       onClick: () => router.push('/ports'), // Added navigation for ports
     },
-    {
+    /*{
       title: 'All Plants',
       image: '/plants/all-plants.png',
       color: 'bg-purple-600',
       onClick: () => router.push('/plant-list'),
-    },
+    },*/
   ];
 
   return (
@@ -61,7 +61,7 @@ export default function PlantTypeWidgetsPage() {
       </div>
 
       {/* Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 max-w-6xl mx-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
         {cards.map((card, index) => (
           <div
             key={index}
