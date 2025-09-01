@@ -118,7 +118,7 @@ const UserGuideModal = ({ isOpen, onClose }: UserGuideModalProps) => {
             </a>{" "}
             or{" "}
             <a href="https://greenearthx.com/contact" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-              greenearthx.com/contact
+              greenearthx.com
             </a>
           </div>
 </div>

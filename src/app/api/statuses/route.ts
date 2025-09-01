@@ -10,10 +10,30 @@ export async function GET() {
       SELECT DISTINCT 
         sector,
         CASE 
-          WHEN LOWER(sector) = 'ccus' THEN LOWER(TRIM(COALESCE((data #>> '{status_date,project_status}')::TEXT, 'unknown')))
-          WHEN LOWER(sector) = 'port' THEN LOWER(TRIM(COALESCE((data #>> '{status_dates,status}')::TEXT, 'unknown')))
-          WHEN LOWER(sector) = 'pipeline' THEN LOWER(TRIM(COALESCE((data #>> '{status,current_status}')::TEXT, 'unknown')))
-          ELSE LOWER(TRIM(COALESCE((data #>> '{status,current_status}')::TEXT, 'unknown')))
+          WHEN LOWER(sector) = 'ccus' THEN 
+            CASE 
+              WHEN LOWER(TRIM(COALESCE((data #>> '{status_date,project_status}')::TEXT, 'unknown'))) IN ('decommsioned', 'decommssioned', 'decomisioned', 'decomissioned', 'decommissioned')
+              THEN 'Decommissioned'
+              ELSE LOWER(TRIM(COALESCE((data #>> '{status_date,project_status}')::TEXT, 'unknown')))
+            END
+          WHEN LOWER(sector) = 'port' THEN 
+            CASE 
+              WHEN LOWER(TRIM(COALESCE((data #>> '{status_dates,status}')::TEXT, 'unknown'))) IN ('decommsioned', 'decommssioned', 'decomisioned', 'decomissioned', 'decommissioned')
+              THEN 'Decommissioned'
+              ELSE LOWER(TRIM(COALESCE((data #>> '{status_dates,status}')::TEXT, 'unknown')))
+            END
+          WHEN LOWER(sector) = 'pipeline' THEN 
+            CASE 
+              WHEN LOWER(TRIM(COALESCE((data #>> '{status,current_status}')::TEXT, 'unknown'))) IN ('decommsioned', 'decommssioned', 'decomisioned', 'decomissioned', 'decommissioned')
+              THEN 'Decommissioned'
+              ELSE LOWER(TRIM(COALESCE((data #>> '{status,current_status}')::TEXT, 'unknown')))
+            END
+          ELSE 
+            CASE 
+              WHEN LOWER(TRIM(COALESCE((data #>> '{status,current_status}')::TEXT, 'unknown'))) IN ('decommsioned', 'decommssioned', 'decomisioned', 'decomissioned', 'decommissioned')
+              THEN 'Decommissioned'
+              ELSE LOWER(TRIM(COALESCE((data #>> '{status,current_status}')::TEXT, 'unknown')))
+            END
         END AS current_status
       FROM project_map
       WHERE LOWER(sector) IN ('production', 'storage', 'ccus', 'port', 'pipeline')

@@ -21,6 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             gtag('config', 'G-HQL4MFH1R2');
           `}
         </Script>
+        
       </head>
       <body className="bg-gray-50 min-h-screen">
         <GexHeader />
