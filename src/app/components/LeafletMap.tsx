@@ -262,7 +262,7 @@ const LeafletMap = ({
   useEffect(() => {
     if (document.getElementById('map')?.children.length) return;
 
-    mapRef.current = L.map('map').setView([51.07289, 10.67139], 2);
+    mapRef.current = L.map('map').setView([51.07289, 10.67139], 3);
     const baseLayers = {
       Light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }),
       Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }),
