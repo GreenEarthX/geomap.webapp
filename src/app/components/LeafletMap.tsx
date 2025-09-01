@@ -349,7 +349,7 @@ const LeafletMap = ({
   }, []);
 
   return (
-    <div className="w-full h-[calc(110vh-90px)] relative">
+    <div className="w-full h-[calc(100vh-68px)] relative">
       <div id="map" className="w-full h-full"></div>
       {/* Filter icon and layer button in a row, filter left of layer, same line */}
       <div className="leaflet-top leaflet-right z-[900] flex flex-row items-start gap-2" style={{ position: 'absolute', top: 5, right: 10, height: 45 }}>
