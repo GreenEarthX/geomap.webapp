@@ -83,15 +83,6 @@ const LeafletMap = ({
     key: keyof ProductionItem | keyof StorageItem | keyof CCUSItem | keyof PortItem | keyof PipelineItem
   ): string[] => {
     const valueMappings: Record<string, string> = {
-      'power and heat': 'Power and Heat',
-      'power & heat': 'Power and Heat',
-      'power': 'Power and Heat',
-      'iron & steel': 'Iron & Steel',
-      'iron and steel': 'Iron & Steel',
-      'iron&steel': 'Iron & Steel',
-      'other industry': 'Other Industry',
-      'otherindustry': 'Other Industry',
-      'other industrial': 'Other Industry',
       decommsioned: 'Decommissioned',
       decommssioned: 'Decommissioned',
       decomisioned: 'Decommissioned',
