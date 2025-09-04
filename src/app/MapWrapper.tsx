@@ -16,7 +16,7 @@ interface StatusesResponse {
 
 const LeafletMap = dynamic(() => import('./components/LeafletMap'), {
   ssr: false,
-  loading: () => null, // Prevent Next.js from rendering a placeholder during dynamic import
+  loading: () => null,
 });
 
 const fetchDisclaimerData = async (): Promise<Disclaimer> => {
@@ -29,28 +29,68 @@ const fetchDisclaimerData = async (): Promise<Disclaimer> => {
 
 const fetchMapData = async () => {
   try {
-    const [productionResponse, storageResponse, ccusResponse, portsResponse, statusResponse] = await Promise.all([
-      fetch('/api/production'),
+    // Fetch data sequentially: ports -> production -> ccus -> storage
+    const portsResponse = await fetch('/api/ports-copy');
+    const portsData: GeoJSONFeatureCollection = await portsResponse.json();
+    // Initial data with ports only
+    const initialData: {
+      combinedData: GeoJSONFeatureCollection['features'];
+      productionData: GeoJSONFeatureCollection;
+      storageData: GeoJSONFeatureCollection;
+      ccusData: GeoJSONFeatureCollection;
+      portsData: GeoJSONFeatureCollection;
+      statusData: StatusesResponse;
+    } = {
+      combinedData: portsData.features || [],
+      productionData: { type: 'FeatureCollection', features: [] },
+      storageData: { type: 'FeatureCollection', features: [] },
+      ccusData: { type: 'FeatureCollection', features: [] },
+      portsData,
+      statusData: { statuses: [] },
+    };
+    // Fetch production data
+    const productionResponse = await fetch('/api/production');
+    const productionData: GeoJSONFeatureCollection = await productionResponse.json();
+    // Update combinedData with ports + production
+    const combinedDataWithProduction = [
+      ...(portsData.features || []),
+      ...(productionData.features || []),
+    ].filter(feature => feature.geometry?.coordinates);
+    const dataWithProduction = {
+      ...initialData,
+      combinedData: combinedDataWithProduction,
+      productionData,
+    };
+    // Fetch CCUS data
+    const ccusResponse = await fetch('/api/ccus');
+    const ccusData: GeoJSONFeatureCollection = await ccusResponse.json();
+    // Update combinedData with ports + production + ccus
+    const combinedDataWithCCUS = [
+      ...(portsData.features || []),
+      ...(productionData.features || []),
+      ...(ccusData.features || []),
+    ].filter(feature => feature.geometry?.coordinates);
+    const dataWithCCUS = {
+      ...dataWithProduction,
+      combinedData: combinedDataWithCCUS,
+      ccusData,
+    };
+    // Fetch storage and status data
+    const [storageResponse, statusResponse] = await Promise.all([
       fetch('/api/storage'),
-      fetch('/api/ccus'),
-      fetch('/api/ports-copy'),
       fetch('/api/statuses'),
     ]);
-    const productionData = await productionResponse.json();
-    const storageData = await storageResponse.json();
-    const ccusData = await ccusResponse.json();
-    const portsData = await portsResponse.json();
+    const storageData: GeoJSONFeatureCollection = await storageResponse.json();
     const statusData: StatusesResponse = await statusResponse.json();
-
-    const combinedData = [
-      ...(productionData.features || []),
-      ...(storageData.features || []),
-      ...(ccusData.features || []),
+    // Final combinedData with all datasets
+    const finalCombinedData = [
       ...(portsData.features || []),
+      ...(productionData.features || []),
+      ...(ccusData.features || []),
+      ...(storageData.features || []),
     ].filter(feature => feature.geometry?.coordinates);
-
     return {
-      combinedData,
+      combinedData: finalCombinedData,
       productionData,
       storageData,
       ccusData,
@@ -66,7 +106,7 @@ const fetchMapData = async () => {
 export default function MapWrapper() {
   const [isClient, setIsClient] = useState(false);
   const [showMap, setShowMap] = useState(false);
-  const [isMapComponentLoaded, setIsMapComponentLoaded] = useState(false); // New state for tracking LeafletMap loading
+  const [isMapComponentLoaded, setIsMapComponentLoaded] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
     if (typeof window !== 'undefined') {
       return !localStorage.getItem('gex_disclaimer_accepted');
@@ -90,9 +130,13 @@ export default function MapWrapper() {
     portsData: GeoJSONFeatureCollection;
     statusData: StatusesResponse;
   } | null>(null);
+  const [loadStartTime, setLoadStartTime] = useState<number | null>(null);
+  const [fetchStartTime, setFetchStartTime] = useState<number | null>(null);
 
   useEffect(() => {
     setIsClient(true);
+    // Start the timer for loading screen
+    setLoadStartTime(Date.now());
   }, []);
 
   useEffect(() => {
@@ -102,12 +146,21 @@ export default function MapWrapper() {
     };
   }, []);
 
-  // Track when LeafletMap is loaded
   useEffect(() => {
     import('./components/LeafletMap').then(() => {
       setIsMapComponentLoaded(true);
     });
   }, []);
+
+  // Log time when map is shown
+  useEffect(() => {
+    if (showMap && isMapComponentLoaded && loadStartTime !== null) {
+      const loadEndTime = Date.now();
+      const loadDuration = (loadEndTime - loadStartTime) / 1000; // Convert to seconds
+      console.log(`Map loaded in ${loadDuration.toFixed(2)} seconds`);
+      setLoadStartTime(null); // Reset to prevent re-logging
+    }
+  }, [showMap, isMapComponentLoaded, loadStartTime]);
 
   useEffect(() => {
     const initializeData = async () => {
@@ -116,9 +169,27 @@ export default function MapWrapper() {
           const disclaimer = await fetchDisclaimerData();
           setDisclaimerData(disclaimer.content);
         } else {
-          const data = await fetchMapData();
-          setMapData(data);
-          // Only show map when both data and LeafletMap are ready
+          // Start fetch timer
+          setFetchStartTime(Date.now());
+          // Fetch data sequentially
+          const portsResponse = await fetch('/api/ports-copy');
+          const portsData: GeoJSONFeatureCollection = await portsResponse.json();
+          const initialData: {
+            combinedData: GeoJSONFeatureCollection['features'];
+            productionData: GeoJSONFeatureCollection;
+            storageData: GeoJSONFeatureCollection;
+            ccusData: GeoJSONFeatureCollection;
+            portsData: GeoJSONFeatureCollection;
+            statusData: StatusesResponse;
+          } = {
+            combinedData: portsData.features || [],
+            productionData: { type: 'FeatureCollection', features: [] },
+            storageData: { type: 'FeatureCollection', features: [] },
+            ccusData: { type: 'FeatureCollection', features: [] },
+            portsData,
+            statusData: { statuses: [] },
+          };
+          setMapData(initialData);
           if (isMapComponentLoaded) {
             setShowMap(true);
             if (!localStorage.getItem('gex_welcome_seen')) {
@@ -126,6 +197,55 @@ export default function MapWrapper() {
               setShowWelcomeModal(true);
             }
           }
+          // Fetch remaining data sequentially
+          const productionResponse = await fetch('/api/production');
+          const productionData: GeoJSONFeatureCollection = await productionResponse.json();
+          setMapData((prev) => ({
+            ...prev!,
+            combinedData: [
+              ...(prev?.portsData.features || []),
+              ...(productionData.features || []),
+            ].filter(feature => feature.geometry?.coordinates),
+            productionData,
+          }));
+          const ccusResponse = await fetch('/api/ccus');
+          const ccusData: GeoJSONFeatureCollection = await ccusResponse.json();
+          setMapData((prev) => ({
+            ...prev!,
+            combinedData: [
+              ...(prev?.portsData.features || []),
+              ...(prev?.productionData.features || []),
+              ...(ccusData.features || []),
+            ].filter(feature => feature.geometry?.coordinates),
+            ccusData,
+          }));
+          const [storageResponse, statusResponse] = await Promise.all([
+            fetch('/api/storage'),
+            fetch('/api/statuses'),
+          ]);
+          const storageData: GeoJSONFeatureCollection = await storageResponse.json();
+          const statusData: StatusesResponse = await statusResponse.json();
+          setMapData((prev) => {
+            const finalData = {
+              ...prev!,
+              combinedData: [
+                ...(prev?.portsData.features || []),
+                ...(prev?.productionData.features || []),
+                ...(prev?.ccusData.features || []),
+                ...(storageData.features || []),
+              ].filter(feature => feature.geometry?.coordinates),
+              storageData,
+              statusData,
+            };
+            // Log fetch completion time
+            if (fetchStartTime !== null) {
+              const fetchEndTime = Date.now();
+              const fetchDuration = (fetchEndTime - fetchStartTime) / 1000; // Convert to seconds
+              console.log(`fetchMapData completed in ${fetchDuration.toFixed(2)} seconds`);
+              setFetchStartTime(null); // Reset to prevent re-logging
+            }
+            return finalData;
+          });
         }
       } catch (err) {
         setError('Failed to load data. Using default content.');
@@ -139,7 +259,7 @@ export default function MapWrapper() {
             'Thank you for helping us improve GreenEarthX.',
           ]);
         } else if (isMapComponentLoaded) {
-          setShowMap(true); // Show map even if data fetch fails
+          setShowMap(true);
         }
       }
     };
@@ -167,7 +287,6 @@ export default function MapWrapper() {
     );
   }
 
-  // Show LoadingScreen until both map data and LeafletMap are ready
   if (!showMap || !isMapComponentLoaded) return <LoadingScreen />;
 
   return (
@@ -194,7 +313,6 @@ export default function MapWrapper() {
   );
 }
 
-// Disclaimer Screen Component
 function DisclaimerScreen({
   onAccept,
   content,
@@ -236,8 +354,6 @@ function DisclaimerScreen({
   );
 }
 
-// Loading Screen Component
-// Loading Screen Component
 function LoadingScreen() {
   useEffect(() => {
     const style = document.createElement('style');
@@ -264,7 +380,6 @@ function LoadingScreen() {
         <h1 style={styles.title}>
           Welcome to <span style={styles.gex}>GEX</span> Map
         </h1>
-        {/* Closer to the title */}
         <p style={styles.subTitle}>We’re setting things up for you ...</p>
         <div style={styles.loaderWrapper}>
           <div style={styles.loader}>
@@ -277,10 +392,6 @@ function LoadingScreen() {
   );
 }
 
-
-
-
-// Welcome Modal Component
 function WelcomeModal({
   onClose,
   onOpenGuide,
@@ -314,7 +425,6 @@ function WelcomeModal({
   );
 }
 
-// Styles (unchanged)
 const styles: { [key: string]: CSSProperties } = {
   container: {
     height: '100vh',
@@ -333,9 +443,9 @@ const styles: { [key: string]: CSSProperties } = {
   },
   logo: { marginBottom: 15 },
   title: { fontSize: '18px', color: '#003B70', fontWeight: 600, marginBottom: '16px' },
- subTitle: {
-    marginTop: '4px',      // closer to title
-    marginBottom: '20px',  // enough space before the pin
+  subTitle: {
+    marginTop: '4px',
+    marginBottom: '20px',
     fontSize: '14px',
     color: '#555',
     fontWeight: 400,

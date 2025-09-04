@@ -23,7 +23,6 @@ import { addCCUSMarkers } from '@/lib/map/addCCUSMarkers';
 import { addPortMarkers } from '@/lib/map/addPortMarkers';
 import { addPipelineMarkers } from '@/lib/map/addPipelineMarkers';
 
-// Define StatusesResponse type
 interface StatusesResponse {
   statuses: { sector: string; current_status: string }[];
 }
@@ -61,6 +60,11 @@ const LeafletMap = ({
   const mapRef = useRef<L.Map | null>(null);
   const filterButtonRef = useRef<HTMLButtonElement>(null);
   const filterBarRef = useRef<HTMLDivElement>(null);
+  const productionClusterRef = useRef<L.MarkerClusterGroup | null>(null);
+  const storageClusterRef = useRef<L.MarkerClusterGroup | null>(null);
+  const ccusClusterRef = useRef<L.MarkerClusterGroup | null>(null);
+  const portsClusterRef = useRef<L.MarkerClusterGroup | null>(null);
+  const pipelineLayerRef = useRef<L.FeatureGroup | null>(null);
 
   const statusColorMap: Record<string, string> = {
     cancelled: 'red',
@@ -77,7 +81,125 @@ const LeafletMap = ({
     planned: 'lightblue',
   };
 
-  // Generic function for cleaning dropdown values
+  // Update allData when combinedData changes
+  useEffect(() => {
+    setAllData(combinedData);
+  }, [combinedData]);
+
+  // Update statusTypes when statusData changes
+  useEffect(() => {
+    if (statusData.statuses && Array.isArray(statusData.statuses)) {
+      const uniqueStatusTypes = Array.from(
+        new Map(statusData.statuses.map((s) => [`${s.sector}-${s.current_status}`, { sector: s.sector, status: s.current_status }])).values()
+      ).sort((a, b) => a.sector.localeCompare(b.sector) || a.status.localeCompare(b.status));
+      setStatusTypes(uniqueStatusTypes);
+    }
+  }, [statusData]);
+
+  // Initialize map
+  useEffect(() => {
+    if (document.getElementById('map')?.children.length || mapRef.current) return;
+
+    mapRef.current = L.map('map').setView([51.07289, 10.67139], 3);
+    const baseLayers = {
+      Light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }),
+      Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }),
+      Satellite: L.layerGroup([
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri & contributors' }),
+        L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { attribution: 'Labels © Esri' }),
+      ]),
+      Terrain: L.tileLayer('https://{s}.google.com/vt/lyrs=p&hl=en&x={x}&y={y}&z={z}', { subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '© Google Maps' }),
+    };
+    baseLayers['Satellite'].addTo(mapRef.current!);
+
+    // Initialize clusters and layers
+    productionClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
+    storageClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
+    ccusClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
+    portsClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
+    pipelineLayerRef.current = L.featureGroup().addTo(mapRef.current!);
+
+    L.control.layers(baseLayers, {
+      'Production Plants': productionClusterRef.current,
+      'Storage Plants': storageClusterRef.current,
+      'CCUS Projects': ccusClusterRef.current,
+      'Ports': portsClusterRef.current,
+      'Pipelines': pipelineLayerRef.current,
+    }, { collapsed: true, position: 'topright' }).addTo(mapRef.current!);
+
+    const measureControl = new (L.Control as any).Measure({ position: 'topleft', primaryLengthUnit: 'kilometers', secondaryLengthUnit: 'miles', primaryAreaUnit: 'sqmeters', secondaryAreaUnit: 'acres' });
+    mapRef.current!.addControl(measureControl);
+    (L.Control as any).Measure.include({
+      _setCaptureMarkerIcon: function () {
+        this._captureMarker.options.autoPanOnFocus = false;
+        this._captureMarker.setIcon(L.divIcon({ iconSize: this._map.getSize().multiplyBy(2) }));
+      },
+    });
+
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  // Add ports markers
+  useEffect(() => {
+    if (!mapRef.current || !portsClusterRef.current) return;
+    portsClusterRef.current.clearLayers();
+    addPortMarkers(portsData, mapRef.current, portsClusterRef.current, statusColorMap, setSelectedPlantName);
+  }, [portsData]);
+
+  // Add production markers
+  useEffect(() => {
+    if (!mapRef.current || !productionClusterRef.current) return;
+    productionClusterRef.current.clearLayers();
+    addProductionMarkers(productionData, mapRef.current, productionClusterRef.current, statusColorMap, setSelectedPlantName);
+  }, [productionData]);
+
+  // Add CCUS markers
+  useEffect(() => {
+    if (!mapRef.current || !ccusClusterRef.current) return;
+    ccusClusterRef.current.clearLayers();
+    addCCUSMarkers(ccusData, mapRef.current, ccusClusterRef.current, statusColorMap, setSelectedPlantName);
+  }, [ccusData]);
+
+  // Add storage markers
+  useEffect(() => {
+    if (!mapRef.current || !storageClusterRef.current) return;
+    storageClusterRef.current.clearLayers();
+    addStorageMarkers(storageData, mapRef.current, storageClusterRef.current, statusColorMap, setSelectedPlantName);
+  }, [storageData]);
+
+  // Add pipeline markers
+  /*useEffect(() => {
+    if (!mapRef.current || !pipelineLayerRef.current) return;
+    pipelineLayerRef.current.clearLayers();
+    addPipelineMarkers(combinedData, mapRef.current, pipelineLayerRef.current, statusColorMap, setSelectedPlantName);
+  }, [combinedData]);*/
+
+  // Handle plant name selection
+  useEffect(() => {
+    if (!mapRef.current || !selectedPlantName) return;
+    const feature = allData.find((f) => {
+      const props = f.properties;
+      const lowerSelectedPlantName = selectedPlantName.toLowerCase();
+      if ('name' in props && props.name?.toLowerCase() === lowerSelectedPlantName) return true;
+      if ('project_name' in props && props.project_name?.toLowerCase() === lowerSelectedPlantName) return true;
+      if ('pipeline_name' in props && props.pipeline_name?.toLowerCase() === lowerSelectedPlantName) return true;
+      return false;
+    });
+    if (feature) {
+      if (feature.geometry.type === 'Point') {
+        const [lng, lat] = feature.geometry.coordinates as [number, number];
+        mapRef.current.setView([lat, lng], 12);
+      } else if (feature.geometry.type === 'LineString' && feature.geometry.coordinates?.length > 0) {
+        const [lng, lat] = feature.geometry.coordinates[0] as [number, number];
+        mapRef.current.setView([lat, lng], 10);
+      }
+    }
+  }, [selectedPlantName, allData]);
+
+  // Existing functions (getUniqueValues, getUniqueNamesForDropdown, handleFindMe, filtered, etc.) remain unchanged
   const getUniqueValues = (
     features: GeoJSONFeatureCollection['features'],
     key: keyof ProductionItem | keyof StorageItem | keyof CCUSItem | keyof PortItem | keyof PipelineItem
@@ -111,7 +233,6 @@ const LeafletMap = ({
     return Array.from(valueMap.values()).sort();
   };
 
-  // Type-safe function for getting all possible names
   const getUniqueNamesForDropdown = (features: GeoJSONFeatureCollection['features']): string[] => {
     const names: string[] = [];
     features.forEach((feature) => {
@@ -237,87 +358,6 @@ const LeafletMap = ({
   const endUses = Array.from(new Set([...getUniqueValues(allData, 'end_use'), ...getUniqueValues(allData, 'end_use_sector')])).sort();
   const plantTypeValues = getUniqueValues(allData, 'type');
 
-  useEffect(() => {
-    if (!mapRef.current || !selectedPlantName) return;
-    const feature = allData.find((f) => {
-      const props = f.properties;
-      const lowerSelectedPlantName = selectedPlantName.toLowerCase();
-      if ('name' in props && props.name?.toLowerCase() === lowerSelectedPlantName) return true;
-      if ('project_name' in props && props.project_name?.toLowerCase() === lowerSelectedPlantName) return true;
-      if ('pipeline_name' in props && props.pipeline_name?.toLowerCase() === lowerSelectedPlantName) return true;
-      return false;
-    });
-    if (feature) {
-      if (feature.geometry.type === 'Point') {
-        const [lng, lat] = feature.geometry.coordinates as [number, number];
-        mapRef.current.setView([lat, lng], 12);
-      } else if (feature.geometry.type === 'LineString' && feature.geometry.coordinates?.length > 0) {
-        const [lng, lat] = feature.geometry.coordinates[0] as [number, number];
-        mapRef.current.setView([lat, lng], 10);
-      }
-    }
-  }, [selectedPlantName, allData]);
-
-  // Main useEffect for map initialization
-  useEffect(() => {
-    if (document.getElementById('map')?.children.length) return;
-
-    mapRef.current = L.map('map').setView([51.07289, 10.67139], 3);
-    const baseLayers = {
-      Light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }),
-      Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }),
-      Satellite: L.layerGroup([
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri & contributors' }),
-        L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { attribution: 'Labels © Esri' }),
-      ]),
-      Terrain: L.tileLayer('https://{s}.google.com/vt/lyrs=p&hl=en&x={x}&y={y}&z={z}', { subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '© Google Maps' }),
-    };
-    baseLayers['Satellite'].addTo(mapRef.current!);
-
-    const productionCluster = L.markerClusterGroup().addTo(mapRef.current!);
-    const storageCluster = L.markerClusterGroup().addTo(mapRef.current!);
-    const ccusCluster = L.markerClusterGroup().addTo(mapRef.current!);
-    const portsCluster = L.markerClusterGroup().addTo(mapRef.current!);
-    const pipelineLayer = L.featureGroup().addTo(mapRef.current!);
-
-    // Add markers using provided data
-    addProductionMarkers(productionData, mapRef.current!, productionCluster, statusColorMap, setSelectedPlantName);
-    addStorageMarkers(storageData, mapRef.current!, storageCluster, statusColorMap, setSelectedPlantName);
-    addCCUSMarkers(ccusData, mapRef.current!, ccusCluster, statusColorMap, setSelectedPlantName);
-    addPortMarkers(portsData, mapRef.current!, portsCluster, statusColorMap, setSelectedPlantName);
-    //addPipelineMarkers(combinedData, mapRef.current!, pipelineLayer, statusColorMap, setSelectedPlantName);
-
-    // Set status types
-    if (statusData.statuses && Array.isArray(statusData.statuses)) {
-      const uniqueStatusTypes = Array.from(
-        new Map(statusData.statuses.map((s) => [`${s.sector}-${s.current_status}`, { sector: s.sector, status: s.current_status }])).values()
-      ).sort((a, b) => a.sector.localeCompare(b.sector) || a.status.localeCompare(b.status));
-      setStatusTypes(uniqueStatusTypes);
-    }
-
-    L.control.layers(baseLayers, {
-      'Production Plants': productionCluster,
-      'Storage Plants': storageCluster,
-      'CCUS Projects': ccusCluster,
-      'Ports': portsCluster,
-      'Pipelines': pipelineLayer,
-    }, { collapsed: true, position: 'topright' }).addTo(mapRef.current!);
-
-    const measureControl = new (L.Control as any).Measure({ position: 'topleft', primaryLengthUnit: 'kilometers', secondaryLengthUnit: 'miles', primaryAreaUnit: 'sqmeters', secondaryAreaUnit: 'acres' });
-    mapRef.current!.addControl(measureControl);
-    (L.Control as any).Measure.include({
-      _setCaptureMarkerIcon: function () {
-        this._captureMarker.options.autoPanOnFocus = false;
-        this._captureMarker.setIcon(L.divIcon({ iconSize: this._map.getSize().multiplyBy(2) }));
-      },
-    });
-
-    return () => {
-      mapRef.current?.remove();
-      mapRef.current = null;
-    };
-  }, [productionData, storageData, ccusData, portsData, statusData, combinedData]);
-
   const handlePlantNameChange = (e: React.ChangeEvent<HTMLSelectElement>) => setSelectedPlantName(e.target.value);
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => setSelectedCountry(e.target.value);
   const toggleLegendPin = () => setLegendPinned((prev) => !prev);
@@ -351,7 +391,6 @@ const LeafletMap = ({
   return (
     <div className="w-full h-[calc(100vh-68px)] relative">
       <div id="map" className="w-full h-full"></div>
-      {/* Filter icon and layer button in a row, filter left of layer, same line */}
       <div className="leaflet-top leaflet-right z-[900] flex flex-row items-start gap-2" style={{ position: 'absolute', top: 5, right: 10, height: 45 }}>
         <div className="leaflet-control leaflet-bar bg-white shadow border border-gray-200 flex items-center justify-center" style={{ width: 45, height: 45, cursor: 'pointer' }}>
           <button
