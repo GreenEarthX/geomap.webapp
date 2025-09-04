@@ -9,14 +9,13 @@ import { GeoJSONFeatureCollection } from '@/lib/types2';
 interface Disclaimer {
   content: string[];
 }
-
 interface StatusesResponse {
   statuses: { sector: string; current_status: string }[];
 }
 
 const LeafletMap = dynamic(() => import('./components/LeafletMap'), {
   ssr: false,
-  loading: () => null, // Prevent Next.js from rendering a placeholder during dynamic import
+  loading: () => null,
 });
 
 const fetchDisclaimerData = async (): Promise<Disclaimer> => {
@@ -28,6 +27,7 @@ const fetchDisclaimerData = async (): Promise<Disclaimer> => {
 };
 
 const fetchMapData = async () => {
+  const fetchStartTime = performance.now();
   try {
     const [productionResponse, storageResponse, ccusResponse, portsResponse, statusResponse] = await Promise.all([
       fetch('/api/production'),
@@ -41,14 +41,14 @@ const fetchMapData = async () => {
     const ccusData = await ccusResponse.json();
     const portsData = await portsResponse.json();
     const statusData: StatusesResponse = await statusResponse.json();
-
     const combinedData = [
       ...(productionData.features || []),
       ...(storageData.features || []),
       ...(ccusData.features || []),
       ...(portsData.features || []),
     ].filter(feature => feature.geometry?.coordinates);
-
+    const fetchTime = performance.now() - fetchStartTime;
+    console.log(`API Fetch Time: ${fetchTime / 1000}s`);
     return {
       combinedData,
       productionData,
@@ -66,7 +66,7 @@ const fetchMapData = async () => {
 export default function MapWrapper() {
   const [isClient, setIsClient] = useState(false);
   const [showMap, setShowMap] = useState(false);
-  const [isMapComponentLoaded, setIsMapComponentLoaded] = useState(false); // New state for tracking LeafletMap loading
+  const [isMapComponentLoaded, setIsMapComponentLoaded] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(() => {
     if (typeof window !== 'undefined') {
       return !localStorage.getItem('gex_disclaimer_accepted');
@@ -90,9 +90,11 @@ export default function MapWrapper() {
     portsData: GeoJSONFeatureCollection;
     statusData: StatusesResponse;
   } | null>(null);
+  const [loadingScreenStartTime, setLoadingScreenStartTime] = useState<number | null>(null);
 
   useEffect(() => {
     setIsClient(true);
+    setLoadingScreenStartTime(performance.now()); // Start timer when component mounts (loading screen appears)
   }, []);
 
   useEffect(() => {
@@ -102,7 +104,6 @@ export default function MapWrapper() {
     };
   }, []);
 
-  // Track when LeafletMap is loaded
   useEffect(() => {
     import('./components/LeafletMap').then(() => {
       setIsMapComponentLoaded(true);
@@ -118,7 +119,6 @@ export default function MapWrapper() {
         } else {
           const data = await fetchMapData();
           setMapData(data);
-          // Only show map when both data and LeafletMap are ready
           if (isMapComponentLoaded) {
             setShowMap(true);
             if (!localStorage.getItem('gex_welcome_seen')) {
@@ -139,12 +139,20 @@ export default function MapWrapper() {
             'Thank you for helping us improve GreenEarthX.',
           ]);
         } else if (isMapComponentLoaded) {
-          setShowMap(true); // Show map even if data fetch fails
+          setShowMap(true);
         }
       }
     };
     initializeData();
   }, [showDisclaimer, isMapComponentLoaded]);
+
+  useEffect(() => {
+    if (showMap && isMapComponentLoaded && loadingScreenStartTime !== null) {
+      const totalTime = performance.now() - loadingScreenStartTime;
+      console.log(`Total Time from Loading Screen to Map Render: ${totalTime / 1000}s`);
+      setLoadingScreenStartTime(null); // Reset to prevent re-logging
+    }
+  }, [showMap, isMapComponentLoaded, loadingScreenStartTime]);
 
   const handleAcceptDisclaimer = () => {
     localStorage.setItem('gex_disclaimer_accepted', 'true');
@@ -167,7 +175,6 @@ export default function MapWrapper() {
     );
   }
 
-  // Show LoadingScreen until both map data and LeafletMap are ready
   if (!showMap || !isMapComponentLoaded) return <LoadingScreen />;
 
   return (
@@ -194,7 +201,6 @@ export default function MapWrapper() {
   );
 }
 
-// Disclaimer Screen Component
 function DisclaimerScreen({
   onAccept,
   content,
@@ -236,8 +242,6 @@ function DisclaimerScreen({
   );
 }
 
-// Loading Screen Component
-// Loading Screen Component
 function LoadingScreen() {
   useEffect(() => {
     const style = document.createElement('style');
@@ -264,7 +268,6 @@ function LoadingScreen() {
         <h1 style={styles.title}>
           Welcome to <span style={styles.gex}>GEX</span> Map
         </h1>
-        {/* Closer to the title */}
         <p style={styles.subTitle}>We’re setting things up for you ...</p>
         <div style={styles.loaderWrapper}>
           <div style={styles.loader}>
@@ -277,10 +280,6 @@ function LoadingScreen() {
   );
 }
 
-
-
-
-// Welcome Modal Component
 function WelcomeModal({
   onClose,
   onOpenGuide,
@@ -314,7 +313,6 @@ function WelcomeModal({
   );
 }
 
-// Styles (unchanged)
 const styles: { [key: string]: CSSProperties } = {
   container: {
     height: '100vh',
@@ -333,9 +331,9 @@ const styles: { [key: string]: CSSProperties } = {
   },
   logo: { marginBottom: 15 },
   title: { fontSize: '18px', color: '#003B70', fontWeight: 600, marginBottom: '16px' },
- subTitle: {
-    marginTop: '4px',      // closer to title
-    marginBottom: '20px',  // enough space before the pin
+  subTitle: {
+    marginTop: '4px',
+    marginBottom: '20px',
     fontSize: '14px',
     color: '#555',
     fontWeight: 400,
