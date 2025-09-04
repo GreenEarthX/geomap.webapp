@@ -9,6 +9,7 @@ import { GeoJSONFeatureCollection } from '@/lib/types2';
 interface Disclaimer {
   content: string[];
 }
+
 interface StatusesResponse {
   statuses: { sector: string; current_status: string }[];
 }
@@ -27,30 +28,69 @@ const fetchDisclaimerData = async (): Promise<Disclaimer> => {
 };
 
 const fetchMapData = async () => {
-  const fetchStartTime = performance.now();
   try {
-    const [productionResponse, storageResponse, ccusResponse, portsResponse, statusResponse] = await Promise.all([
-      fetch('/api/production'),
+    // Fetch data sequentially: ports -> production -> ccus -> storage
+    const portsResponse = await fetch('/api/ports-copy');
+    const portsData: GeoJSONFeatureCollection = await portsResponse.json();
+    // Initial data with ports only
+    const initialData: {
+      combinedData: GeoJSONFeatureCollection['features'];
+      productionData: GeoJSONFeatureCollection;
+      storageData: GeoJSONFeatureCollection;
+      ccusData: GeoJSONFeatureCollection;
+      portsData: GeoJSONFeatureCollection;
+      statusData: StatusesResponse;
+    } = {
+      combinedData: portsData.features || [],
+      productionData: { type: 'FeatureCollection', features: [] },
+      storageData: { type: 'FeatureCollection', features: [] },
+      ccusData: { type: 'FeatureCollection', features: [] },
+      portsData,
+      statusData: { statuses: [] },
+    };
+    // Fetch production data
+    const productionResponse = await fetch('/api/production');
+    const productionData: GeoJSONFeatureCollection = await productionResponse.json();
+    // Update combinedData with ports + production
+    const combinedDataWithProduction = [
+      ...(portsData.features || []),
+      ...(productionData.features || []),
+    ].filter(feature => feature.geometry?.coordinates);
+    const dataWithProduction = {
+      ...initialData,
+      combinedData: combinedDataWithProduction,
+      productionData,
+    };
+    // Fetch CCUS data
+    const ccusResponse = await fetch('/api/ccus');
+    const ccusData: GeoJSONFeatureCollection = await ccusResponse.json();
+    // Update combinedData with ports + production + ccus
+    const combinedDataWithCCUS = [
+      ...(portsData.features || []),
+      ...(productionData.features || []),
+      ...(ccusData.features || []),
+    ].filter(feature => feature.geometry?.coordinates);
+    const dataWithCCUS = {
+      ...dataWithProduction,
+      combinedData: combinedDataWithCCUS,
+      ccusData,
+    };
+    // Fetch storage and status data
+    const [storageResponse, statusResponse] = await Promise.all([
       fetch('/api/storage'),
-      fetch('/api/ccus'),
-      fetch('/api/ports-copy'),
       fetch('/api/statuses'),
     ]);
-    const productionData = await productionResponse.json();
-    const storageData = await storageResponse.json();
-    const ccusData = await ccusResponse.json();
-    const portsData = await portsResponse.json();
+    const storageData: GeoJSONFeatureCollection = await storageResponse.json();
     const statusData: StatusesResponse = await statusResponse.json();
-    const combinedData = [
-      ...(productionData.features || []),
-      ...(storageData.features || []),
-      ...(ccusData.features || []),
+    // Final combinedData with all datasets
+    const finalCombinedData = [
       ...(portsData.features || []),
+      ...(productionData.features || []),
+      ...(ccusData.features || []),
+      ...(storageData.features || []),
     ].filter(feature => feature.geometry?.coordinates);
-    const fetchTime = performance.now() - fetchStartTime;
-    console.log(`API Fetch Time: ${fetchTime / 1000}s`);
     return {
-      combinedData,
+      combinedData: finalCombinedData,
       productionData,
       storageData,
       ccusData,
@@ -90,11 +130,13 @@ export default function MapWrapper() {
     portsData: GeoJSONFeatureCollection;
     statusData: StatusesResponse;
   } | null>(null);
-  const [loadingScreenStartTime, setLoadingScreenStartTime] = useState<number | null>(null);
+  const [loadStartTime, setLoadStartTime] = useState<number | null>(null);
+  const [fetchStartTime, setFetchStartTime] = useState<number | null>(null);
 
   useEffect(() => {
     setIsClient(true);
-    setLoadingScreenStartTime(performance.now()); // Start timer when component mounts (loading screen appears)
+    // Start the timer for loading screen
+    setLoadStartTime(Date.now());
   }, []);
 
   useEffect(() => {
@@ -110,6 +152,16 @@ export default function MapWrapper() {
     });
   }, []);
 
+  // Log time when map is shown
+  useEffect(() => {
+    if (showMap && isMapComponentLoaded && loadStartTime !== null) {
+      const loadEndTime = Date.now();
+      const loadDuration = (loadEndTime - loadStartTime) / 1000; // Convert to seconds
+      console.log(`Map loaded in ${loadDuration.toFixed(2)} seconds`);
+      setLoadStartTime(null); // Reset to prevent re-logging
+    }
+  }, [showMap, isMapComponentLoaded, loadStartTime]);
+
   useEffect(() => {
     const initializeData = async () => {
       try {
@@ -117,8 +169,27 @@ export default function MapWrapper() {
           const disclaimer = await fetchDisclaimerData();
           setDisclaimerData(disclaimer.content);
         } else {
-          const data = await fetchMapData();
-          setMapData(data);
+          // Start fetch timer
+          setFetchStartTime(Date.now());
+          // Fetch data sequentially
+          const portsResponse = await fetch('/api/ports-copy');
+          const portsData: GeoJSONFeatureCollection = await portsResponse.json();
+          const initialData: {
+            combinedData: GeoJSONFeatureCollection['features'];
+            productionData: GeoJSONFeatureCollection;
+            storageData: GeoJSONFeatureCollection;
+            ccusData: GeoJSONFeatureCollection;
+            portsData: GeoJSONFeatureCollection;
+            statusData: StatusesResponse;
+          } = {
+            combinedData: portsData.features || [],
+            productionData: { type: 'FeatureCollection', features: [] },
+            storageData: { type: 'FeatureCollection', features: [] },
+            ccusData: { type: 'FeatureCollection', features: [] },
+            portsData,
+            statusData: { statuses: [] },
+          };
+          setMapData(initialData);
           if (isMapComponentLoaded) {
             setShowMap(true);
             if (!localStorage.getItem('gex_welcome_seen')) {
@@ -126,6 +197,55 @@ export default function MapWrapper() {
               setShowWelcomeModal(true);
             }
           }
+          // Fetch remaining data sequentially
+          const productionResponse = await fetch('/api/production');
+          const productionData: GeoJSONFeatureCollection = await productionResponse.json();
+          setMapData((prev) => ({
+            ...prev!,
+            combinedData: [
+              ...(prev?.portsData.features || []),
+              ...(productionData.features || []),
+            ].filter(feature => feature.geometry?.coordinates),
+            productionData,
+          }));
+          const ccusResponse = await fetch('/api/ccus');
+          const ccusData: GeoJSONFeatureCollection = await ccusResponse.json();
+          setMapData((prev) => ({
+            ...prev!,
+            combinedData: [
+              ...(prev?.portsData.features || []),
+              ...(prev?.productionData.features || []),
+              ...(ccusData.features || []),
+            ].filter(feature => feature.geometry?.coordinates),
+            ccusData,
+          }));
+          const [storageResponse, statusResponse] = await Promise.all([
+            fetch('/api/storage'),
+            fetch('/api/statuses'),
+          ]);
+          const storageData: GeoJSONFeatureCollection = await storageResponse.json();
+          const statusData: StatusesResponse = await statusResponse.json();
+          setMapData((prev) => {
+            const finalData = {
+              ...prev!,
+              combinedData: [
+                ...(prev?.portsData.features || []),
+                ...(prev?.productionData.features || []),
+                ...(prev?.ccusData.features || []),
+                ...(storageData.features || []),
+              ].filter(feature => feature.geometry?.coordinates),
+              storageData,
+              statusData,
+            };
+            // Log fetch completion time
+            if (fetchStartTime !== null) {
+              const fetchEndTime = Date.now();
+              const fetchDuration = (fetchEndTime - fetchStartTime) / 1000; // Convert to seconds
+              console.log(`fetchMapData completed in ${fetchDuration.toFixed(2)} seconds`);
+              setFetchStartTime(null); // Reset to prevent re-logging
+            }
+            return finalData;
+          });
         }
       } catch (err) {
         setError('Failed to load data. Using default content.');
@@ -145,14 +265,6 @@ export default function MapWrapper() {
     };
     initializeData();
   }, [showDisclaimer, isMapComponentLoaded]);
-
-  useEffect(() => {
-    if (showMap && isMapComponentLoaded && loadingScreenStartTime !== null) {
-      const totalTime = performance.now() - loadingScreenStartTime;
-      console.log(`Total Time from Loading Screen to Map Render: ${totalTime / 1000}s`);
-      setLoadingScreenStartTime(null); // Reset to prevent re-logging
-    }
-  }, [showMap, isMapComponentLoaded, loadingScreenStartTime]);
 
   const handleAcceptDisclaimer = () => {
     localStorage.setItem('gex_disclaimer_accepted', 'true');
