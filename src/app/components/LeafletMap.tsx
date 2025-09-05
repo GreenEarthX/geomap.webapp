@@ -33,6 +33,7 @@ interface LeafletMapProps {
   storageData: GeoJSONFeatureCollection;
   ccusData: GeoJSONFeatureCollection;
   portsData: GeoJSONFeatureCollection;
+  pipelineData: GeoJSONFeatureCollection;
   statusData: StatusesResponse;
 }
 
@@ -42,6 +43,7 @@ const LeafletMap = ({
   storageData,
   ccusData,
   portsData,
+  pipelineData,
   statusData,
 }: LeafletMapProps) => {
   const [search, setSearch] = useState('');
@@ -81,12 +83,10 @@ const LeafletMap = ({
     planned: 'lightblue',
   };
 
-  // Update allData when combinedData changes
   useEffect(() => {
     setAllData(combinedData);
   }, [combinedData]);
 
-  // Update statusTypes when statusData changes
   useEffect(() => {
     if (statusData.statuses && Array.isArray(statusData.statuses)) {
       const uniqueStatusTypes = Array.from(
@@ -96,10 +96,8 @@ const LeafletMap = ({
     }
   }, [statusData]);
 
-  // Initialize map
   useEffect(() => {
     if (document.getElementById('map')?.children.length || mapRef.current) return;
-
     mapRef.current = L.map('map').setView([51.07289, 10.67139], 3);
     const baseLayers = {
       Light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }),
@@ -111,14 +109,11 @@ const LeafletMap = ({
       Terrain: L.tileLayer('https://{s}.google.com/vt/lyrs=p&hl=en&x={x}&y={y}&z={z}', { subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '© Google Maps' }),
     };
     baseLayers['Satellite'].addTo(mapRef.current!);
-
-    // Initialize clusters and layers
     productionClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     storageClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     ccusClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     portsClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     pipelineLayerRef.current = L.featureGroup().addTo(mapRef.current!);
-
     L.control.layers(baseLayers, {
       'Production Plants': productionClusterRef.current,
       'Storage Plants': storageClusterRef.current,
@@ -126,7 +121,6 @@ const LeafletMap = ({
       'Ports': portsClusterRef.current,
       'Pipelines': pipelineLayerRef.current,
     }, { collapsed: true, position: 'topright' }).addTo(mapRef.current!);
-
     const measureControl = new (L.Control as any).Measure({ position: 'topleft', primaryLengthUnit: 'kilometers', secondaryLengthUnit: 'miles', primaryAreaUnit: 'sqmeters', secondaryAreaUnit: 'acres' });
     mapRef.current!.addControl(measureControl);
     (L.Control as any).Measure.include({
@@ -135,49 +129,42 @@ const LeafletMap = ({
         this._captureMarker.setIcon(L.divIcon({ iconSize: this._map.getSize().multiplyBy(2) }));
       },
     });
-
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
     };
   }, []);
 
-  // Add ports markers
   useEffect(() => {
     if (!mapRef.current || !portsClusterRef.current) return;
     portsClusterRef.current.clearLayers();
     addPortMarkers(portsData, mapRef.current, portsClusterRef.current, statusColorMap, setSelectedPlantName);
   }, [portsData]);
 
-  // Add production markers
   useEffect(() => {
     if (!mapRef.current || !productionClusterRef.current) return;
     productionClusterRef.current.clearLayers();
     addProductionMarkers(productionData, mapRef.current, productionClusterRef.current, statusColorMap, setSelectedPlantName);
   }, [productionData]);
 
-  // Add CCUS markers
   useEffect(() => {
     if (!mapRef.current || !ccusClusterRef.current) return;
     ccusClusterRef.current.clearLayers();
     addCCUSMarkers(ccusData, mapRef.current, ccusClusterRef.current, statusColorMap, setSelectedPlantName);
   }, [ccusData]);
 
-  // Add storage markers
   useEffect(() => {
     if (!mapRef.current || !storageClusterRef.current) return;
     storageClusterRef.current.clearLayers();
     addStorageMarkers(storageData, mapRef.current, storageClusterRef.current, statusColorMap, setSelectedPlantName);
   }, [storageData]);
 
-  // Add pipeline markers
-  /*useEffect(() => {
+  useEffect(() => {
     if (!mapRef.current || !pipelineLayerRef.current) return;
     pipelineLayerRef.current.clearLayers();
-    addPipelineMarkers(combinedData, mapRef.current, pipelineLayerRef.current, statusColorMap, setSelectedPlantName);
-  }, [combinedData]);*/
+    addPipelineMarkers(pipelineData, mapRef.current, pipelineLayerRef.current, statusColorMap, setSelectedPlantName);
+  }, [pipelineData, statusColorMap, setSelectedPlantName]);
 
-  // Handle plant name selection
   useEffect(() => {
     if (!mapRef.current || !selectedPlantName) return;
     const feature = allData.find((f) => {
@@ -199,7 +186,6 @@ const LeafletMap = ({
     }
   }, [selectedPlantName, allData]);
 
-  // Existing functions (getUniqueValues, getUniqueNamesForDropdown, handleFindMe, filtered, etc.) remain unchanged
   const getUniqueValues = (
     features: GeoJSONFeatureCollection['features'],
     key: keyof ProductionItem | keyof StorageItem | keyof CCUSItem | keyof PortItem | keyof PipelineItem
@@ -237,6 +223,9 @@ const LeafletMap = ({
     const names: string[] = [];
     features.forEach((feature) => {
       if (feature.properties.type?.toLowerCase() === 'pipeline') {
+        if ('pipeline_name' in feature.properties && feature.properties.pipeline_name) {
+          names.push(feature.properties.pipeline_name);
+        }
         return;
       }
       const props = feature.properties;
@@ -599,7 +588,7 @@ const LeafletMap = ({
                 else if (sector.toLowerCase() === 'pipeline') {
                   return (
                     <div key={`${sector}-${status}-${index}`} className="flex items-center mt-1">
-                      <div style={{ width: 18, height: 4, backgroundColor: statusColorMap[status.toLowerCase()] || statusColorMap['other/unknown'], marginRight: 5 }}></div>
+                      <div style={{ width: 18, height: 4, backgroundColor: 'blue', marginRight: 5 }}></div>
                       <span>Pipeline - {status.replace(/\b\w/g, (l) => l.toUpperCase())}</span>
                     </div>
                   );
