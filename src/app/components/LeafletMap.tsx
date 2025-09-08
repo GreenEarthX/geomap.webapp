@@ -159,11 +159,11 @@ const LeafletMap = ({
     addStorageMarkers(storageData, mapRef.current, storageClusterRef.current, statusColorMap, setSelectedPlantName);
   }, [storageData]);
 
-  useEffect(() => {
+  /*useEffect(() => {
     if (!mapRef.current || !pipelineLayerRef.current) return;
     pipelineLayerRef.current.clearLayers();
     addPipelineMarkers(pipelineData, mapRef.current, pipelineLayerRef.current, statusColorMap, setSelectedPlantName);
-  }, [pipelineData, statusColorMap, setSelectedPlantName]);
+  }, [pipelineData, statusColorMap, setSelectedPlantName]);*/
 
   useEffect(() => {
     if (!mapRef.current || !selectedPlantName) return;

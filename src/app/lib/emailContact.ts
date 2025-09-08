@@ -1,5 +1,49 @@
-import nodemailer from 'nodemailer';
+import { ConfidentialClientApplication } from "@azure/msal-node";
+import { Client } from "@microsoft/microsoft-graph-client";
 
+// --- MSAL CONFIG ---
+const msalConfig = {
+  auth: {
+    clientId: process.env.MICROSOFT_CLIENT_ID!,
+    authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID}`,
+    clientSecret: process.env.MICROSOFT_CLIENT_SECRET!,
+  },
+};
+
+const cca = new ConfidentialClientApplication(msalConfig);
+
+// --- TOKEN ACQUISITION ---
+async function getAccessToken(): Promise<string> {
+  const result = await cca.acquireTokenByClientCredential({
+    scopes: ["https://graph.microsoft.com/.default"],
+  });
+  if (!result?.accessToken) throw new Error("❌ Failed to acquire access token");
+  return result.accessToken;
+}
+
+// --- GRAPH CLIENT ---
+async function getGraphClient() {
+  const token = await getAccessToken();
+  return Client.init({
+    authProvider: (done) => done(null, token),
+  });
+}
+
+// --- GENERIC SEND EMAIL ---
+async function sendMail(to: string, subject: string, html: string, from: string = process.env.EMAIL_USER!) {
+  const client = await getGraphClient();
+  await client.api(`/users/${from}/sendMail`).post({
+    message: {
+      subject,
+      body: { contentType: "HTML", content: html },
+      toRecipients: [{ emailAddress: { address: to } }],
+      from: { emailAddress: { address: from } },
+    },
+  });
+  console.log(`✅ Email sent to ${to}: ${subject}`);
+}
+
+// --- EMAIL HELPER ---
 export async function sendContactEmail(
   toEmail: string,
   userName: string,
@@ -8,15 +52,7 @@ export async function sendContactEmail(
   userEmail: string,
   telephone?: string
 ) {
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
-
-  const emailContent = topic === 'Request New Entry'
+  const html = topic === 'Request New Entry'
     ? `
       <!DOCTYPE html>
       <html>
@@ -38,7 +74,7 @@ export async function sendContactEmail(
       <body>
         <div class="container">
           <div class="header">
-            <img src="https://i.ibb.co/8DLfxFz8/GEX-Logo.png" alt="GEX Logo" />
+            <img src="https://geomap.greenearthx.io/gex-logo.png" alt="GEX Logo" />
           </div>
           <div class="content">
             <h1>New Contact Message - Request New Entry</h1>
@@ -76,7 +112,7 @@ export async function sendContactEmail(
       <body>
         <div class="container">
           <div class="header">
-            <img src="https://i.ibb.co/8DLfxFz8/GEX-Logo.png" alt="GEX Logo" />
+            <img src="https://geomap.greenearthx.io/gex-logo.png" alt="GEX Logo" />
           </div>
           <div class="content">
             <h1>New Contact Message</h1>
@@ -92,12 +128,5 @@ export async function sendContactEmail(
       </body>
       </html>
     `;
-
-  return transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: toEmail,
-    subject: `New Contact Message - ${topic}`,
-    text: `Hello Admin,\n\nYou received a new contact message from ${userName} (${userEmail}).\n\n${telephone ? `Telephone: ${telephone}\n` : ''}Topic: ${topic}\nMessage: ${message}\n\nBest regards,\nGEX Contact Form`,
-    html: emailContent,
-  });
+  await sendMail(toEmail, `New Contact Message - ${topic}`, html);
 }
