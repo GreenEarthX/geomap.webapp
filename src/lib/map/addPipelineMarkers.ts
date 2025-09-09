@@ -6,6 +6,7 @@ export const addPipelineMarkers = (
   data: GeoJSONFeatureCollection,
   map: L.Map,
   pipelineLayer: L.FeatureGroup,
+  statusColorMap: Record<string, string>,
   setSelectedPlantName: (name: string) => void
 ) => {
   if (!data || !Array.isArray(data.features)) {
@@ -26,11 +27,9 @@ export const addPipelineMarkers = (
     }
 
     const latlngs = (feature.geometry.coordinates as [number, number][]).map(([lng, lat]) => [lat, lng] as [number, number]);
-
     const popupHtml = generatePopupHtml(props, 'Pipeline');
-
     const polyline = L.polyline(latlngs, {
-      color: 'red',
+      color: 'blue', // Force pipeline color to blue
       weight: 4,
     })
       .bindPopup(popupHtml)

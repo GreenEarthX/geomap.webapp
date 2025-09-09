@@ -11,52 +11,58 @@ export async function GET() {
          WHERE sector = 'Pipeline' AND active = 1;`
       );
 
-      const features = result.rows.flatMap((row) => {
+      const features = result.rows.map((row) => {
         const { id, internal_id, data, sector } = row;
-        const segments = data.segments || [];
 
-        return segments.map((segment: any, index: number) => {
-          const startCoords = segment.start?.latitude && segment.start?.longitude
-            ? [parseFloat(segment.start.longitude), parseFloat(segment.start.latitude)]
-            : [0, 0];
-          const stopCoords = segment.stop?.latitude && segment.stop?.longitude
-            ? [parseFloat(segment.stop.longitude), parseFloat(segment.stop.latitude)]
+        const startCoords =
+          data.start?.lng != null && data.start?.lat != null
+            ? [parseFloat(data.start.lng), parseFloat(data.start.lat)]
             : [0, 0];
 
-          // Skip segments with invalid coordinates
-          if (startCoords[0] === 0 && startCoords[1] === 0 && stopCoords[0] === 0 && stopCoords[1] === 0) {
-            console.warn(`Skipping segment ${segment.segment_id} for pipeline ${internal_id}: invalid coordinates`);
-            return null;
-          }
+        const stopCoords =
+          data.stop?.lng != null && data.stop?.lat != null
+            ? [parseFloat(data.stop.lng), parseFloat(data.stop.lat)]
+            : [0, 0];
 
-          return {
-            type: 'Feature',
-            geometry: {
-              type: 'LineString',
-              coordinates: [startCoords, stopCoords],
-            },
-            properties: {
-              id,
-              internal_id,
-              pipeline_name: data.pipeline_name || 'N/A',
-              segment_id: segment.segment_id || `Segment ${index + 1}`,
-              segment_order: segment.segment_order || index + 1,
-              start_location: segment.start?.location_name || 'N/A',
-              stop_location: segment.stop?.location_name || 'N/A',
-              pipeline_number: data.pipeline_number || 'N/A',
-              infrastructure_type: data.infrastructure_type || 'Pipeline',
-              total_segments: data.total_segments || segments.length,
-              country: data.country || 'N/A',
-            },
-          };
-        }).filter((feature: any) => feature !== null);
-      });
+        // Skip if invalid
+        if (
+          (startCoords[0] === 0 && startCoords[1] === 0) &&
+          (stopCoords[0] === 0 && stopCoords[1] === 0)
+        ) {
+          console.warn(
+            `Skipping pipeline ${internal_id}: invalid coordinates`
+          );
+          return null;
+        }
 
-      console.log('Fetched pipelines:', features.map(f => ({
-        internal_id: f.properties.internal_id,
-        segment_id: f.properties.segment_id,
-        coordinates: f.geometry.coordinates,
-      })));
+        return {
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: [startCoords, stopCoords],
+          },
+          properties: {
+            id,
+            internal_id,
+            pipeline_number: data.pipeline_nr || 'N/A',
+            segment: data.segment || 'N/A',
+            start_location: data.start?.location || 'N/A',
+            stop_location: data.stop?.location || 'N/A',
+            infrastructure_type: 'Pipeline',
+            country: data.country || 'N/A',
+            sector,
+          },
+        };
+      }).filter((feature) => feature !== null);
+
+      console.log(
+        'Fetched pipelines:',
+        features.map((f) => ({
+          internal_id: f.properties.internal_id,
+          segment: f.properties.segment,
+          coordinates: f.geometry.coordinates,
+        }))
+      );
 
       return NextResponse.json({
         pipelines: {
@@ -69,6 +75,9 @@ export async function GET() {
     }
   } catch (error) {
     console.error('Error fetching pipelines data:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Internal Server Error' },
+      { status: 500 }
+    );
   }
 }

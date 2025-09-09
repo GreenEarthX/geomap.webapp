@@ -446,7 +446,6 @@ const StorageForm = ({ initialFeature, initialError, statusOptions, statusToolti
                     <div key={field.name} className="flex flex-col">
                       <label className="text-sm font-medium text-gray-700 mb-1 flex items-center">
                         {field.label}
-                        {field.name === 'status' && statusTooltip}
                       </label>
                       {field.type === 'select' ? (
                         <select
