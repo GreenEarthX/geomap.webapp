@@ -2,6 +2,9 @@ import L from 'leaflet';
 import { PipelineItem, GeoJSONFeatureCollection } from '@/lib/types2';
 import { generatePopupHtml } from '@/lib/map/generatePopupHtml';
 
+
+
+
 export const addPipelineMarkers = (
   data: GeoJSONFeatureCollection,
   map: L.Map,
@@ -15,36 +18,57 @@ export const addPipelineMarkers = (
   }
 
   data.features.forEach((feature) => {
-    const props = feature.properties as PipelineItem;
-    if (
-      feature.geometry.type !== 'LineString' ||
-      !Array.isArray(feature.geometry.coordinates) ||
-      feature.geometry.coordinates.length < 2 ||
-      !feature.geometry.coordinates.every((c) => Array.isArray(c) && c.length === 2 && typeof c[0] === 'number' && typeof c[1] === 'number')
-    ) {
-      console.warn('Skipping Pipeline feature with invalid coordinates:', { feature });
-      return;
-    }
+  const props = feature.properties as PipelineItem;
 
-    const latlngs = (feature.geometry.coordinates as [number, number][]).map(([lng, lat]) => [lat, lng] as [number, number]);
-    const popupHtml = generatePopupHtml(props, 'Pipeline');
-    const polyline = L.polyline(latlngs, {
-      color: 'blue', // Force pipeline color to blue
-      weight: 4,
-    })
+  // ✅ Add safety check for missing or null geometry
+  if (
+    !feature.geometry ||
+    !['LineString', 'MultiLineString'].includes(feature.geometry.type) ||
+    !feature.geometry.coordinates
+  ) {
+    console.warn('Skipping Pipeline feature with invalid geometry:', { feature });
+    return;
+  }
+
+  const popupHtml = generatePopupHtml(props, 'Pipeline');
+
+  if (feature.geometry.type === 'LineString') {
+    const latlngs = feature.geometry.coordinates.map(
+      ([lng, lat]) => [lat, lng] as [number, number]
+    );
+
+    const polyline = L.polyline(latlngs, { color: 'blue', weight: 3 })
       .bindPopup(popupHtml)
       .on('click', () => {
         if (props.pipeline_name) {
-          const params = new URLSearchParams();
-          params.set('plantName', props.pipeline_name);
           setSelectedPlantName(props.pipeline_name);
-          window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
           if (latlngs.length > 0) {
-            map.setView(latlngs[0], 10);
+            map.setView(latlngs[0], 7);
           }
         }
       });
 
     pipelineLayer.addLayer(polyline);
-  });
+  }
+
+  if (feature.geometry.type === 'MultiLineString') {
+    feature.geometry.coordinates.forEach((line) => {
+      const latlngs = line.map(([lng, lat]) => [lat, lng] as [number, number]);
+
+      const polyline = L.polyline(latlngs, { color: 'blue', weight: 4 })
+        .bindPopup(popupHtml)
+        .on('click', () => {
+          if (props.pipeline_name) {
+            setSelectedPlantName(props.pipeline_name);
+            if (latlngs.length > 0) {
+              map.setView(latlngs[0], 7);
+            }
+          }
+        });
+
+      pipelineLayer.addLayer(polyline);
+    });
+  }
+});
+
 };

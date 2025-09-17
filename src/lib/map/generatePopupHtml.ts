@@ -268,13 +268,18 @@ export const generatePopupHtml = (
   allEntries.push(...remainingEntries);
 
   const popupContent = allEntries
-    .map(([key, value]) => {
-      return `
-        <b class="font-semibold text-gray-800 text-xs">${formatFieldName(key, type)}:</b>
-        <span class="text-gray-600 text-xs">${formatValue(value)}</span>
-      `;
-    })
-    .join('<br>');
+  .map(([key, value]) => {
+    // For pipelines, override infrastructure_type display
+    if (type === 'Pipeline' && key === 'infrastructure_type') {
+      value = 'Hydrogen Pipeline';
+    }
+    return `
+      <b class="font-semibold text-gray-800 text-xs">${formatFieldName(key, type)}:</b>
+      <span class="text-gray-600 text-xs">${formatValue(value)}</span>
+    `;
+  })
+  .join('<br>');
+
 
   // =========== BEGIN MODIFICATION ===========
   

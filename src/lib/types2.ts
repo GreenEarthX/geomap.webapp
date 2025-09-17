@@ -148,17 +148,31 @@ export interface PipelineItem {
   project_name: string | null;
 }
 
+export type Geometry =
+  | {
+      type: 'Point';
+      coordinates: [number, number];
+    }
+  | {
+      type: 'LineString';
+      coordinates: [number, number][];
+    }
+  | {
+      type: 'MultiLineString';
+      coordinates: [number, number][][];
+    };
+
+export interface GeoJSONFeature {
+  type: 'Feature';
+  geometry: Geometry;
+  properties: ProductionItem | StorageItem | CCUSItem | PortItem | PipelineItem;
+}
+
 export interface GeoJSONFeatureCollection {
   type: 'FeatureCollection';
-  features: {
-    type: 'Feature';
-    geometry: {
-      type: 'Point' | 'LineString';
-      coordinates: [number, number] | [number, number][];
-    };
-    properties: ProductionItem | StorageItem | CCUSItem | PortItem | PipelineItem;
-  }[];
+  features: GeoJSONFeature[];
 }
+
 
 export interface LeafletFeature {
   type: 'Feature';
