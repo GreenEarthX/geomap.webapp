@@ -108,12 +108,45 @@ const LeafletMap = ({
       ]),
       Terrain: L.tileLayer('https://{s}.google.com/vt/lyrs=p&hl=en&x={x}&y={y}&z={z}', { subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '© Google Maps' }),
     };
-    baseLayers['Satellite'].addTo(mapRef.current!);
+    baseLayers['Light'].addTo(mapRef.current!);
     productionClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     storageClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     ccusClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     portsClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
-    pipelineLayerRef.current = L.featureGroup().addTo(mapRef.current!);
+    let selectedPipeline: L.Path | null = null;
+
+pipelineLayerRef.current = L.geoJSON(pipelineData, {
+  style: (feature) => ({
+    color: 'blue',   // default color
+    weight: 2,
+  }),
+  onEachFeature: (feature, layer) => {
+    layer.on('click', () => {
+      const pathLayer = layer as L.Path; // cast to Path to access setStyle
+
+      // Reset previous
+      if (selectedPipeline) {
+        selectedPipeline.setStyle({ color: 'blue', weight: 2 });
+      }
+
+      // Highlight clicked
+      pathLayer.setStyle({ color: 'red', weight: 4 });
+      selectedPipeline = pathLayer;
+
+      // Focus map
+      if ((pathLayer as any).getBounds) {
+        mapRef.current?.fitBounds((pathLayer as any).getBounds(), { padding: [50, 50] });
+      }
+
+      // Update selected plant
+      if (feature.properties.pipeline_name) {
+        setSelectedPlantName(feature.properties.pipeline_name);
+      }
+    });
+  },
+}).addTo(mapRef.current!);
+
+
     L.control.layers(baseLayers, {
       'Production Plants': productionClusterRef.current,
       'Storage Plants': storageClusterRef.current,
@@ -159,11 +192,11 @@ const LeafletMap = ({
     addStorageMarkers(storageData, mapRef.current, storageClusterRef.current, statusColorMap, setSelectedPlantName);
   }, [storageData]);
 
-  /*useEffect(() => {
+  useEffect(() => {
     if (!mapRef.current || !pipelineLayerRef.current) return;
     pipelineLayerRef.current.clearLayers();
     addPipelineMarkers(pipelineData, mapRef.current, pipelineLayerRef.current, statusColorMap, setSelectedPlantName);
-  }, [pipelineData, statusColorMap, setSelectedPlantName]);*/
+  }, [pipelineData, statusColorMap, setSelectedPlantName]);
 
   useEffect(() => {
     if (!mapRef.current || !selectedPlantName) return;
