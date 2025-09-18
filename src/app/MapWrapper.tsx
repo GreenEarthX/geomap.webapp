@@ -5,20 +5,16 @@ import Image from 'next/image';
 import { CSSProperties } from 'react';
 import UserGuideModal from './components/UserGuideModal';
 import { GeoJSONFeatureCollection } from '@/lib/types2';
-
 interface Disclaimer {
   content: string[];
 }
-
 interface StatusesResponse {
   statuses: { sector: string; current_status: string }[];
 }
-
 const LeafletMap = dynamic(() => import('./components/LeafletMap'), {
   ssr: false,
   loading: () => null,
 });
-
 const fetchDisclaimerData = async (): Promise<Disclaimer> => {
   const response = await fetch('https://api.example.com/disclaimer');
   if (!response.ok) {
@@ -26,7 +22,6 @@ const fetchDisclaimerData = async (): Promise<Disclaimer> => {
   }
   return response.json();
 };
-
 export default function MapWrapper() {
   const [isClient, setIsClient] = useState(false);
   const [showMap, setShowMap] = useState(false);
@@ -55,28 +50,23 @@ export default function MapWrapper() {
     pipelineData: GeoJSONFeatureCollection;
     statusData: StatusesResponse;
   } | null>(null);
-
   const [loadStartTime, setLoadStartTime] = useState<number | null>(null);
   const [fetchStartTime, setFetchStartTime] = useState<number | null>(null);
-
   useEffect(() => {
     setIsClient(true);
     setLoadStartTime(Date.now());
   }, []);
-
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = 'auto';
     };
   }, []);
-
   useEffect(() => {
     import('./components/LeafletMap').then(() => {
       setIsMapComponentLoaded(true);
     });
   }, []);
-
   useEffect(() => {
     if (showMap && isMapComponentLoaded && loadStartTime !== null) {
       const loadEndTime = Date.now();
@@ -85,104 +75,122 @@ export default function MapWrapper() {
       setLoadStartTime(null);
     }
   }, [showMap, isMapComponentLoaded, loadStartTime]);
-
- useEffect(() => {
-  const initializeData = async () => {
-    try {
-      if (showDisclaimer) {
-        const disclaimer = await fetchDisclaimerData();
-        setDisclaimerData(disclaimer.content);
-      } else {
-        setFetchStartTime(Date.now());
-        // 1. Ports
-        const portsResponse = await fetch('/api/ports-copy');
-        const portsData: GeoJSONFeatureCollection = await portsResponse.json();
-        // 2. Pipelines
-        const pipelineResponse = await fetch('/api/pipelines');
-        const pipelineData: { pipelines: GeoJSONFeatureCollection } = await pipelineResponse.json();
-        
-        const initialData: {
-          combinedData: GeoJSONFeatureCollection['features'];
-          productionData: GeoJSONFeatureCollection;
-          storageData: GeoJSONFeatureCollection;
-          ccusData: GeoJSONFeatureCollection;
-          portsData: GeoJSONFeatureCollection;
-          pipelineData: GeoJSONFeatureCollection;
-          statusData: StatusesResponse;
-        } = {
-          combinedData: [
-            ...(portsData.features || []),
-            ...(pipelineData.pipelines.features || []),
-          ].filter(f => f.geometry?.coordinates),
-          productionData: { type: 'FeatureCollection', features: [] },
-          storageData: { type: 'FeatureCollection', features: [] },
-          ccusData: { type: 'FeatureCollection', features: [] },
-          portsData,
-          pipelineData: pipelineData.pipelines,
-          statusData: { statuses: [] },
-        };
-        
-        setMapData(initialData);
-        if (isMapComponentLoaded) {
-          setShowMap(true);
-          if (!localStorage.getItem('gex_welcome_seen')) {
-            localStorage.setItem('gex_welcome_seen', 'true');
-            setShowWelcomeModal(true);
+  useEffect(() => {
+    const initializeData = async () => {
+      try {
+        if (showDisclaimer) {
+          const disclaimer = await fetchDisclaimerData();
+          setDisclaimerData(disclaimer.content);
+        } else {
+          setFetchStartTime(Date.now());
+          // 1. Ports
+          const portsResponse = await fetch('/api/ports-copy');
+          const portsData: GeoJSONFeatureCollection = await portsResponse.json();
+          // Initialize mapData with ports data
+          const initialData: {
+            combinedData: GeoJSONFeatureCollection['features'];
+            productionData: GeoJSONFeatureCollection;
+            storageData: GeoJSONFeatureCollection;
+            ccusData: GeoJSONFeatureCollection;
+            portsData: GeoJSONFeatureCollection;
+            pipelineData: GeoJSONFeatureCollection;
+            statusData: StatusesResponse;
+          } = {
+            combinedData: [...(portsData.features || [])].filter(
+              (f) => f.geometry?.coordinates
+            ),
+            productionData: { type: 'FeatureCollection', features: [] },
+            storageData: { type: 'FeatureCollection', features: [] },
+            ccusData: { type: 'FeatureCollection', features: [] },
+            portsData,
+            pipelineData: { type: 'FeatureCollection', features: [] },
+            statusData: { statuses: [] },
+          };
+          setMapData(initialData);
+          if (isMapComponentLoaded) {
+            setShowMap(true);
+            if (!localStorage.getItem('gex_welcome_seen')) {
+              localStorage.setItem('gex_welcome_seen', 'true');
+              setShowWelcomeModal(true);
+            }
           }
-        }
-
-          // 3. Production
+          // 2. Production
           const productionResponse = await fetch('/api/production');
-          const productionData: GeoJSONFeatureCollection = await productionResponse.json();
-          setMapData(prev => ({
+          const productionData: GeoJSONFeatureCollection =
+            await productionResponse.json();
+          setMapData((prev) => ({
             ...prev!,
             combinedData: [
               ...(prev?.portsData.features || []),
-              ...(prev?.pipelineData.features || []),
               ...(productionData.features || []),
-            ].filter(f => f.geometry?.coordinates),
+            ].filter((f) => f.geometry?.coordinates),
             productionData,
           }));
-
-          // 4. CCUS
+          // 3. CCUS
           const ccusResponse = await fetch('/api/ccus');
           const ccusData: GeoJSONFeatureCollection = await ccusResponse.json();
-          setMapData(prev => ({
+          setMapData((prev) => ({
             ...prev!,
             combinedData: [
               ...(prev?.portsData.features || []),
-              ...(prev?.pipelineData.features || []),
               ...(prev?.productionData.features || []),
               ...(ccusData.features || []),
-            ].filter(f => f.geometry?.coordinates),
+            ].filter((f) => f.geometry?.coordinates),
             ccusData,
           }));
-
-          // 5. Storage + Statuses
+          // 4. Storage + Statuses
           const [storageResponse, statusResponse] = await Promise.all([
             fetch('/api/storage'),
             fetch('/api/statuses'),
           ]);
-          const storageData: GeoJSONFeatureCollection = await storageResponse.json();
+          const storageData: GeoJSONFeatureCollection =
+            await storageResponse.json();
           const statusData: StatusesResponse = await statusResponse.json();
-          setMapData(prev => {
+          setMapData((prev) => ({
+            ...prev!,
+            combinedData: [
+              ...(prev?.portsData.features || []),
+              ...(prev?.productionData.features || []),
+              ...(prev?.ccusData.features || []),
+              ...(storageData.features || []),
+            ].filter((f) => f.geometry?.coordinates),
+            storageData,
+            statusData,
+          }));
+          // 5. Pipelines (moved to last)
+          const pipelineResponse = await fetch('/api/pipelines');
+          const pipelineData: { pipelines: GeoJSONFeatureCollection } =
+            await pipelineResponse.json();
+          // 🔹 Force a status on every pipeline feature
+          const forcedPipelineData: GeoJSONFeatureCollection = {
+            ...pipelineData.pipelines,
+            features: pipelineData.pipelines.features.map((f) => ({
+              ...f,
+              properties: {
+                ...f.properties,
+                infrastructure_type: 'Hydrogen Pipeline', // 👈 overwrite Infra Type
+                current_status: 'Active', // 👈 force pipeline status
+              },
+            })),
+          };
+          setMapData((prev) => {
             const finalData = {
               ...prev!,
               combinedData: [
                 ...(prev?.portsData.features || []),
-                ...(prev?.pipelineData.features || []),
                 ...(prev?.productionData.features || []),
                 ...(prev?.ccusData.features || []),
-                ...(storageData.features || []),
-              ].filter(f => f.geometry?.coordinates),
-              storageData,
-              statusData,
+                ...(prev?.storageData.features || []),
+                ...(forcedPipelineData.features || []),
+              ].filter((f) => f.geometry?.coordinates),
+              pipelineData: forcedPipelineData,
             };
-
             if (fetchStartTime !== null) {
               const fetchEndTime = Date.now();
               const fetchDuration = (fetchEndTime - fetchStartTime) / 1000;
-              console.log(`fetchMapData completed in ${fetchDuration.toFixed(2)} seconds`);
+              console.log(
+                `fetchMapData completed in ${fetchDuration.toFixed(2)} seconds`
+              );
               setFetchStartTime(null);
             }
             return finalData;
@@ -206,19 +214,15 @@ export default function MapWrapper() {
     };
     initializeData();
   }, [showDisclaimer, isMapComponentLoaded]);
-
   const handleAcceptDisclaimer = () => {
     localStorage.setItem('gex_disclaimer_accepted', 'true');
     setShowDisclaimer(false);
   };
-
   const emptyGeoJSON: GeoJSONFeatureCollection = {
     type: 'FeatureCollection',
     features: [],
   };
-
   if (!isClient) return null;
-
   if (showDisclaimer) {
     return (
       <DisclaimerScreen
@@ -227,9 +231,7 @@ export default function MapWrapper() {
       />
     );
   }
-
   if (!showMap || !isMapComponentLoaded) return <LoadingScreen />;
-
   return (
     <>
       <LeafletMap
@@ -238,7 +240,7 @@ export default function MapWrapper() {
         storageData={mapData?.storageData || emptyGeoJSON}
         ccusData={mapData?.ccusData || emptyGeoJSON}
         portsData={mapData?.portsData || emptyGeoJSON}
-        pipelineData={mapData?.pipelineData || emptyGeoJSON} 
+        pipelineData={mapData?.pipelineData || emptyGeoJSON}
         statusData={mapData?.statusData || { statuses: [] }}
       />
       {showWelcomeModal && (
@@ -254,8 +256,6 @@ export default function MapWrapper() {
     </>
   );
 }
-
-
 function DisclaimerScreen({
   onAccept,
   content,
@@ -264,7 +264,11 @@ function DisclaimerScreen({
   content: string[];
 }) {
   return (
-    <div style={disclaimerStyles.container} role="dialog" aria-labelledby="disclaimer-title">
+    <div
+      style={disclaimerStyles.container}
+      role="dialog"
+      aria-labelledby="disclaimer-title"
+    >
       <div style={disclaimerStyles.content}>
         <Image
           src="/gex-logo.png"
@@ -296,7 +300,6 @@ function DisclaimerScreen({
     </div>
   );
 }
-
 function LoadingScreen() {
   useEffect(() => {
     const style = document.createElement('style');
@@ -315,7 +318,6 @@ function LoadingScreen() {
       document.head.removeChild(style);
     };
   }, []);
-
   return (
     <div style={styles.container}>
       <div style={styles.content}>
@@ -334,7 +336,6 @@ function LoadingScreen() {
     </div>
   );
 }
-
 function WelcomeModal({
   onClose,
   onOpenGuide,
@@ -345,16 +346,19 @@ function WelcomeModal({
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-[90%] text-center">
-        <h2 className="text-xl font-semibold text-[#006CB5] mb-3">Welcome to GEX Map 🎉</h2>
+        <h2 className="text-xl font-semibold text-[#006CB5] mb-3">
+          Welcome to GEX Map 🎉
+        </h2>
         <p className="text-gray-600 mb-4 text-sm leading-relaxed">
-          You can explore environmental projects, interact with the map, and discover insights.
-          For more details on how to use the map effectively, check out the{" "}
+          You can explore environmental projects, interact with the map, and
+          discover insights. For more details on how to use the map effectively,
+          check out the{' '}
           <span
             className="font-semibold text-[#006CB5] cursor-pointer"
             onClick={onOpenGuide}
           >
             User Guide
-          </span>{" "}
+          </span>{' '}
           in the menu.
         </p>
         <button
@@ -367,7 +371,6 @@ function WelcomeModal({
     </div>
   );
 }
-
 const styles: { [key: string]: CSSProperties } = {
   container: {
     height: '100vh',
@@ -385,7 +388,12 @@ const styles: { [key: string]: CSSProperties } = {
     textAlign: 'center' as const,
   },
   logo: { marginBottom: 15 },
-  title: { fontSize: '18px', color: '#003B70', fontWeight: 600, marginBottom: '16px' },
+  title: {
+    fontSize: '18px',
+    color: '#003B70',
+    fontWeight: 600,
+    marginBottom: '16px',
+  },
   subTitle: {
     marginTop: '4px',
     marginBottom: '20px',
@@ -433,7 +441,6 @@ const styles: { [key: string]: CSSProperties } = {
     boxSizing: 'border-box' as const,
   },
 };
-
 const disclaimerStyles: { [key: string]: CSSProperties } = {
   container: {
     height: '100vh',
@@ -460,7 +467,12 @@ const disclaimerStyles: { [key: string]: CSSProperties } = {
     overflowY: 'auto' as const,
   },
   logo: { marginBottom: '10px', width: '100px', height: '60px' },
-  title: { fontSize: '18px', color: '#003B70', fontWeight: 700, marginBottom: '14px' },
+  title: {
+    fontSize: '18px',
+    color: '#003B70',
+    fontWeight: 700,
+    marginBottom: '14px',
+  },
   gex: { color: '#006CB5' },
   disclaimerBox: {
     textAlign: 'left' as const,
@@ -472,9 +484,25 @@ const disclaimerStyles: { [key: string]: CSSProperties } = {
     maxHeight: '50vh',
     overflowY: 'auto' as const,
   },
-  warningIcon: { fontSize: '20px', color: '#f44336', marginBottom: '10px', textAlign: 'center' as const },
-  disclaimerTitle: { fontSize: '18px', fontWeight: 600, color: '#d32f2f', textAlign: 'center' as const, marginBottom: '15px' },
-  disclaimerText: { fontSize: '14px', color: '#333', marginBottom: '10px', lineHeight: '1.6' },
+  warningIcon: {
+    fontSize: '20px',
+    color: '#f44336',
+    marginBottom: '10px',
+    textAlign: 'center' as const,
+  },
+  disclaimerTitle: {
+    fontSize: '18px',
+    fontWeight: 600,
+    color: '#d32f2f',
+    textAlign: 'center' as const,
+    marginBottom: '15px',
+  },
+  disclaimerText: {
+    fontSize: '14px',
+    color: '#333',
+    marginBottom: '10px',
+    lineHeight: '1.6',
+  },
   acceptButton: {
     backgroundColor: '#006CB5',
     color: 'white',
