@@ -4,7 +4,15 @@ const displayNameMap: Partial<Record<'Production' | 'Storage' | 'CCUS' | 'Port' 
   Production: {
     name: 'Plant Name',
   },
+  Pipeline: {
+    pipeline_name: 'Pipeline Name',
+    project_name: 'Project Name',
+    infrastructure_type: 'Infrastructure Type',
+    start_location: 'Start Location',
+    stop_location: 'Stop Location',
+  },
 };
+
 
 const formatFieldName = (key: string, type: 'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline'): string => {
   const customName = displayNameMap[type]?.[key];
@@ -35,7 +43,7 @@ const formatValue = (value: any): string => {
     }
     if ('costs_musd' in value) {
       if (!value.costs_musd || value.costs_musd.value === null || value.costs_musd.value === undefined) {
-        return '';
+        return 'N/A';
       }
       return `${value.costs_musd.value} ${value.costs_musd.unit || 'MUSD'}`;
     }
@@ -133,6 +141,7 @@ const fieldOrder: Record<'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline'
     'capacity',
   ],
   Pipeline: [
+    'project_name',
     'pipeline_name',
     'start_location',
     'stop_location',
@@ -149,6 +158,8 @@ export const generatePopupHtml = (
   props: ProductionItem | StorageItem | CCUSItem | PortItem | PipelineItem,
   type: 'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline'
 ): string => {
+  console.log(`[generatePopupHtml] Type: ${type}, Props:`, props);
+
   const excludedFields = ['id', 'internal_id', 'latitude', 'longitude', 'stakeholders', 'data_source', 'Ref Id', 'end_use', 'investment', 'references', 'investment_capex'];
   let capacityFields: CapacityField[] = [];
   let specialEntries: [string, { value: any; unit?: any }][] = [];
@@ -237,10 +248,11 @@ export const generatePopupHtml = (
 
   const regularEntries: [string, any][] = Object.entries(props).filter(([key, value]) =>
     !allExcludedKeys.has(key) &&
-    value !== null &&
-    value !== undefined &&
-    value !== '' &&
-    (!Array.isArray(value) || value.length > 0)
+    (type === 'Pipeline' && key === 'project_name' ? true : // Always include project_name for Pipeline
+      value !== null &&
+      value !== undefined &&
+      value !== '' &&
+      (!Array.isArray(value) || value.length > 0))
   );
 
   const orderedFieldOrder = fieldOrder[type];
@@ -264,29 +276,36 @@ export const generatePopupHtml = (
     }
   }
 
+  // Ensure project_name is included for Pipeline type, even if null
+  if (type === 'Pipeline' && !usedKeys.has('project_name')) {
+    allEntries.unshift(['project_name', (props as PipelineItem).project_name]);
+    usedKeys.add('project_name');
+  }
+
   const remainingEntries = regularEntries.filter(([key, value]) => !usedKeys.has(key) && formatValue(value) !== '');
   allEntries.push(...remainingEntries);
 
-  const popupContent = allEntries
-  .map(([key, value]) => {
-    // For pipelines, override infrastructure_type display
-    if (type === 'Pipeline' && key === 'infrastructure_type') {
-      value = 'Hydrogen Pipeline';
-    }
-    return `
-      <b class="font-semibold text-gray-800 text-xs">${formatFieldName(key, type)}:</b>
-      <span class="text-gray-600 text-xs">${formatValue(value)}</span>
-    `;
-  })
-  .join('<br>');
+  console.log(`[generatePopupHtml] Type: ${type}, allEntries:`, allEntries);
 
+  const popupContent = allEntries.length > 0
+    ? allEntries
+        .map(([key, value]) => {
+          if (type === 'Pipeline' && key === 'infrastructure_type') {
+            value = 'Hydrogen Pipeline';
+          }
+          return `
+            <b class="font-semibold text-gray-800 text-xs">${formatFieldName(key, type)}:</b>
+            <span class="text-gray-600 text-xs">${formatValue(value)}</span>
+          `;
+        })
+        .join('<br>')
+    : '<span class="text-gray-600 text-xs">No data available</span>';
 
-  // =========== BEGIN MODIFICATION ===========
-  
+  console.log(`[generatePopupHtml] Type: ${type}, popupContent:`, popupContent);
+
   let verifyUrl = '';
   const internalId = 'internal_id' in props ? props.internal_id : null;
   let formPath = '';
-
   if (internalId) {
     switch (type) {
       case 'Production':
@@ -302,7 +321,6 @@ export const generatePopupHtml = (
         formPath = `/port-form/${internalId}`;
         break;
     }
-    // Always use geomap-redirect endpoint for authentication and token injection
     const onboardingUrl = process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000';
     const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL || 'http://localhost:3001';
     verifyUrl = `${onboardingUrl}/api/auth/geomap-redirect?redirect=${encodeURIComponent(geomapUrl + formPath)}`;
@@ -311,9 +329,9 @@ export const generatePopupHtml = (
   const onboardingUrl = process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000';
   const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL || 'http://localhost:3001';
   const loginUrl = `${onboardingUrl}/auth/authenticate?redirect=${encodeURIComponent(geomapUrl + formPath)}`;
+
   const verifyButton = verifyUrl
     ? (() => {
-        // Synchronously check token before rendering button
         let isAuthenticated = false;
         try {
           const token = typeof window !== 'undefined' ? window.localStorage.getItem('geomap-auth-token') : null;
@@ -321,9 +339,13 @@ export const generatePopupHtml = (
             try {
               JSON.parse(atob(token.split('.')[1]));
               isAuthenticated = true;
-            } catch (e) { isAuthenticated = false; }
+            } catch (e) {
+              isAuthenticated = false;
+            }
           }
-        } catch (e) { isAuthenticated = false; }
+        } catch (e) {
+          isAuthenticated = false;
+        }
         const label = isAuthenticated ? 'Verify' : 'Login to verify';
         return `
           <button
@@ -356,12 +378,10 @@ export const generatePopupHtml = (
         </span>
       `;
 
-  // =========== END MODIFICATION ===========
-
   return `
     <div class="max-w-[90vw] w-64 p-2 bg-white rounded shadow border border-gray-100 font-sans text-sm">
       ${popupContent}
-      ${type !== 'Pipeline' ? verifyButton : ''} 
+      ${type !== 'Pipeline' ? verifyButton : ''}
     </div>
   `;
 };

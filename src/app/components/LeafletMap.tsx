@@ -53,11 +53,10 @@ const LeafletMap = ({
   const [selectedPlantName, setSelectedPlantName] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
   const [allData, setAllData] = useState<GeoJSONFeatureCollection['features']>(combinedData);
-  const [statusTypes, setStatusTypes] = useState<{ sector: string; status: string }[]>([]);
   const [legendVisible, setLegendVisible] = useState(true);
   const [legendPinned, setLegendPinned] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);
-  const [legendCollapsed, setLegendCollapsed] = useState(true);
+  const [legendCollapsed, setLegendCollapsed] = useState(false);
   const [showFilterHelp, setShowFilterHelp] = useState(false);
   const mapRef = useRef<L.Map | null>(null);
   const filterButtonRef = useRef<HTMLButtonElement>(null);
@@ -69,18 +68,116 @@ const LeafletMap = ({
   const pipelineLayerRef = useRef<L.FeatureGroup | null>(null);
 
   const statusColorMap: Record<string, string> = {
-    cancelled: 'red',
     concept: 'green',
-    decommisioned: 'darkgrey',
+    decommissioned: 'darkgrey',
     demo: 'purple',
     'feasibility study': 'cadetblue',
     feed: 'orange',
     fid: 'darkred',
     FID: 'darkpurple',
     operational: 'darkgreen',
+    planned: 'lightblue',
+    canceled: 'red',
     'other/unknown': 'grey',
     'under construction': 'blue',
-    planned: 'lightblue',
+  };
+
+  const statusOrder = [
+    'Concept',
+    'Planned',
+    'Under Construction',
+    'Feed',
+    'FID',
+    'Operational',
+    'Demo',
+    'Decommissioned',
+    'Canceled',
+    'Other/Unknown',
+    'Unknown',
+    'Feasibility Study',
+  ];
+
+  const generateCustomLegendOrder = (): string[] => {
+    const customLegendOrder: string[] = [];
+    const sectors = ['CCUS', 'Port', 'Production', 'Storage'];
+    const statusOrderLower = statusOrder.map(s => s.toLowerCase());
+    const availableStatusesBySector = statusData.statuses.reduce((acc, { sector, current_status }) => {
+      if (current_status && sector) {
+        const normalizedSector = sector.charAt(0).toUpperCase() + sector.slice(1).toLowerCase();
+        if (!acc[normalizedSector]) {
+          acc[normalizedSector] = new Set<string>();
+        }
+        const normalizedStatus = current_status.charAt(0).toUpperCase() + current_status.slice(1).toLowerCase();
+        acc[normalizedSector].add(normalizedStatus);
+      }
+      return acc;
+    }, {} as Record<string, Set<string>>);
+
+    if (!availableStatusesBySector['CCUS'] && ccusData.features.length > 0) {
+      availableStatusesBySector['CCUS'] = new Set<string>();
+      ccusData.features.forEach(feature => {
+        const status = (feature.properties as CCUSItem).project_status;
+        if (status) {
+          const normalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+          if (statusOrderLower.includes(normalizedStatus.toLowerCase())) {
+            availableStatusesBySector['CCUS'].add(normalizedStatus);
+          }
+        }
+      });
+    }
+
+    sectors.forEach(sector => {
+      statusOrder.forEach(status => {
+        const statusLower = status.toLowerCase();
+        if (availableStatusesBySector[sector]?.has(status) ||
+            availableStatusesBySector[sector]?.has(status.charAt(0).toUpperCase() + status.slice(1).toLowerCase())) {
+          customLegendOrder.push(`${sector} - ${status}`);
+        }
+      });
+    });
+    customLegendOrder.push('Hydrogen Pipeline');
+    console.log('[LeafletMap] customLegendOrder:', customLegendOrder);
+    return customLegendOrder;
+  };
+
+  const customLegendOrder = generateCustomLegendOrder();
+
+  const getCustomStatusOrder = (): string[] => {
+    const allStatuses = new Set<string>();
+    statusData.statuses.forEach(({ current_status }) => {
+      if (current_status) {
+        const normalizedStatus = current_status.charAt(0).toUpperCase() + current_status.slice(1).toLowerCase();
+        allStatuses.add(normalizedStatus);
+      }
+    });
+
+    if (ccusData.features.length > 0) {
+      ccusData.features.forEach(feature => {
+        const status = (feature.properties as CCUSItem).project_status;
+        if (status) {
+          const normalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+          allStatuses.add(normalizedStatus);
+        }
+      });
+    }
+
+    const result = statusOrder.filter(status =>
+      Array.from(allStatuses).some(s => s.toLowerCase() === status.toLowerCase())
+    );
+    console.log('[LeafletMap] customStatusOrder:', result);
+    return result;
+  };
+
+  const customStatusOrder = getCustomStatusOrder();
+
+  const getSectorIcon = (sector: string): string => {
+    switch (sector.toLowerCase()) {
+      case 'production': return 'industry';
+      case 'storage': return 'database';
+      case 'ccus': return 'cloud';
+      case 'port': return 'ship';
+      default: return 'question';
+    }
   };
 
   useEffect(() => {
@@ -88,16 +185,14 @@ const LeafletMap = ({
   }, [combinedData]);
 
   useEffect(() => {
-    if (statusData.statuses && Array.isArray(statusData.statuses)) {
-      const uniqueStatusTypes = Array.from(
-        new Map(statusData.statuses.map((s) => [`${s.sector}-${s.current_status}`, { sector: s.sector, status: s.current_status }])).values()
-      ).sort((a, b) => a.sector.localeCompare(b.sector) || a.status.localeCompare(b.status));
-      setStatusTypes(uniqueStatusTypes);
-    }
-  }, [statusData]);
+    console.log('[LeafletMap] statusData:', statusData);
+    console.log('[LeafletMap] ccusData:', ccusData);
+    console.log('[LeafletMap] customLegendOrder:', customLegendOrder);
+  }, [statusData, ccusData, customLegendOrder]);
 
   useEffect(() => {
     if (document.getElementById('map')?.children.length || mapRef.current) return;
+
     mapRef.current = L.map('map').setView([51.07289, 10.67139], 3);
     const baseLayers = {
       Light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }),
@@ -108,44 +203,19 @@ const LeafletMap = ({
       ]),
       Terrain: L.tileLayer('https://{s}.google.com/vt/lyrs=p&hl=en&x={x}&y={y}&z={z}', { subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '© Google Maps' }),
     };
+
     baseLayers['Light'].addTo(mapRef.current!);
     productionClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     storageClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     ccusClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     portsClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     let selectedPipeline: L.Path | null = null;
-
-pipelineLayerRef.current = L.geoJSON(pipelineData, {
-  style: (feature) => ({
-    color: 'blue',   // default color
-    weight: 2,
-  }),
-  onEachFeature: (feature, layer) => {
-    layer.on('click', () => {
-      const pathLayer = layer as L.Path; // cast to Path to access setStyle
-
-      // Reset previous
-      if (selectedPipeline) {
-        selectedPipeline.setStyle({ color: 'blue', weight: 2 });
-      }
-
-      // Highlight clicked
-      pathLayer.setStyle({ color: 'red', weight: 4 });
-      selectedPipeline = pathLayer;
-
-      // Focus map
-      if ((pathLayer as any).getBounds) {
-        mapRef.current?.fitBounds((pathLayer as any).getBounds(), { padding: [50, 50] });
-      }
-
-      // Update selected plant
-      if (feature.properties.pipeline_name) {
-        setSelectedPlantName(feature.properties.pipeline_name);
-      }
-    });
-  },
-}).addTo(mapRef.current!);
-
+    pipelineLayerRef.current = L.geoJSON(pipelineData, {
+      style: () => ({
+        color: '#2877B2',
+        weight: 2,
+      })
+    }).addTo(mapRef.current!);
 
     L.control.layers(baseLayers, {
       'Production Plants': productionClusterRef.current,
@@ -154,6 +224,7 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
       'Ports': portsClusterRef.current,
       'Pipelines': pipelineLayerRef.current,
     }, { collapsed: true, position: 'topright' }).addTo(mapRef.current!);
+
     const measureControl = new (L.Control as any).Measure({ position: 'topleft', primaryLengthUnit: 'kilometers', secondaryLengthUnit: 'miles', primaryAreaUnit: 'sqmeters', secondaryAreaUnit: 'acres' });
     mapRef.current!.addControl(measureControl);
     (L.Control as any).Measure.include({
@@ -162,6 +233,7 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
         this._captureMarker.setIcon(L.divIcon({ iconSize: this._map.getSize().multiplyBy(2) }));
       },
     });
+
     return () => {
       mapRef.current?.remove();
       mapRef.current = null;
@@ -196,7 +268,7 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
     if (!mapRef.current || !pipelineLayerRef.current) return;
     pipelineLayerRef.current.clearLayers();
     addPipelineMarkers(pipelineData, mapRef.current, pipelineLayerRef.current, statusColorMap, setSelectedPlantName);
-  }, [pipelineData, statusColorMap, setSelectedPlantName]);
+  }, [pipelineData]);
 
   useEffect(() => {
     if (!mapRef.current || !selectedPlantName) return;
@@ -208,6 +280,7 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
       if ('pipeline_name' in props && props.pipeline_name?.toLowerCase() === lowerSelectedPlantName) return true;
       return false;
     });
+
     if (feature) {
       if (feature.geometry.type === 'Point') {
         const [lng, lat] = feature.geometry.coordinates as [number, number];
@@ -230,6 +303,7 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
       decomissioned: 'Decommissioned',
       decommissioned: 'Decommissioned',
     };
+
     const values = features
       .map((f) => f.properties[key as keyof typeof f.properties])
       .filter((value) => value != null)
@@ -242,6 +316,7 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
         return valueMappings[lowerValue] || strValue;
       })
       .filter((v) => v !== '');
+
     const valueMap = new Map<string, string>();
     values.forEach((value) => {
       const key = value.toLowerCase();
@@ -249,7 +324,8 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
         valueMap.set(key, value);
       }
     });
-    return Array.from(valueMap.values()).sort();
+
+    return Array.from(valueMap.values());
   };
 
   const getUniqueNamesForDropdown = (features: GeoJSONFeatureCollection['features']): string[] => {
@@ -315,6 +391,7 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
     let endUseValue: string | string[] | null = null;
     let countryValue = '';
     let typeValue = props.type || '';
+
     switch (props.type?.toLowerCase()) {
       case 'production':
         const prodProps = props as ProductionItem;
@@ -349,6 +426,7 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
         statusValue = pipelineProps.status || '';
         break;
     }
+
     const searchMatch =
       search === '' ||
       Object.values(props).some((v) => {
@@ -357,26 +435,30 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
         if (typeof v === 'object' && v !== null) return JSON.stringify(v).toLowerCase().includes(search.toLowerCase());
         return false;
       });
+
     const statusMatch =
       status === '' ||
       (statusValue &&
         (Array.isArray(statusValue)
           ? statusValue.some((s) => typeof s === 'string' && s.toLowerCase().includes(status.toLowerCase()))
           : typeof statusValue === 'string' && statusValue.toLowerCase().includes(status.toLowerCase())));
+
     const endUseMatch =
       endUse === '' ||
       (endUseValue &&
         (Array.isArray(endUseValue)
           ? endUseValue.some((e) => typeof e === 'string' && e.toLowerCase().includes(endUse.toLowerCase()))
           : typeof endUseValue === 'string' && endUseValue.toLowerCase().includes(endUse.toLowerCase())));
+
     const plantTypeMatch = plantType === '' || (typeValue && typeValue.toLowerCase() === plantType.toLowerCase());
     const countryMatch = selectedCountry === '' || (countryValue && countryValue.toLowerCase() === selectedCountry.toLowerCase());
+
     return searchMatch && statusMatch && endUseMatch && plantTypeMatch && countryMatch;
   });
 
   const uniquePlantNames = getUniqueNamesForDropdown(filtered);
   const countries = getUniqueValues(allData, 'country');
-  const statuses = Array.from(new Set([...getUniqueValues(allData, 'status'), ...getUniqueValues(allData, 'project_status')])).sort();
+  const statuses = customStatusOrder;
   const endUses = Array.from(new Set([...getUniqueValues(allData, 'end_use'), ...getUniqueValues(allData, 'end_use_sector')])).sort();
   const plantTypeValues = getUniqueValues(allData, 'type');
 
@@ -409,6 +491,32 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const renderLegendItems = () => {
+    return customLegendOrder.map((item, index) => {
+      if (item === 'Hydrogen Pipeline') {
+        return (
+          <div key={item} className="flex items-center mt-1">
+            <div style={{ width: 18, height: 4, backgroundColor: 'blue', marginRight: 5 }}></div>
+            <span>{item}</span>
+          </div>
+        );
+      } else {
+        const [sector, status] = item.split(' - ');
+        const icon = getSectorIcon(sector);
+        const statusKey = status.toLowerCase().replace(/\s+/g, ' ');
+        return (
+          <div key={`${sector}-${status}-${index}`} className="flex items-center mt-1">
+            <i
+              className={`fa fa-${icon} fa-fw`}
+              style={{ color: statusColorMap[statusKey] || statusColorMap['other/unknown'], marginRight: 5 }}
+            ></i>
+            <span>{item}</span>
+          </div>
+        );
+      }
+    });
+  };
 
   return (
     <div className="w-full h-[calc(100vh-68px)] relative">
@@ -444,123 +552,121 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
             minHeight: '60px',
           }}
         >
-          <>
-            <div className="flex flex-col gap-3 p-4 w-full md:hidden z-[9999]">
-              <div className="flex justify-between items-center">
-                <span className="font-semibold text-gray-700">Filters</span>
-                <button
-                  onClick={() => setFiltersVisible(false)}
-                  className="text-gray-500 hover:text-red-600"
-                  title="Close Filters"
-                >
-                  <i className="fas fa-times text-lg"></i>
-                </button>
-              </div>
-              <input
-                type="text"
-                placeholder="Search all fields..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <select value={selectedPlantName} onChange={handlePlantNameChange} className="p-2 text-sm border border-gray-300 rounded">
-                <option value="">Project List</option>
-                {uniquePlantNames.map((name) => (
-                  <option key={name} value={name}>
-                    {name.replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
-              <select value={selectedCountry} onChange={handleCountryChange} className="p-2 text-sm border border-gray-300 rounded">
-                <option value="">Country</option>
-                {countries.map((country) => (
-                  <option key={country} value={country}>
-                    {country.replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-2 text-sm border border-gray-300 rounded">
-                <option value="">Status</option>
-                {statuses.map((statusOption) => (
-                  <option key={statusOption} value={statusOption}>
-                    {statusOption}
-                  </option>
-                ))}
-              </select>
-              <select value={endUse} onChange={(e) => setEndUse(e.target.value)} className="p-2 text-sm border border-gray-300 rounded">
-                <option value="">End Use</option>
-                {endUses.map((endUseOption) => (
-                  <option key={endUseOption} value={endUseOption}>
-                    {endUseOption}
-                  </option>
-                ))}
-              </select>
-              <select value={plantType} onChange={(e) => setPlantType(e.target.value)} className="p-2 text-sm border border-gray-300 rounded">
-                <option value="">Sector</option>
-                {plantTypeValues.map((typeOption) => (
-                  <option key={typeOption} value={typeOption}>
-                    {typeOption.replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="hidden md:flex md:flex-row md:gap-2 md:w-full md:items-center">
-              <input
-                type="text"
-                placeholder="Search all fields..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px] max-w-[180px]"
-              />
-              <select value={selectedPlantName} onChange={handlePlantNameChange} className="p-1.5 text-sm border border-gray-300 rounded min-w-[160px] max-w-[200px]">
-                <option value="">Project List</option>
-                {uniquePlantNames.map((name) => (
-                  <option key={name} value={name}>
-                    {name.replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
-              <select value={selectedCountry} onChange={handleCountryChange} className="p-1.5 text-sm border border-gray-300 rounded min-w-[120px] max-w-[160px]">
-                <option value="">Country</option>
-                {countries.map((country) => (
-                  <option key={country} value={country}>
-                    {country.replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded min-w-[110px] max-w-[140px]">
-                <option value="">Status</option>
-                {statuses.map((statusOption) => (
-                  <option key={statusOption} value={statusOption}>
-                    {statusOption}
-                  </option>
-                ))}
-              </select>
-              <select value={endUse} onChange={(e) => setEndUse(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded min-w-[110px] max-w-[140px]">
-                <option value="">End Use</option>
-                {endUses.map((endUseOption) => (
-                  <option key={endUseOption} value={endUseOption}>
-                    {endUseOption}
-                  </option>
-                ))}
-              </select>
-              <select value={plantType} onChange={(e) => setPlantType(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded min-w-[110px] max-w-[140px]">
-                <option value="">Sector</option>
-                {plantTypeValues.map((typeOption) => (
-                  <option key={typeOption} value={typeOption}>
-                    {typeOption.replace(/\b\w/g, (l) => l.toUpperCase())}
-                  </option>
-                ))}
-              </select>
+          <div className="flex flex-col gap-3 p-4 w-full md:hidden z-[9999]">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-gray-700">Filters</span>
               <button
-                onClick={() => setShowFilterHelp((prev) => !prev)}
-                className="ml-auto text-gray-500 hover:text-blue-600"
-                title="Filter Help"
+                onClick={() => setFiltersVisible(false)}
+                className="text-gray-500 hover:text-red-600"
+                title="Close Filters"
               >
-                <i className="fas fa-info-circle"></i>
+                <i className="fas fa-times text-lg"></i>
               </button>
             </div>
-          </>
+            <input
+              type="text"
+              placeholder="Search all fields..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <select value={selectedPlantName} onChange={handlePlantNameChange} className="p-2 text-sm border border-gray-300 rounded">
+              <option value="">Project List</option>
+              {uniquePlantNames.map((name) => (
+                <option key={name} value={name}>
+                  {name.replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <select value={selectedCountry} onChange={handleCountryChange} className="p-2 text-sm border border-gray-300 rounded">
+              <option value="">Country</option>
+              {countries.map((country) => (
+                <option key={country} value={country}>
+                  {country.replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-2 text-sm border border-gray-300 rounded">
+              <option value="">Status</option>
+              {statuses.map((statusOption) => (
+                <option key={statusOption} value={statusOption}>
+                  {statusOption}
+                </option>
+              ))}
+            </select>
+            <select value={endUse} onChange={(e) => setEndUse(e.target.value)} className="p-2 text-sm border border-gray-300 rounded">
+              <option value="">End Use</option>
+              {endUses.map((endUseOption) => (
+                <option key={endUseOption} value={endUseOption}>
+                  {endUseOption}
+                </option>
+              ))}
+            </select>
+            <select value={plantType} onChange={(e) => setPlantType(e.target.value)} className="p-2 text-sm border border-gray-300 rounded">
+              <option value="">Sector</option>
+              {plantTypeValues.map((typeOption) => (
+                <option key={typeOption} value={typeOption}>
+                  {typeOption.replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="hidden md:flex md:flex-row md:gap-2 md:w-full md:items-center">
+            <input
+              type="text"
+              placeholder="Search all fields..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px] max-w-[180px]"
+            />
+            <select value={selectedPlantName} onChange={handlePlantNameChange} className="p-1.5 text-sm border border-gray-300 rounded min-w-[160px] max-w-[200px]">
+              <option value="">Project List</option>
+              {uniquePlantNames.map((name) => (
+                <option key={name} value={name}>
+                  {name.replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <select value={selectedCountry} onChange={handleCountryChange} className="p-1.5 text-sm border border-gray-300 rounded min-w-[120px] max-w-[160px]">
+              <option value="">Country</option>
+              {countries.map((country) => (
+                <option key={country} value={country}>
+                  {country.replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded min-w-[110px] max-w-[140px]">
+              <option value="">Status</option>
+              {statuses.map((statusOption) => (
+                <option key={statusOption} value={statusOption}>
+                  {statusOption}
+                </option>
+              ))}
+            </select>
+            <select value={endUse} onChange={(e) => setEndUse(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded min-w-[110px] max-w-[140px]">
+              <option value="">End Use</option>
+              {endUses.map((endUseOption) => (
+                <option key={endUseOption} value={endUseOption}>
+                  {endUseOption}
+                </option>
+              ))}
+            </select>
+            <select value={plantType} onChange={(e) => setPlantType(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded min-w-[110px] max-w-[140px]">
+              <option value="">Sector</option>
+              {plantTypeValues.map((typeOption) => (
+                <option key={typeOption} value={typeOption}>
+                  {typeOption.replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => setShowFilterHelp((prev) => !prev)}
+              className="ml-auto text-gray-500 hover:text-blue-600"
+              title="Filter Help"
+            >
+              <i className="fas fa-info-circle"></i>
+            </button>
+          </div>
         </div>
       )}
       {showFilterHelp && (
@@ -612,30 +718,7 @@ pipelineLayerRef.current = L.geoJSON(pipelineData, {
         {!legendCollapsed && (
           <>
             <div className="mt-2 text-black max-h-48 overflow-y-auto pr-1 custom-scroll">
-              {statusTypes.map(({ sector, status }, index) => {
-                let icon = 'question';
-                if (sector.toLowerCase() === 'production') icon = 'industry';
-                else if (sector.toLowerCase() === 'storage') icon = 'database';
-                else if (sector.toLowerCase() === 'ccus') icon = 'cloud';
-                else if (sector.toLowerCase() === 'port') icon = 'ship';
-                else if (sector.toLowerCase() === 'pipeline') {
-                  return (
-                    <div key={`${sector}-${status}-${index}`} className="flex items-center mt-1">
-                      <div style={{ width: 18, height: 4, backgroundColor: 'blue', marginRight: 5 }}></div>
-                      <span>Pipeline - {status.replace(/\b\w/g, (l) => l.toUpperCase())}</span>
-                    </div>
-                  );
-                }
-                return (
-                  <div key={`${sector}-${status}-${index}`} className="flex items-center mt-1">
-                    <i
-                      className={`fa fa-${icon} fa-fw`}
-                      style={{ color: statusColorMap[status.toLowerCase()] || statusColorMap['other/unknown'], marginRight: 5 }}
-                    ></i>
-                    <span>{`${sector.replace(/\b\w/g, (l) => l.toUpperCase())} - ${status.replace(/\b\w/g, (l) => l.toUpperCase())}`}</span>
-                  </div>
-                );
-              })}
+              {renderLegendItems()}
             </div>
             <div className="mt-2 text-xs italic text-black">Use the measuring tool on the left to calculate distances</div>
           </>
