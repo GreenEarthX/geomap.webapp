@@ -5,7 +5,8 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import UserGuideModal from './UserGuideModal';
 import ContactUsModal from './ContactUsModal';
-import { MailIcon, BookIcon, UserIcon, LogInIcon, ChevronRightIcon, ChevronLeftIcon, LogOutIcon } from 'lucide-react';
+import ReportMissingProjectModal from "./ReportMissingProjectModal";
+import { MailIcon, BookIcon, UserIcon, LogInIcon, ChevronRightIcon, ChevronLeftIcon, LogOutIcon, MapPinIcon, MapPinPlusIcon } from 'lucide-react';
 
 const AuthBridge = dynamic(() => import('./AuthBridge'), { ssr: false });
 
@@ -14,6 +15,7 @@ export default function GexHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showUserGuideModal, setShowUserGuideModal] = useState(false);
   const [showUserSubMenu, setShowUserSubMenu] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const authBridgeRef = useRef<{ handleLogin: () => void; handleLogout: () => void }>(null);
@@ -117,7 +119,7 @@ export default function GexHeader() {
               </>
             ) : (
               <>
-                {/* User / Sign In item (simple like others) */}
+                {/* User / Sign In item */}
                 <button
                   onClick={isAuthenticated ? toggleUserSubMenu : () => authBridgeRef.current?.handleLogin()}
                   className="w-full text-left text-gray-600 hover:text-blue-700 hover:bg-gray-50 transition-colors flex items-center justify-between gap-2 py-2 px-3 rounded-md"
@@ -153,6 +155,20 @@ export default function GexHeader() {
                   <span className="text-sm font-medium">User Guide</span>
                 </button>
 
+                {/* Suggest a map pin */}
+                {/*}
+                <button
+                  onClick={() => {
+                    setShowPinModal(true);
+                    setMenuOpen(false);
+                    setShowUserSubMenu(false);
+                  }}
+                  className="w-full text-left text-gray-600 hover:text-emerald-700 hover:bg-emerald-50 transition-colors flex items-center gap-2 py-2 px-3 rounded-md"
+                >
+                  <MapPinPlusIcon className="h-5 w-5" />
+                  <span className="text-sm font-medium">Report Missing Project</span>
+                </button>*/}
+
                 {/* Contact Us */}
                 <button
                   onClick={() => {
@@ -166,7 +182,7 @@ export default function GexHeader() {
                   <span className="text-sm font-medium">Contact Us</span>
                 </button>
 
-                {/* Access Database (kept blue since it’s a CTA) */}
+                {/* Access Database */}
                 <button
                   onClick={() => {
                     window.location.href = '/plant-widget';
@@ -184,7 +200,13 @@ export default function GexHeader() {
         </div>
       )}
 
+      {/* Modals */}
       <ContactUsModal isOpen={showContactModal} onClose={() => setShowContactModal(false)} />
+      {/*<ReportMissingProjectModal
+        isOpen={showPinModal}
+        onClose={() => setShowPinModal(false)}
+        onOpenContact={() => setShowContactModal(true)}
+      />*/}
       <UserGuideModal isOpen={showUserGuideModal} onClose={() => setShowUserGuideModal(false)} />
       <AuthBridge onAuthChange={handleAuthChange} ref={authBridgeRef} />
     </header>
