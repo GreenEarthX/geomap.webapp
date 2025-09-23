@@ -9,6 +9,7 @@ import 'leaflet-measure/dist/leaflet-measure.css';
 import 'leaflet.awesome-markers';
 import 'leaflet.markercluster';
 import 'leaflet-measure';
+import { MapPinPlusIcon } from 'lucide-react';
 import {
   GeoJSONFeatureCollection,
   ProductionItem,
@@ -58,6 +59,7 @@ const LeafletMap = ({
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [legendCollapsed, setLegendCollapsed] = useState(false);
   const [showFilterHelp, setShowFilterHelp] = useState(false);
+
   const mapRef = useRef<L.Map | null>(null);
   const filterButtonRef = useRef<HTMLButtonElement>(null);
   const filterBarRef = useRef<HTMLDivElement>(null);
@@ -150,7 +152,6 @@ const LeafletMap = ({
         allStatuses.add(normalizedStatus);
       }
     });
-
     if (ccusData.features.length > 0) {
       ccusData.features.forEach(feature => {
         const status = (feature.properties as CCUSItem).project_status;
@@ -160,7 +161,6 @@ const LeafletMap = ({
         }
       });
     }
-
     const result = statusOrder.filter(status =>
       Array.from(allStatuses).some(s => s.toLowerCase() === status.toLowerCase())
     );
@@ -194,6 +194,7 @@ const LeafletMap = ({
     if (document.getElementById('map')?.children.length || mapRef.current) return;
 
     mapRef.current = L.map('map').setView([51.07289, 10.67139], 3);
+
     const baseLayers = {
       Light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }),
       Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }),
@@ -205,16 +206,17 @@ const LeafletMap = ({
     };
 
     baseLayers['Light'].addTo(mapRef.current!);
+
     productionClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     storageClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     ccusClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
     portsClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
-    let selectedPipeline: L.Path | null = null;
+
     pipelineLayerRef.current = L.geoJSON(pipelineData, {
       style: () => ({
         color: '#2877B2',
         weight: 2,
-      })
+      }),
     }).addTo(mapRef.current!);
 
     L.control.layers(baseLayers, {
@@ -225,8 +227,15 @@ const LeafletMap = ({
       'Pipelines': pipelineLayerRef.current,
     }, { collapsed: true, position: 'topright' }).addTo(mapRef.current!);
 
-    const measureControl = new (L.Control as any).Measure({ position: 'topleft', primaryLengthUnit: 'kilometers', secondaryLengthUnit: 'miles', primaryAreaUnit: 'sqmeters', secondaryAreaUnit: 'acres' });
+    const measureControl = new (L.Control as any).Measure({
+      position: 'topleft',
+      primaryLengthUnit: 'kilometers',
+      secondaryLengthUnit: 'miles',
+      primaryAreaUnit: 'sqmeters',
+      secondaryAreaUnit: 'acres',
+    });
     mapRef.current!.addControl(measureControl);
+
     (L.Control as any).Measure.include({
       _setCaptureMarkerIcon: function () {
         this._captureMarker.options.autoPanOnFocus = false;
@@ -280,7 +289,6 @@ const LeafletMap = ({
       if ('pipeline_name' in props && props.pipeline_name?.toLowerCase() === lowerSelectedPlantName) return true;
       return false;
     });
-
     if (feature) {
       if (feature.geometry.type === 'Point') {
         const [lng, lat] = feature.geometry.coordinates as [number, number];
@@ -291,6 +299,31 @@ const LeafletMap = ({
       }
     }
   }, [selectedPlantName, allData]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (
+        filtersVisible &&
+        !filterButtonRef.current?.contains(e.target as Node) &&
+        !filterBarRef.current?.contains(e.target as Node)
+      ) {
+        setFiltersVisible(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [filtersVisible]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.leaflet-control') && !target.closest('.fa-info-circle')) {
+        setShowFilterHelp(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const getUniqueValues = (
     features: GeoJSONFeatureCollection['features'],
@@ -303,7 +336,6 @@ const LeafletMap = ({
       decomissioned: 'Decommissioned',
       decommissioned: 'Decommissioned',
     };
-
     const values = features
       .map((f) => f.properties[key as keyof typeof f.properties])
       .filter((value) => value != null)
@@ -316,7 +348,6 @@ const LeafletMap = ({
         return valueMappings[lowerValue] || strValue;
       })
       .filter((v) => v !== '');
-
     const valueMap = new Map<string, string>();
     values.forEach((value) => {
       const key = value.toLowerCase();
@@ -324,7 +355,6 @@ const LeafletMap = ({
         valueMap.set(key, value);
       }
     });
-
     return Array.from(valueMap.values());
   };
 
@@ -391,7 +421,6 @@ const LeafletMap = ({
     let endUseValue: string | string[] | null = null;
     let countryValue = '';
     let typeValue = props.type || '';
-
     switch (props.type?.toLowerCase()) {
       case 'production':
         const prodProps = props as ProductionItem;
@@ -426,7 +455,6 @@ const LeafletMap = ({
         statusValue = pipelineProps.status || '';
         break;
     }
-
     const searchMatch =
       search === '' ||
       Object.values(props).some((v) => {
@@ -435,24 +463,20 @@ const LeafletMap = ({
         if (typeof v === 'object' && v !== null) return JSON.stringify(v).toLowerCase().includes(search.toLowerCase());
         return false;
       });
-
     const statusMatch =
       status === '' ||
       (statusValue &&
         (Array.isArray(statusValue)
           ? statusValue.some((s) => typeof s === 'string' && s.toLowerCase().includes(status.toLowerCase()))
           : typeof statusValue === 'string' && statusValue.toLowerCase().includes(status.toLowerCase())));
-
     const endUseMatch =
       endUse === '' ||
       (endUseValue &&
         (Array.isArray(endUseValue)
           ? endUseValue.some((e) => typeof e === 'string' && e.toLowerCase().includes(endUse.toLowerCase()))
           : typeof endUseValue === 'string' && endUseValue.toLowerCase().includes(endUse.toLowerCase())));
-
     const plantTypeMatch = plantType === '' || (typeValue && typeValue.toLowerCase() === plantType.toLowerCase());
     const countryMatch = selectedCountry === '' || (countryValue && countryValue.toLowerCase() === selectedCountry.toLowerCase());
-
     return searchMatch && statusMatch && endUseMatch && plantTypeMatch && countryMatch;
   });
 
@@ -466,31 +490,6 @@ const LeafletMap = ({
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => setSelectedCountry(e.target.value);
   const toggleLegendPin = () => setLegendPinned((prev) => !prev);
   const toggleFilters = () => setFiltersVisible((prev) => !prev);
-
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (
-        filtersVisible &&
-        !filterButtonRef.current?.contains(e.target as Node) &&
-        !filterBarRef.current?.contains(e.target as Node)
-      ) {
-        setFiltersVisible(false);
-      }
-    };
-    document.addEventListener('mousedown', handleOutsideClick);
-    return () => document.removeEventListener('mousedown', handleOutsideClick);
-  }, [filtersVisible]);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('.leaflet-control') && !target.closest('.fa-info-circle')) {
-        setShowFilterHelp(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const renderLegendItems = () => {
     return customLegendOrder.map((item, index) => {
@@ -532,6 +531,27 @@ const LeafletMap = ({
             style={{ background: 'none', border: 'none', padding: 0 }}
           >
             <i className={`fas fa-filter${filtersVisible ? ' text-blue-700' : ''}`} />
+          </button>
+        </div>
+      </div>
+      <div className="leaflet-top leaflet-right" style={{ position: 'absolute', top: 60, right: 10 }}>
+        <div className="leaflet-control leaflet-bar">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              window.location.href = 'https://form.typeform.com/to/NVsVmo67';
+            }}
+            className="w-full h-full flex items-center justify-center text-base text-black rounded-lg shadow border border-gray-200 hover:bg-gray-100 focus:outline-none"
+            title="Report Missing Project"
+            aria-label="Report Missing Project"
+            style={{
+              width: '45px',
+              height: '45px',
+              background: 'white',
+              border: 'none',
+            }}
+          >
+            <MapPinPlusIcon className="h-5 w-5" />
           </button>
         </div>
       </div>
