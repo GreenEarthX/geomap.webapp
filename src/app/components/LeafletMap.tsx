@@ -534,7 +534,7 @@ const LeafletMap = ({
           </button>
         </div>
       </div>
-      <div className="leaflet-top leaflet-right" style={{ position: 'absolute', top: 60, right: 10 }}>
+      {/*<div className="leaflet-top leaflet-right" style={{ position: 'absolute', top: 60, right: 10 }}>
         <div className="leaflet-control leaflet-bar">
           <button
             onClick={(e) => {
@@ -554,7 +554,7 @@ const LeafletMap = ({
             <MapPinPlusIcon className="h-5 w-5" />
           </button>
         </div>
-      </div>
+      </div>*/}
       {filtersVisible && (
         <div
           ref={filterBarRef}
