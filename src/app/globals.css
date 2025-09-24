@@ -82,19 +82,19 @@ html, body {
 /* Move the layer control button downward */
 .leaflet-control-layers {
   z-index: 2000 !important; /* Ensure it stays above filter button */
-  top: 120px !important; /* Adjust this value to move it down (e.g., 80px from top) */
+  top: 60px !important; /* Adjust this value to move it down (e.g., 80px from top) */
   right: 8px !important; /* Optional: Adjust right spacing if needed */
 }
 
 .leaflet-control-layers-expanded {
   z-index: 2001 !important; /* Ensure the expanded panel is above everything */
-  top: 120px !important; /* Align expanded panel with button */
+  top: 60px !important; /* Align expanded panel with button */
 }
 
 /* Keep filter button visible and lower */
 .leaflet-top.leaflet-right.z-10 {
   z-index: 10 !important;
-  top: 120px !important; /* Keep filter button higher up */
+  top: 60px !important; /* Keep filter button higher up */
   right: 65px !important;
 }
 
