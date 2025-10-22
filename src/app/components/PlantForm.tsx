@@ -1,0 +1,282 @@
+'use client';
+
+import { useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+
+export interface Feature {
+  type: 'Feature';
+  geometry: {
+    type: 'Point';
+    coordinates: [number, number];
+  };
+  properties: {
+    id?: number;
+    internal_id?: string;
+    name?: string;
+    status?: string;
+    type?: string;
+    capacity_mw?: number;
+    end_use?: string;
+    consumption_tpy?: number;
+    start_year?: number;
+    city?: string;
+    country?: string;
+    process?: string;
+  };
+}
+
+interface PlantFormProps {
+  initialFeature: Feature | null;
+  initialError: string | null;
+}
+
+interface FieldConfig {
+  name: keyof Feature['properties'];
+  label: string;
+  type: string;
+  placeholder: string;
+}
+
+const PlantForm = ({ initialFeature, initialError }: PlantFormProps) => {
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const [isEditing, setIsEditing] = useState(false);
+
+  const feature: Feature = initialFeature || {
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [0, 0],
+    },
+    properties: {
+      internal_id: id || '',
+      name: 'Placeholder Feature',
+      type: 'hydrogen',
+      status: '',
+      start_year: 0,
+      capacity_mw: 0,
+      process: '',
+      end_use: '',
+      consumption_tpy: 0,
+      city: '',
+      country: '',
+    },
+  };
+
+  const initialFormData: Partial<Feature['properties']> = {
+    internal_id: feature.properties.internal_id ?? id,
+    name: feature.properties.name ?? 'Placeholder Feature',
+    type: feature.properties.type ?? 'hydrogen',
+    status: feature.properties.status ?? '',
+    start_year: feature.properties.start_year ?? 0,
+    capacity_mw: feature.properties.capacity_mw ?? 0,
+    process: feature.properties.process ?? '',
+    end_use: feature.properties.end_use ?? '',
+    consumption_tpy: feature.properties.consumption_tpy ?? 0,
+    city: feature.properties.city ?? '',
+    country: feature.properties.country ?? '',
+  };
+
+  const [formData, setFormData] = useState<Partial<Feature['properties']>>(initialFormData);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    const parsedValue = ['start_year', 'capacity_mw', 'consumption_tpy'].includes(name)
+      ? parseFloat(value) || 0
+      : value;
+    setFormData((prev) => ({ ...prev, [name]: parsedValue }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsEditing(false);
+    const notification = document.createElement('div');
+    notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg animate-fade-in-out';
+    notification.textContent = 'Changes saved successfully!';
+    document.body.appendChild(notification);
+    setTimeout(() => {
+      notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+      setTimeout(() => notification.remove(), 300);
+    }, 3000);
+  };
+
+  const renderFields = () => {
+    const fields: FieldConfig[] = [
+      { name: 'name', label: 'Project Name', type: 'text', placeholder: 'Enter project name' },
+      { name: 'status', label: 'Status', type: 'text', placeholder: 'e.g. Concept, Operational, DEMO' },
+      { name: 'start_year', label: 'Start Year', type: 'number', placeholder: 'YYYY' },
+      { name: 'capacity_mw', label: 'Capacity (MW)', type: 'number', placeholder: 'Enter capacity' },
+      { name: 'process', label: 'Process', type: 'text', placeholder: 'Production process' },
+      { name: 'end_use', label: 'End Use', type: 'text', placeholder: 'e.g. Power, CH4 grid injection' },
+      { name: 'consumption_tpy', label: 'Consumption (t/y)', type: 'number', placeholder: 'Annual consumption' },
+      { name: 'city', label: 'City', type: 'text', placeholder: 'City location' },
+      { name: 'country', label: 'Country', type: 'text', placeholder: 'Country location' },
+    ];
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {fields.map((field) => (
+          <div key={field.name} className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {field.label}
+              {isEditing && field.type === 'number' && (
+                <span className="ml-1 text-xs text-gray-500">(numeric)</span>
+              )}
+            </label>
+            <input
+              type={field.type}
+              name={field.name}
+              value={String(formData[field.name] ?? '')}
+              onChange={handleInputChange}
+              disabled={!isEditing}
+              placeholder={field.placeholder}
+              className={`w-full px-4 py-2 rounded-lg border focus:ring-2 focus:ring-[#006CB5] focus:border-[#006CB5] transition-all duration-200 ${
+                isEditing
+                  ? 'bg-white border-gray-300 shadow-sm hover:border-gray-400'
+                  : 'bg-gray-50 border-gray-200 text-gray-600'
+              }`}
+            />
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  if (initialError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#e0f7fa] to-[#e8f5e9]">
+        <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full">
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-[#003B70] mb-2">Error Loading Data</h2>
+            <p className="text-gray-600 mb-6">{initialError}</p>
+            <div className="flex justify-center space-x-3">
+              <button
+                onClick={() => router.push('/')}
+                className="flex items-center px-6 py-2 bg-[#006CB5] text-white rounded-lg hover:bg-[#003B70] transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                Back to Map
+              </button>
+              <button
+                onClick={() => router.push('/plant-list')}
+                className="flex items-center px-6 py-2 bg-[#006CB5] text-white rounded-lg hover:bg-[#003B70] transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-18-8h18m-18 12h18" />
+                </svg>
+                Plant List
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#e0f7fa] to-[#e8f5e9] font-sans">
+      <div className="bg-white p-8 rounded-2xl shadow-xl max-w-4xl w-full relative">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-[#003B70]">
+              {feature.properties.name || 'Feature Details'}
+            </h2>
+            <p className="text-gray-500 capitalize">Hydrogen Project</p>
+          </div>
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className={`flex items-center px-4 py-2 rounded-lg transition-all duration-200 ${
+              isEditing
+                ? 'bg-green-500 hover:bg-green-600 text-white shadow-md hover:shadow-lg'
+                : 'bg-[#006CB5] hover:bg-[#003B70] text-white shadow-md hover:shadow-lg'
+            }`}
+          >
+            <svg
+              className={`w-5 h-5 mr-2 transition-transform duration-200 ${isEditing ? 'rotate-45' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              {isEditing ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              )}
+            </svg>
+            {isEditing ? 'Save' : 'Edit'}
+          </button>
+        </div>
+
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
+          <div className="flex items-center">
+            <svg className="w-5 h-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <p className="text-blue-700 text-sm">
+              {isEditing
+                ? 'You are now editing this project. Make your changes and click Save when done.'
+                : 'Viewing project details. Click Edit to make changes.'}
+            </p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          {renderFields()}
+          <div className="flex justify-between mt-8 pt-6 border-t border-gray-200 space-x-3">
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={() => router.push('/')}
+                className="flex items-center px-6 py-2 bg-[#006CB5] text-white rounded-lg hover:bg-[#003B70] transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+                Back to Map
+              </button>
+              <button
+                type="button"
+                onClick={() => router.push('/plant-list')}
+                className="flex items-center px-6 py-2 bg-[#006CB5] text-white rounded-lg hover:bg-[#003B70] transition-all duration-200 shadow-md hover:shadow-lg"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-18-8h18m-18 12h18" />
+                </svg>
+                Plant List
+              </button>
+            </div>
+            {isEditing && (
+              <div className="space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData(initialFormData);
+                    setIsEditing(false);
+                  }}
+                  className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg"
+                >
+                  Save Changes
+                </button>
+              </div>
+            )}
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default PlantForm;
