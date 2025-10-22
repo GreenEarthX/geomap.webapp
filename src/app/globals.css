@@ -14,12 +14,12 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
+/*@media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
-}
+}*/
 
 body {
   background: var(--background);
@@ -79,8 +79,83 @@ html, body {
   background-color: #e2e6ea;
 }
 
+/* Move the layer control button downward */
+.leaflet-control-layers {
+  z-index: 2000 !important; /* Ensure it stays above filter button */
+  top: 60px !important; /* Adjust this value to move it down (e.g., 80px from top) */
+  right: 8px !important; /* Optional: Adjust right spacing if needed */
+}
+
+.leaflet-control-layers-expanded {
+  z-index: 2001 !important; /* Ensure the expanded panel is above everything */
+  top: 60px !important; /* Align expanded panel with button */
+}
+
+/* Keep filter button visible and lower */
+.leaflet-top.leaflet-right.z-10 {
+  z-index: 10 !important;
+  top: 60px !important; /* Keep filter button higher up */
+  right: 65px !important;
+}
+
+/* Ensure filter bar stays above button but below layer control */
+.fixed.z-\[650\] {
+  z-index: 650 !important;
+}
 
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+
+/*legend*/
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* Tailwind slate-300 */
+  border-radius: 4px;
+}
+
+.custom-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: #94a3b8; /* Tailwind slate-400 */
+}
+
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+
+
+/*Wrapper*/
+@keyframes animMarker {
+  0% { transform: rotate(45deg) translate(5px, 5px); }
+  100% { transform: rotate(45deg) translate(-5px, -5px); }
+}
+
+@keyframes animShadow {
+  0% { transform: scale(0.5); }
+  100% { transform: scale(1); }
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');

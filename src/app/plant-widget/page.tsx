@@ -10,68 +10,75 @@ export default function PlantTypeWidgetsPage() {
     {
       title: 'Production Plants',
       image: '/plants/production-plant.png',
-      color: '#006CB5',
+      color: 'bg-blue-600',
       onClick: () => router.push('/plant-list?type=Production'),
     },
     {
       title: 'Storage Plants',
       image: '/plants/storage-plant.png',
-      color: '#009688',
+      color: 'bg-teal-600',
       onClick: () => router.push('/plant-list?type=Storage'),
     },
     {
+      title: 'CCUS Plants',
+      image: '/plants/ccus-plant.png',
+      color: 'bg-green-600',
+      onClick: () => router.push('/plant-list?type=CCUS'),
+    },
+    {
+      title: 'Ports',
+      image: '/plants/port-plant.png', // Added new image path for the port
+      color: 'bg-orange-600', // Added a new color for the port widget
+      onClick: () => router.push('/ports'), // Added navigation for ports
+    },
+    /*{
       title: 'All Plants',
       image: '/plants/all-plants.png',
-      color: '#673AB7',
+      color: 'bg-purple-600',
       onClick: () => router.push('/plant-list'),
-    },
+    },*/
   ];
 
   return (
-    <div style={{ fontFamily: 'Segoe UI, sans-serif', backgroundColor: '#f3f7fa', minHeight: '100vh', padding: '40px 20px' }}>
+    <div className="min-h-screen bg-gray-100 font-sans py-10 px-4 sm:px-6">
       {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: 40 }}>
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            margin: '0 auto',
-            position: 'relative',
-          }}
-        >
+      <div className="text-center mb-10">
+        <div className="relative w-20 h-20 mx-auto">
           <Image
             src="/gex-logo-2.png"
             alt="GEX Logo"
             fill
-            style={{ objectFit: 'contain' }}
+            className="object-contain"
             priority
           />
         </div>
-        <h1 style={{ fontSize: 32, marginTop: 20, color: '#004970' }}>Explore Hydrogen Plants</h1>
-        <p style={{ fontSize: 16, color: '#555' }}>Select a plant category to view details</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-blue-800 mt-5">
+          Explore Hydrogen & CCUS Infrastructure
+        </h1>
+        <p className="text-gray-600 text-sm sm:text-base mt-2">
+          Select a category to view details
+        </p>
       </div>
 
       {/* Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 24, maxWidth: 1000, margin: '0 auto' }}>
-        {cards.map((card, i) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+        {cards.map((card, index) => (
           <div
-            key={i}
+            key={index}
             onClick={card.onClick}
-            style={{
-              background: card.color,
-              borderRadius: 16,
-              color: 'white',
-              cursor: 'pointer',
-              overflow: 'hidden',
-              transition: 'transform 0.3s ease',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.03)')}
-            onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+            className={`${card.color} rounded-xl text-white cursor-pointer overflow-hidden transition-transform duration-300 hover:scale-103`}
           >
-            <div style={{ height: 160, position: 'relative' }}>
-              <Image src={card.image} alt={card.title} layout="fill" objectFit="cover" />
+            <div className="relative h-40">
+              <Image
+                src={card.image}
+                alt={card.title}
+                fill
+                className="object-cover"
+              />
             </div>
-            <div style={{ padding: 20, fontSize: 20, fontWeight: 600, textAlign: 'center' }}>{card.title}</div>
+            <div className="p-5 text-lg sm:text-xl font-semibold text-center">
+              {card.title}
+            </div>
           </div>
         ))}
       </div>
@@ -79,29 +86,22 @@ export default function PlantTypeWidgetsPage() {
       {/* Back to Map Button */}
       <button
         onClick={() => router.push('/')}
-        style={{
-          position: 'fixed',
-          top: '50%',
-          left: 20,
-          transform: 'translateY(-50%)',
-          zIndex: 10000,
-          background: 'rgba(0, 108, 181, 0.8)',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '50px',
-          padding: '10px 16px',
-          fontSize: 14,
-          cursor: 'pointer',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          transition: 'background 0.3s ease',
-        }}
-        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0, 108, 181, 1)')}
-        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(0, 108, 181, 0.8)')}
+        className="fixed top-1/2 left-4 transform -translate-y-1/2 bg-blue-600/80 text-white rounded-full px-4 py-2 text-sm flex items-center gap-2 hover:bg-blue-600 transition-colors duration-300 shadow-lg z-50"
       >
-        <i className="fa fa-arrow-left" /> <span>Map</span>
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+        <span>Map</span>
       </button>
     </div>
   );

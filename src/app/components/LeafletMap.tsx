@@ -1,5 +1,4 @@
 'use client';
-
 import { useEffect, useState, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -10,68 +9,373 @@ import 'leaflet-measure/dist/leaflet-measure.css';
 import 'leaflet.awesome-markers';
 import 'leaflet.markercluster';
 import 'leaflet-measure';
+import { MapPinPlusIcon } from 'lucide-react';
+import {
+  GeoJSONFeatureCollection,
+  ProductionItem,
+  StorageItem,
+  CCUSItem,
+  PortItem,
+  PipelineItem,
+} from '@/lib/types2';
+import { addProductionMarkers } from '@/lib/map/addProductionMarkers';
+import { addStorageMarkers } from '@/lib/map/addStorageMarkers';
+import { addCCUSMarkers } from '@/lib/map/addCCUSMarkers';
+import { addPortMarkers } from '@/lib/map/addPortMarkers';
+import { addPipelineMarkers } from '@/lib/map/addPipelineMarkers';
 
-export interface Feature {
-  type: 'Feature';
-  geometry: {
-    type: 'Point';
-    coordinates: [number, number];
-  };
-  properties: {
-    id?: number;
-    internal_id?: string;
-    name?: string;
-    status?: string;
-    type?: string;
-    capacity_mw?: number;
-    end_use?: string;
-    consumption_tpy?: number;
-    start_year?: number;
-    city?: string;
-    country?: string;
-    process?: string;
-    secondary_product?: string;
-  };
+interface StatusesResponse {
+  statuses: { sector: string; current_status: string }[];
 }
 
-const getUniqueValues = (features: Feature[], key: keyof Feature['properties']) => {
-  return Array.from(
-    new Set(
-      features
-        .map(f => f.properties[key])
-        .filter((v): v is string | number => v !== null && v !== undefined)
-    )
-  ).sort();
-};
+interface LeafletMapProps {
+  combinedData: GeoJSONFeatureCollection['features'];
+  productionData: GeoJSONFeatureCollection;
+  storageData: GeoJSONFeatureCollection;
+  ccusData: GeoJSONFeatureCollection;
+  portsData: GeoJSONFeatureCollection;
+  pipelineData: GeoJSONFeatureCollection;
+  statusData: StatusesResponse;
+}
 
-const LeafletMap = () => {
+const LeafletMap = ({
+  combinedData,
+  productionData,
+  storageData,
+  ccusData,
+  portsData,
+  pipelineData,
+  statusData,
+}: LeafletMapProps) => {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [endUse, setEndUse] = useState('');
   const [plantType, setPlantType] = useState('');
   const [selectedPlantName, setSelectedPlantName] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
-  const [hydrogenData, setHydrogenData] = useState<Feature[]>([]);
-  const [statusTypes, setStatusTypes] = useState<{ sector: string; current_status: string }[]>([]);
-  const [legendVisible, setLegendVisible] = useState(true); // Visible by default for web
+  const [allData, setAllData] = useState<GeoJSONFeatureCollection['features']>(combinedData);
+  const [legendVisible, setLegendVisible] = useState(true);
   const [legendPinned, setLegendPinned] = useState(false);
-  const [filtersVisible, setFiltersVisible] = useState(true); // Toggle for mobile filters
+  const [filtersVisible, setFiltersVisible] = useState(false);
+  const [legendCollapsed, setLegendCollapsed] = useState(false);
+  const [showFilterHelp, setShowFilterHelp] = useState(false);
 
   const mapRef = useRef<L.Map | null>(null);
-  const filterRef = useRef<HTMLDivElement>(null);
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+  const filterBarRef = useRef<HTMLDivElement>(null);
+  const productionClusterRef = useRef<L.MarkerClusterGroup | null>(null);
+  const storageClusterRef = useRef<L.MarkerClusterGroup | null>(null);
+  const ccusClusterRef = useRef<L.MarkerClusterGroup | null>(null);
+  const portsClusterRef = useRef<L.MarkerClusterGroup | null>(null);
+  const pipelineLayerRef = useRef<L.FeatureGroup | null>(null);
 
   const statusColorMap: Record<string, string> = {
-    cancelled: 'red',
     concept: 'green',
-    decommisioned: 'darkgrey',
+    decommissioned: 'darkgrey',
     demo: 'purple',
     'feasibility study': 'cadetblue',
     feed: 'orange',
     fid: 'darkred',
-    'fid/construction': 'darkpurple',
+    FID: 'darkpurple',
     operational: 'darkgreen',
+    planned: 'lightblue',
+    canceled: 'red',
     'other/unknown': 'grey',
     'under construction': 'blue',
+  };
+
+  const statusOrder = [
+    'Concept',
+    'Planned',
+    'Under Construction',
+    'Feed',
+    'FID',
+    'Operational',
+    'Demo',
+    'Decommissioned',
+    'Canceled',
+    'Other/Unknown',
+    'Unknown',
+    'Feasibility Study',
+  ];
+
+  const generateCustomLegendOrder = (): string[] => {
+    const customLegendOrder: string[] = [];
+    const sectors = ['CCUS', 'Port', 'Production', 'Storage'];
+    const statusOrderLower = statusOrder.map(s => s.toLowerCase());
+    const availableStatusesBySector = statusData.statuses.reduce((acc, { sector, current_status }) => {
+      if (current_status && sector) {
+        const normalizedSector = sector.charAt(0).toUpperCase() + sector.slice(1).toLowerCase();
+        if (!acc[normalizedSector]) {
+          acc[normalizedSector] = new Set<string>();
+        }
+        const normalizedStatus = current_status.charAt(0).toUpperCase() + current_status.slice(1).toLowerCase();
+        acc[normalizedSector].add(normalizedStatus);
+      }
+      return acc;
+    }, {} as Record<string, Set<string>>);
+
+    if (!availableStatusesBySector['CCUS'] && ccusData.features.length > 0) {
+      availableStatusesBySector['CCUS'] = new Set<string>();
+      ccusData.features.forEach(feature => {
+        const status = (feature.properties as CCUSItem).project_status;
+        if (status) {
+          const normalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+          if (statusOrderLower.includes(normalizedStatus.toLowerCase())) {
+            availableStatusesBySector['CCUS'].add(normalizedStatus);
+          }
+        }
+      });
+    }
+
+    sectors.forEach(sector => {
+      statusOrder.forEach(status => {
+        const statusLower = status.toLowerCase();
+        if (availableStatusesBySector[sector]?.has(status) ||
+            availableStatusesBySector[sector]?.has(status.charAt(0).toUpperCase() + status.slice(1).toLowerCase())) {
+          customLegendOrder.push(`${sector} - ${status}`);
+        }
+      });
+    });
+    customLegendOrder.push('Hydrogen Pipeline');
+    console.log('[LeafletMap] customLegendOrder:', customLegendOrder);
+    return customLegendOrder;
+  };
+
+  const customLegendOrder = generateCustomLegendOrder();
+
+  const getCustomStatusOrder = (): string[] => {
+    const allStatuses = new Set<string>();
+    statusData.statuses.forEach(({ current_status }) => {
+      if (current_status) {
+        const normalizedStatus = current_status.charAt(0).toUpperCase() + current_status.slice(1).toLowerCase();
+        allStatuses.add(normalizedStatus);
+      }
+    });
+    if (ccusData.features.length > 0) {
+      ccusData.features.forEach(feature => {
+        const status = (feature.properties as CCUSItem).project_status;
+        if (status) {
+          const normalizedStatus = status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
+          allStatuses.add(normalizedStatus);
+        }
+      });
+    }
+    const result = statusOrder.filter(status =>
+      Array.from(allStatuses).some(s => s.toLowerCase() === status.toLowerCase())
+    );
+    console.log('[LeafletMap] customStatusOrder:', result);
+    return result;
+  };
+
+  const customStatusOrder = getCustomStatusOrder();
+
+  const getSectorIcon = (sector: string): string => {
+    switch (sector.toLowerCase()) {
+      case 'production': return 'industry';
+      case 'storage': return 'database';
+      case 'ccus': return 'cloud';
+      case 'port': return 'ship';
+      default: return 'question';
+    }
+  };
+
+  useEffect(() => {
+    setAllData(combinedData);
+  }, [combinedData]);
+
+  useEffect(() => {
+    console.log('[LeafletMap] statusData:', statusData);
+    console.log('[LeafletMap] ccusData:', ccusData);
+    console.log('[LeafletMap] customLegendOrder:', customLegendOrder);
+  }, [statusData, ccusData, customLegendOrder]);
+
+  useEffect(() => {
+    if (document.getElementById('map')?.children.length || mapRef.current) return;
+
+    mapRef.current = L.map('map').setView([51.07289, 10.67139], 3);
+
+    const baseLayers = {
+      Light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }),
+      Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors © CARTO' }),
+      Satellite: L.layerGroup([
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Tiles © Esri & contributors' }),
+        L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { attribution: 'Labels © Esri' }),
+      ]),
+      Terrain: L.tileLayer('https://{s}.google.com/vt/lyrs=p&hl=en&x={x}&y={y}&z={z}', { subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '© Google Maps' }),
+    };
+
+    baseLayers['Light'].addTo(mapRef.current!);
+
+    productionClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
+    storageClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
+    ccusClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
+    portsClusterRef.current = L.markerClusterGroup().addTo(mapRef.current!);
+
+    pipelineLayerRef.current = L.geoJSON(pipelineData, {
+      style: () => ({
+        color: '#2877B2',
+        weight: 2,
+      }),
+    }).addTo(mapRef.current!);
+
+    L.control.layers(baseLayers, {
+      'Production Plants': productionClusterRef.current,
+      'Storage Plants': storageClusterRef.current,
+      'CCUS Projects': ccusClusterRef.current,
+      'Ports': portsClusterRef.current,
+      'Pipelines': pipelineLayerRef.current,
+    }, { collapsed: true, position: 'topright' }).addTo(mapRef.current!);
+
+    const measureControl = new (L.Control as any).Measure({
+      position: 'topleft',
+      primaryLengthUnit: 'kilometers',
+      secondaryLengthUnit: 'miles',
+      primaryAreaUnit: 'sqmeters',
+      secondaryAreaUnit: 'acres',
+    });
+    mapRef.current!.addControl(measureControl);
+
+    (L.Control as any).Measure.include({
+      _setCaptureMarkerIcon: function () {
+        this._captureMarker.options.autoPanOnFocus = false;
+        this._captureMarker.setIcon(L.divIcon({ iconSize: this._map.getSize().multiplyBy(2) }));
+      },
+    });
+
+    return () => {
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapRef.current || !portsClusterRef.current) return;
+    portsClusterRef.current.clearLayers();
+    addPortMarkers(portsData, mapRef.current, portsClusterRef.current, statusColorMap, setSelectedPlantName);
+  }, [portsData]);
+
+  useEffect(() => {
+    if (!mapRef.current || !productionClusterRef.current) return;
+    productionClusterRef.current.clearLayers();
+    addProductionMarkers(productionData, mapRef.current, productionClusterRef.current, statusColorMap, setSelectedPlantName);
+  }, [productionData]);
+
+  useEffect(() => {
+    if (!mapRef.current || !ccusClusterRef.current) return;
+    ccusClusterRef.current.clearLayers();
+    addCCUSMarkers(ccusData, mapRef.current, ccusClusterRef.current, statusColorMap, setSelectedPlantName);
+  }, [ccusData]);
+
+  useEffect(() => {
+    if (!mapRef.current || !storageClusterRef.current) return;
+    storageClusterRef.current.clearLayers();
+    addStorageMarkers(storageData, mapRef.current, storageClusterRef.current, statusColorMap, setSelectedPlantName);
+  }, [storageData]);
+
+  useEffect(() => {
+    if (!mapRef.current || !pipelineLayerRef.current) return;
+    pipelineLayerRef.current.clearLayers();
+    addPipelineMarkers(pipelineData, mapRef.current, pipelineLayerRef.current, statusColorMap, setSelectedPlantName);
+  }, [pipelineData]);
+
+  useEffect(() => {
+    if (!mapRef.current || !selectedPlantName) return;
+    const feature = allData.find((f) => {
+      const props = f.properties;
+      const lowerSelectedPlantName = selectedPlantName.toLowerCase();
+      if ('name' in props && props.name?.toLowerCase() === lowerSelectedPlantName) return true;
+      if ('project_name' in props && props.project_name?.toLowerCase() === lowerSelectedPlantName) return true;
+      if ('pipeline_name' in props && props.pipeline_name?.toLowerCase() === lowerSelectedPlantName) return true;
+      return false;
+    });
+    if (feature) {
+      if (feature.geometry.type === 'Point') {
+        const [lng, lat] = feature.geometry.coordinates as [number, number];
+        mapRef.current.setView([lat, lng], 12);
+      } else if (feature.geometry.type === 'LineString' && feature.geometry.coordinates?.length > 0) {
+        const [lng, lat] = feature.geometry.coordinates[0] as [number, number];
+        mapRef.current.setView([lat, lng], 10);
+      }
+    }
+  }, [selectedPlantName, allData]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (
+        filtersVisible &&
+        !filterButtonRef.current?.contains(e.target as Node) &&
+        !filterBarRef.current?.contains(e.target as Node)
+      ) {
+        setFiltersVisible(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [filtersVisible]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.leaflet-control') && !target.closest('.fa-info-circle')) {
+        setShowFilterHelp(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const getUniqueValues = (
+    features: GeoJSONFeatureCollection['features'],
+    key: keyof ProductionItem | keyof StorageItem | keyof CCUSItem | keyof PortItem | keyof PipelineItem
+  ): string[] => {
+    const valueMappings: Record<string, string> = {
+      decommsioned: 'Decommissioned',
+      decommssioned: 'Decommissioned',
+      decomisioned: 'Decommissioned',
+      decomissioned: 'Decommissioned',
+      decommissioned: 'Decommissioned',
+    };
+    const values = features
+      .map((f) => f.properties[key as keyof typeof f.properties])
+      .filter((value) => value != null)
+      .flat(Infinity)
+      .map((item) => {
+        const strValue = String(item)
+          .replace(/[\[\]"]/g, '')
+          .trim();
+        const lowerValue = strValue.toLowerCase();
+        return valueMappings[lowerValue] || strValue;
+      })
+      .filter((v) => v !== '');
+    const valueMap = new Map<string, string>();
+    values.forEach((value) => {
+      const key = value.toLowerCase();
+      if (!valueMap.has(key)) {
+        valueMap.set(key, value);
+      }
+    });
+    return Array.from(valueMap.values());
+  };
+
+  const getUniqueNamesForDropdown = (features: GeoJSONFeatureCollection['features']): string[] => {
+    const names: string[] = [];
+    features.forEach((feature) => {
+      if (feature.properties.type?.toLowerCase() === 'pipeline') {
+        if ('pipeline_name' in feature.properties && feature.properties.pipeline_name) {
+          names.push(feature.properties.pipeline_name);
+        }
+        return;
+      }
+      const props = feature.properties;
+      if ('name' in props && props.name) {
+        names.push(props.name);
+      }
+      if ('project_name' in props && props.project_name) {
+        names.push(props.project_name);
+      }
+    });
+    return Array.from(new Set(names.map((name) => name.toLowerCase()))).sort();
   };
 
   const handleFindMe = () => {
@@ -83,13 +387,11 @@ const LeafletMap = () => {
             duration: 0.5,
             easeLinearity: 0.25,
           });
-
-          mapRef.current?.eachLayer(layer => {
+          mapRef.current?.eachLayer((layer) => {
             if (layer instanceof L.Marker && layer.getPopup()?.getContent() === 'Your Location') {
               mapRef.current?.removeLayer(layer);
             }
           });
-
           L.marker([latitude, longitude], {
             icon: L.AwesomeMarkers.icon({
               markerColor: 'blue',
@@ -112,419 +414,336 @@ const LeafletMap = () => {
     }
   };
 
-  const filtered = hydrogenData.filter(f => {
-    return (
-      (search === '' ||
-        Object.values(f.properties).some(
-          v => typeof v === 'string' && v.toLowerCase().includes(search.toLowerCase())
-        )) &&
-      (status === '' || f.properties.status === status) &&
-      (endUse === '' || f.properties.end_use?.toLowerCase().includes(endUse.toLowerCase())) &&
-      (plantType === '' || f.properties.type === plantType) &&
-      (selectedCountry === '' || f.properties.country === selectedCountry)
-    );
+  const filtered = allData.filter((f) => {
+    const props = f.properties;
+    let name = '';
+    let statusValue = '';
+    let endUseValue: string | string[] | null = null;
+    let countryValue = '';
+    let typeValue = props.type || '';
+    switch (props.type?.toLowerCase()) {
+      case 'production':
+        const prodProps = props as ProductionItem;
+        name = prodProps.name || prodProps.project_name || '';
+        statusValue = prodProps.status || '';
+        endUseValue = prodProps.end_use || null;
+        countryValue = prodProps.country || '';
+        break;
+      case 'storage':
+        const storeProps = props as StorageItem;
+        name = storeProps.project_name || '';
+        statusValue = storeProps.status || '';
+        endUseValue = storeProps.end_use || null;
+        countryValue = storeProps.country || '';
+        break;
+      case 'ccus':
+        const ccusProps = props as CCUSItem;
+        name = ccusProps.name || ccusProps.project_name || '';
+        statusValue = ccusProps.project_status || '';
+        endUseValue = ccusProps.end_use_sector || '';
+        countryValue = ccusProps.country || '';
+        break;
+      case 'port':
+        const portProps = props as PortItem;
+        name = portProps.name || portProps.project_name || '';
+        statusValue = portProps.status || '';
+        countryValue = portProps.country || '';
+        break;
+      case 'pipeline':
+        const pipelineProps = props as PipelineItem;
+        name = pipelineProps.pipeline_name || '';
+        statusValue = pipelineProps.status || '';
+        break;
+    }
+    const searchMatch =
+      search === '' ||
+      Object.values(props).some((v) => {
+        if (typeof v === 'string') return v.toLowerCase().includes(search.toLowerCase());
+        if (Array.isArray(v)) return v.some((item: any) => typeof item === 'string' && item.toLowerCase().includes(search.toLowerCase()));
+        if (typeof v === 'object' && v !== null) return JSON.stringify(v).toLowerCase().includes(search.toLowerCase());
+        return false;
+      });
+    const statusMatch =
+      status === '' ||
+      (statusValue &&
+        (Array.isArray(statusValue)
+          ? statusValue.some((s) => typeof s === 'string' && s.toLowerCase().includes(status.toLowerCase()))
+          : typeof statusValue === 'string' && statusValue.toLowerCase().includes(status.toLowerCase())));
+    const endUseMatch =
+      endUse === '' ||
+      (endUseValue &&
+        (Array.isArray(endUseValue)
+          ? endUseValue.some((e) => typeof e === 'string' && e.toLowerCase().includes(endUse.toLowerCase()))
+          : typeof endUseValue === 'string' && endUseValue.toLowerCase().includes(endUse.toLowerCase())));
+    const plantTypeMatch = plantType === '' || (typeValue && typeValue.toLowerCase() === plantType.toLowerCase());
+    const countryMatch = selectedCountry === '' || (countryValue && countryValue.toLowerCase() === selectedCountry.toLowerCase());
+    return searchMatch && statusMatch && endUseMatch && plantTypeMatch && countryMatch;
   });
 
-  const plantNames = getUniqueValues(filtered, 'name');
-  const countries = getUniqueValues(hydrogenData, 'country');
-  const statuses = getUniqueValues(hydrogenData, 'status');
-  const endUses = getUniqueValues(hydrogenData, 'end_use');
-  const plantTypes = getUniqueValues(hydrogenData, 'type');
+  const uniquePlantNames = getUniqueNamesForDropdown(filtered);
+  const countries = getUniqueValues(allData, 'country');
+  const statuses = customStatusOrder;
+  const endUses = Array.from(new Set([...getUniqueValues(allData, 'end_use'), ...getUniqueValues(allData, 'end_use_sector')])).sort();
+  const plantTypeValues = getUniqueValues(allData, 'type');
 
-  useEffect(() => {
-    if (!mapRef.current) return;
+  const handlePlantNameChange = (e: React.ChangeEvent<HTMLSelectElement>) => setSelectedPlantName(e.target.value);
+  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => setSelectedCountry(e.target.value);
+  const toggleLegendPin = () => setLegendPinned((prev) => !prev);
+  const toggleFilters = () => setFiltersVisible((prev) => !prev);
 
-    const feature = hydrogenData.find(
-      f =>
-        (selectedPlantName && f.properties.name === selectedPlantName) ||
-        (selectedCountry && f.properties.country === selectedCountry)
-    );
-
-    if (feature && feature.geometry.coordinates?.[0] && feature.geometry.coordinates?.[1]) {
-      const [lng, lat] = feature.geometry.coordinates;
-      mapRef.current.setView([lat, lng], 12);
-    }
-  }, [selectedPlantName, selectedCountry, hydrogenData]);
-
-  useEffect(() => {
-    if (!mapRef.current || !search.trim()) return;
-
-    const match = filtered.find(f =>
-      Object.values(f.properties).some(
-        v => typeof v === 'string' && v.toLowerCase().includes(search.toLowerCase())
-      )
-    );
-
-    if (match && match.geometry.coordinates?.[0] && match.geometry.coordinates?.[1]) {
-      const [lng, lat] = match.geometry.coordinates;
-      mapRef.current.setView([lat, lng], 12);
-    }
-  }, [search, filtered]);
-
-  useEffect(() => {
-    if (document.getElementById('map')?.children.length) return;
-
-    mapRef.current = L.map('map').setView([51.07289, 10.67139], 5);
-
-    const baseLayers = {
-      Light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors © CARTO',
-      }),
-      Dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '© OpenStreetMap contributors © CARTO',
-      }),
-      Satellite: L.layerGroup([
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-          attribution: 'Tiles © Esri & contributors',
-        }),
-        L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-          attribution: 'Labels © Esri',
-        }),
-      ]),
-      Terrain: L.tileLayer('https://{s}.google.com/vt/lyrs=p&hl=en&x={x}&y={y}&z={z}', {
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
-        attribution: '© Google Maps',
-      }),
-    };
-
-    baseLayers['Light'].addTo(mapRef.current!);
-
-    const productionCluster = L.markerClusterGroup().addTo(mapRef.current!);
-    const storageCluster = L.markerClusterGroup().addTo(mapRef.current!);
-
-    const getHydrogenIcon = (status: string | undefined | null, type: string | undefined | null) => {
-      const statusKey = status ? status.toLowerCase() : 'other/unknown';
-      const color = statusColorMap[statusKey] || statusColorMap['other/unknown'];
-      const iconType = type?.toLowerCase() === 'production' ? 'bolt' : 'cube';
-      return L.AwesomeMarkers.icon({
-        markerColor: color,
-        iconColor: 'white',
-        icon: iconType,
-        prefix: 'fa',
-      });
-    };
-
-    const fetchAndAddMarkerFromJson = async (data: any) => {
-      if (!data || !Array.isArray(data.features)) {
-        console.warn('Missing or invalid data for hydrogen');
-        return;
-      }
-
-      data.features.forEach((feature: Feature) => {
-        const coords = feature.geometry?.coordinates;
-        const props = feature.properties;
-
-        // Skip if coordinates are null, undefined, empty, or invalid (0, NaN)
-        if (
-          !coords ||
-          !Array.isArray(coords) ||
-          coords.length !== 2 ||
-          typeof coords[0] !== 'number' ||
-          typeof coords[1] !== 'number' ||
-          coords[0] === 0 ||
-          coords[1] === 0 ||
-          isNaN(coords[0]) ||
-          isNaN(coords[1])
-        ) {
-          console.warn('Skipping feature with invalid or missing coordinates:', {
-            feature,
-            reason:
-              !coords
-                ? 'Coordinates are null or undefined'
-                : !Array.isArray(coords)
-                ? 'Coordinates is not an array'
-                : coords.length !== 2
-                ? 'Coordinates array length is not 2'
-                : typeof coords[0] !== 'number' || isNaN(coords[0])
-                ? 'Longitude is not a valid number'
-                : typeof coords[1] !== 'number' || isNaN(coords[1])
-                ? 'Latitude is not a valid number'
-                : 'Coordinates are zero (0,0)',
-          });
-          return;
-        }
-
-        const icon = getHydrogenIcon(props.status, props.type);
-
-        const popupHtml = `
-          <div class="max-w-xs p-2 text-sm">
-            <b>Project Name:</b> ${props.name || 'N/A'}<br>
-            <b>Type:</b> ${props.type || 'N/A'}<br>
-            <b>Status:</b> ${props.status || 'N/A'}<br>
-            <b>Start Year:</b> ${props.start_year || 'N/A'}<br>
-            <b>Capacity:</b> ${props.capacity_mw || 'N/A'} MW<br>
-            <b>Process:</b> ${props.process || 'N/A'}<br>
-            <b>End-use:</b> ${props.end_use || 'N/A'}<br>
-            <b>Consumption:</b> ${props.consumption_tpy || 'N/A'} t/y<br>
-            <b>City:</b> ${props.city || 'N/A'}<br>
-            <b>Country:</b> ${props.country || 'N/A'}<br>
-            ${
-              props.internal_id
-                ? `<button onclick="window.location.href='/plant-form/hydrogen/${props.internal_id}'" class="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">Verify</button>`
-                : '<span class="text-red-500 text-xs">No ID available</span>'
-            }
+  const renderLegendItems = () => {
+    return customLegendOrder.map((item, index) => {
+      if (item === 'Hydrogen Pipeline') {
+        return (
+          <div key={item} className="flex items-center mt-1">
+            <div style={{ width: 18, height: 4, backgroundColor: 'blue', marginRight: 5 }}></div>
+            <span>{item}</span>
           </div>
-        `;
-
-        const marker = L.marker([coords[1], coords[0]], { icon })
-          .bindTooltip(props.name || 'Unnamed', { sticky: true })
-          .bindPopup(popupHtml)
-          .on('click', () => {
-            const params = new URLSearchParams();
-            if (props.name) {
-              params.set('plantName', props.name);
-            }
-            window.history.replaceState({}, '', `${window.location.pathname}?${params}`);
-            if (mapRef.current) {
-              mapRef.current.setView([coords[1], coords[0]], 12);
-            }
-          });
-
-        if (props.type?.toLowerCase() === 'production') {
-          productionCluster.addLayer(marker);
-        } else if (props.type?.toLowerCase() === 'storage') {
-          storageCluster.addLayer(marker);
-        } else {
-          productionCluster.addLayer(marker);
-        }
-      });
-    };
-
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/data');
-        const datasets = await response.json();
-        setHydrogenData(datasets.hydrogen.features || []);
-        await fetchAndAddMarkerFromJson(datasets.hydrogen);
-
-        const statusResponse = await fetch('/api/statuses');
-        const statusData = await statusResponse.json();
-        if (statusData.statuses) {
-          setStatusTypes(statusData.statuses);
-        }
-      } catch (error) {
-        console.error('Error loading datasets:', error);
-      }
-    };
-
-    fetchData();
-
-    L.control
-      .layers(
-        baseLayers,
-        {
-          'Production Plants': productionCluster,
-          'Storage Plants': storageCluster,
-        },
-        { collapsed: true, position: 'topright' }
-      )
-      .addTo(mapRef.current!);
-
-    const measureControl = new L.Control.Measure({
-      position: 'topleft',
-      primaryLengthUnit: 'kilometers',
-      secondaryLengthUnit: 'miles',
-      primaryAreaUnit: 'sqmeters',
-      secondaryAreaUnit: 'acres',
-    });
-    mapRef.current!.addControl(measureControl);
-
-    L.Control.Measure.include({
-      _setCaptureMarkerIcon: function () {
-        this._captureMarker.options.autoPanOnFocus = false;
-        this._captureMarker.setIcon(
-          L.divIcon({ iconSize: this._map.getSize().multiplyBy(2) })
         );
-      },
-    });
-
-    return () => {
-      mapRef.current?.remove();
-      mapRef.current = null;
-    };
-  }, []);
-
-  const handlePlantNameChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedPlantName(e.target.value);
-    setSelectedCountry('');
-    setStatus('');
-    setEndUse('');
-    setPlantType('');
-  };
-
-  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedCountry(e.target.value);
-    setSelectedPlantName('');
-    setStatus('');
-    setEndUse('');
-    setPlantType('');
-  };
-
-  useEffect(() => {
-    if (selectedPlantName && !plantNames.includes(selectedPlantName)) {
-      setSelectedPlantName('');
-    }
-  }, [plantNames, selectedPlantName]);
-
-  const toggleLegendPin = () => {
-    setLegendPinned(prev => !prev);
-    setLegendVisible(true); // Show legend when pinning
-  };
-
-  const toggleFilters = () => {
-    setFiltersVisible(prev => !prev);
-  };
-
-  // Hide filters on mobile when clicking/tapping outside
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
-      if (filtersVisible && filterRef.current && !filterRef.current.contains(e.target as Node)) {
-        setFiltersVisible(false);
+      } else {
+        const [sector, status] = item.split(' - ');
+        const icon = getSectorIcon(sector);
+        const statusKey = status.toLowerCase().replace(/\s+/g, ' ');
+        return (
+          <div key={`${sector}-${status}-${index}`} className="flex items-center mt-1">
+            <i
+              className={`fa fa-${icon} fa-fw`}
+              style={{ color: statusColorMap[statusKey] || statusColorMap['other/unknown'], marginRight: 5 }}
+            ></i>
+            <span>{item}</span>
+          </div>
+        );
       }
-    };
-
-    document.addEventListener('click', handleOutsideClick);
-    document.addEventListener('touchstart', handleOutsideClick);
-    return () => {
-      document.removeEventListener('click', handleOutsideClick);
-      document.removeEventListener('touchstart', handleOutsideClick);
-    };
-  }, [filtersVisible]);
+    });
+  };
 
   return (
-    <div className="relative w-full h-screen">
-      <div id="map" className="w-full h-full z-0"></div>
-
-      {/* Filter Toggle Button (Mobile Only) */}
-      <button
-        onClick={toggleFilters}
-        className="sm:hidden fixed top-4 right-16 z-[600] bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg shadow-md hover:bg-blue-700"
-      >
-        <i className={`fas fa-${filtersVisible ? 'times' : 'filter'}`} />
-      </button>
-
-      {/* Filter Controls */}
-      <div
-        ref={filterRef}
-        className={`fixed top-0 left-1/2 -translate-x-1/2 w-10/12 max-w-3xl z-[500] flex flex-col sm:flex-row gap-2 p-2 bg-[rgba(255,255,255,0.7)] text-black rounded-b-lg shadow-md transition-all duration-300 ease-in-out ${
-          filtersVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0 sm:translate-y-0 sm:opacity-100'
-        }`}
-      >
-        <input
-          type="text"
-          placeholder="Search..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="flex-1 p-1.5 text-sm border border-gray-300 rounded bg-[rgba(255,255,255,0.7)] text-black focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <select
-          value={selectedPlantName ?? ''}
-          onChange={handlePlantNameChange}
-          className="p-1.5 text-sm border border-gray-300 rounded bg-[rgba(255,255,255,0.7)] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-32"
-        >
-          <option value="">Plant Name</option>
-          {plantNames.map(name => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={selectedCountry ?? ''}
-          onChange={handleCountryChange}
-          className="p-1.5 text-sm border border-gray-300 rounded bg-[rgba(255,255,255,0.7)] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-32"
-        >
-          <option value="">Country</option>
-          {countries.map(country => (
-            <option key={country} value={country}>
-              {country}
-            </option>
-          ))}
-        </select>
-        <select
-          value={status ?? ''}
-          onChange={e => setStatus(e.target.value)}
-          className="p-1.5 text-sm border border-gray-300 rounded bg-[rgba(255,255,255,0.7)] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-24"
-        >
-          <option value="">Status</option>
-          {statuses.map(statusOption => (
-            <option key={statusOption} value={statusOption}>
-              {statusOption}
-            </option>
-          ))}
-        </select>
-        <select
-          value={endUse ?? ''}
-          onChange={e => setEndUse(e.target.value)}
-          className="p-1.5 text-sm border border-gray-300 rounded bg-[rgba(255,255,255,0.7)] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-24"
-        >
-          <option value="">End Use</option>
-          {endUses.map(endUseOption => (
-            <option key={endUseOption} value={endUseOption}>
-              {endUseOption}
-            </option>
-          ))}
-        </select>
-        <select
-          value={plantType ?? ''}
-          onChange={e => setPlantType(e.target.value)}
-          className="p-1.5 text-sm border border-gray-300 rounded bg-[rgba(255,255,255,0.7)] text-black focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-24"
-        >
-          <option value="">Plant Type</option>
-          {plantTypes.map(typeOption => (
-            <option key={typeOption} value={typeOption}>
-              {typeOption}
-            </option>
-          ))}
-        </select>
+    <div className="w-full h-[calc(100vh-68px)] relative">
+      <div id="map" className="w-full h-full"></div>
+      <div className="leaflet-top leaflet-right z-[900] flex flex-row items-start gap-2" style={{ position: 'absolute', top: 5, right: 10, height: 45 }}>
+        <div className="leaflet-control leaflet-bar bg-white shadow border border-gray-200 flex items-center justify-center" style={{ width: 45, height: 45, cursor: 'pointer' }}>
+          <button
+            onClick={toggleFilters}
+            ref={filterButtonRef}
+            className="w-full h-full flex items-center justify-center text-base text-black hover:bg-gray-100 focus:outline-none"
+            title="Show Filters"
+            aria-label="Show Filters"
+            style={{ background: 'none', border: 'none', padding: 0 }}
+          >
+            <i className={`fas fa-filter${filtersVisible ? ' text-blue-700' : ''}`} />
+          </button>
+        </div>
       </div>
-
-      {/* Legend */}
+      {/*<div className="leaflet-top leaflet-right" style={{ position: 'absolute', top: 60, right: 10 }}>
+        <div className="leaflet-control leaflet-bar">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              window.location.href = 'https://form.typeform.com/to/NVsVmo67';
+            }}
+            className="w-full h-full flex items-center justify-center text-base text-black rounded-lg shadow border border-gray-200 hover:bg-gray-100 focus:outline-none"
+            title="Report Missing Project"
+            aria-label="Report Missing Project"
+            style={{
+              width: '45px',
+              height: '45px',
+              background: 'white',
+              border: 'none',
+            }}
+          >
+            <MapPinPlusIcon className="h-5 w-5" />
+          </button>
+        </div>
+      </div>*/}
+      {filtersVisible && (
+        <div
+          ref={filterBarRef}
+          className={`
+            fixed z-[650] bg-[rgba(255,255,255,0.97)] backdrop-blur text-black rounded-lg shadow border border-gray-200
+            transition-all duration-300 overflow-y-auto
+            md:flex md:flex-row md:items-center md:gap-2 md:px-2 md:py-2
+          `}
+          style={{
+            top: '66px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '100%',
+            maxWidth: '64rem',
+            minHeight: '60px',
+          }}
+        >
+          <div className="flex flex-col gap-3 p-4 w-full md:hidden z-[9999]">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-gray-700">Filters</span>
+              <button
+                onClick={() => setFiltersVisible(false)}
+                className="text-gray-500 hover:text-red-600"
+                title="Close Filters"
+              >
+                <i className="fas fa-times text-lg"></i>
+              </button>
+            </div>
+            <input
+              type="text"
+              placeholder="Search all fields..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <select value={selectedPlantName} onChange={handlePlantNameChange} className="p-2 text-sm border border-gray-300 rounded">
+              <option value="">Project List</option>
+              {uniquePlantNames.map((name) => (
+                <option key={name} value={name}>
+                  {name.replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <select value={selectedCountry} onChange={handleCountryChange} className="p-2 text-sm border border-gray-300 rounded">
+              <option value="">Country</option>
+              {countries.map((country) => (
+                <option key={country} value={country}>
+                  {country.replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-2 text-sm border border-gray-300 rounded">
+              <option value="">Status</option>
+              {statuses.map((statusOption) => (
+                <option key={statusOption} value={statusOption}>
+                  {statusOption}
+                </option>
+              ))}
+            </select>
+            <select value={endUse} onChange={(e) => setEndUse(e.target.value)} className="p-2 text-sm border border-gray-300 rounded">
+              <option value="">End Use</option>
+              {endUses.map((endUseOption) => (
+                <option key={endUseOption} value={endUseOption}>
+                  {endUseOption}
+                </option>
+              ))}
+            </select>
+            <select value={plantType} onChange={(e) => setPlantType(e.target.value)} className="p-2 text-sm border border-gray-300 rounded">
+              <option value="">Sector</option>
+              {plantTypeValues.map((typeOption) => (
+                <option key={typeOption} value={typeOption}>
+                  {typeOption.replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="hidden md:flex md:flex-row md:gap-2 md:w-full md:items-center">
+            <input
+              type="text"
+              placeholder="Search all fields..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="p-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[140px] max-w-[180px]"
+            />
+            <select value={selectedPlantName} onChange={handlePlantNameChange} className="p-1.5 text-sm border border-gray-300 rounded min-w-[160px] max-w-[200px]">
+              <option value="">Project List</option>
+              {uniquePlantNames.map((name) => (
+                <option key={name} value={name}>
+                  {name.replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <select value={selectedCountry} onChange={handleCountryChange} className="p-1.5 text-sm border border-gray-300 rounded min-w-[120px] max-w-[160px]">
+              <option value="">Country</option>
+              {countries.map((country) => (
+                <option key={country} value={country}>
+                  {country.replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded min-w-[110px] max-w-[140px]">
+              <option value="">Status</option>
+              {statuses.map((statusOption) => (
+                <option key={statusOption} value={statusOption}>
+                  {statusOption}
+                </option>
+              ))}
+            </select>
+            <select value={endUse} onChange={(e) => setEndUse(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded min-w-[110px] max-w-[140px]">
+              <option value="">End Use</option>
+              {endUses.map((endUseOption) => (
+                <option key={endUseOption} value={endUseOption}>
+                  {endUseOption}
+                </option>
+              ))}
+            </select>
+            <select value={plantType} onChange={(e) => setPlantType(e.target.value)} className="p-1.5 text-sm border border-gray-300 rounded min-w-[110px] max-w-[140px]">
+              <option value="">Sector</option>
+              {plantTypeValues.map((typeOption) => (
+                <option key={typeOption} value={typeOption}>
+                  {typeOption.replace(/\b\w/g, (l) => l.toUpperCase())}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={() => setShowFilterHelp((prev) => !prev)}
+              className="ml-auto text-gray-500 hover:text-blue-600"
+              title="Filter Help"
+            >
+              <i className="fas fa-info-circle"></i>
+            </button>
+          </div>
+        </div>
+      )}
+      {showFilterHelp && (
+        <div
+          className="fixed z-[700] w-80 p-3 bg-white border border-gray-300 rounded-md shadow-lg text-sm text-gray-800"
+          style={{
+            top: '120px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+          }}
+        >
+          <div className="font-semibold mb-2">How to use filters</div>
+          <ul className="list-disc pl-5 space-y-1 text-xs">
+            <li><strong>Search:</strong> Enter keywords to search across all columns.</li>
+            <li><strong>Project:</strong> Navigate directly to a specific project by name.</li>
+            <li><strong>Country:</strong> Apply a filter to display data for a selected location.</li>
+            <li><strong>Status:</strong> Filter to show only operational or planned items.</li>
+            <li><strong>End Use:</strong> Select a usage sector to refine results.</li>
+            <li><strong>Sector:</strong> Filter by category, such as Production, Storage, or CCUS.</li>
+          </ul>
+        </div>
+      )}
       <div
-        className={`fixed bottom-4 left-4 w-48 p-3 bg-white border-2 border-gray-300 rounded shadow-md z-[600] text-black text-xs transition-all duration-300 ${
-          legendPinned || legendVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
+        className={`fixed bottom-4 left-4 w-52 p-3 bg-white border-2 border-gray-300 rounded shadow-md z-[600] text-black text-xs transition-all duration-300 ${
+          legendPinned || legendVisible ? 'opacity-100' : 'opacity-0'
         }`}
         onMouseEnter={() => setLegendVisible(true)}
         onMouseLeave={() => !legendPinned && setLegendVisible(false)}
-        onTouchStart={() => setLegendVisible(true)}
-        onTouchEnd={() => !legendPinned && setLegendVisible(false)}
       >
         <div className="flex justify-between items-center text-black">
           <strong>Legend</strong>
-          <button
-            onClick={toggleLegendPin}
-            className={`text-sm ${legendPinned ? 'text-blue-600' : 'text-black'}`}
-            title={legendPinned ? 'Unpin Legend' : 'Pin Legend'}
-          >
-            <i className={`fa fa-thumbtack ${legendPinned ? 'rotate-45' : ''}`} />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setLegendCollapsed((lc) => !lc)}
+              className="text-sm"
+              title={legendCollapsed ? 'Expand Legend' : 'Collapse Legend'}
+            >
+              <i className={`fa fa-chevron-${legendCollapsed ? 'up' : 'down'}`} />
+            </button>
+            <button
+              onClick={toggleLegendPin}
+              className={`text-sm ${legendPinned ? 'text-blue-600' : 'text-black'}`}
+              title={legendPinned ? 'Unpin Legend' : 'Pin Legend'}
+            >
+              <i className={`fa fa-thumbtack ${legendPinned ? 'rotate-45' : ''}`} />
+            </button>
+          </div>
         </div>
-        <div className="mt-2 text-black">
-          {statusTypes.map(({ sector, current_status }) => (
-            <div key={`${sector}-${current_status}`} className="flex items-center mt-1">
-              <i
-                className={`fa fa-${sector.toLowerCase() === 'production' ? 'bolt' : 'cube'}`}
-                style={{ color: statusColorMap[current_status.toLowerCase()] || statusColorMap['other/unknown'], marginRight: 5 }}
-              ></i>
-              {sector} - {current_status}
+        {!legendCollapsed && (
+          <>
+            <div className="mt-2 text-black max-h-48 overflow-y-auto pr-1 custom-scroll">
+              {renderLegendItems()}
             </div>
-          ))}
-        </div>
-        <div className="mt-2 text-xs italic text-black">
-          Use the measuring tool on the left to calculate distances
-        </div>
+            <div className="mt-2 text-xs italic text-black">Use the measuring tool on the left to calculate distances</div>
+          </>
+        )}
       </div>
-
-      {/* Plant List Button */}
-      <button
-        onClick={() => window.location.href = '/plant-widget'}
-        className="fixed top-1/2 right-4 -translate-y-1/2 z-[600] bg-blue-600/80 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2 text-sm hover:bg-blue-600 transition-colors"
-      >
-        <span>Plant List</span>
-        <i className="fa fa-arrow-right" />
-      </button>
-
-      {/* Find Me Button */}
       <button
         onClick={handleFindMe}
         className="fixed bottom-20 right-4 z-[600] bg-white text-blue-600 w-12 h-12 rounded-full shadow-lg flex items-center justify-center text-lg transition-transform hover:scale-105"
