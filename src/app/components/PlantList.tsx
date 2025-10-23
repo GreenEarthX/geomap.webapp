@@ -169,7 +169,7 @@ export default function PlantList({ type, data, columns }: PlantListProps) {
           />
         </div>
         <h1 className="text-2xl md:text-3xl font-bold text-blue-600 mt-2">
-          GEX Database - {type}
+          GEX Ecosystem Database - {type}
         </h1>
       </div>
 

@@ -200,7 +200,7 @@ export default function MapWrapper() {
         setError('Failed to load data. Using default content.');
         if (showDisclaimer) {
           setDisclaimerData([
-            'You are using a Beta version of GreenEarthX, intended for early access, testing, and feedback.',
+            'You are using a Beta version of GEX Ecosystem Map, intended for early access, testing, and feedback.',
             'The platform is under development and may include bugs, incomplete features, or performance issues.',
             'Do not upload sensitive, confidential, or personal information; data security cannot be guaranteed at this stage.',
             'GreenEarthX assumes no liability for data loss or unauthorized access during Beta usage.',
@@ -278,7 +278,7 @@ function DisclaimerScreen({
           style={disclaimerStyles.logo}
         />
         <h1 id="disclaimer-title" style={disclaimerStyles.title}>
-          <span style={disclaimerStyles.gex}>GEX</span> Map - Beta Version
+          <span style={disclaimerStyles.gex}>GEX Ecosystem Map</span> - Beta Version
         </h1>
         <div style={disclaimerStyles.disclaimerBox}>
           <div style={disclaimerStyles.warningIcon}>⚠️</div>
@@ -323,7 +323,7 @@ function LoadingScreen() {
       <div style={styles.content}>
         <Image src="/gex-logo.png" alt="GEX Logo" width={60} height={96} />
         <h1 style={styles.title}>
-          Welcome to <span style={styles.gex}>GEX</span> Map
+          Welcome to <span style={styles.gex}>GEX Ecosystem Map</span>
         </h1>
         <p style={styles.subTitle}>We’re setting things up for you ...</p>
         <div style={styles.loaderWrapper}>
@@ -347,7 +347,7 @@ function WelcomeModal({
     <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md w-[90%] text-center">
         <h2 className="text-xl font-semibold text-[#006CB5] mb-3">
-          Welcome to GEX Map 🎉
+          Welcome to GEX Ecosystem Map 🎉
         </h2>
         <p className="text-gray-600 mb-4 text-sm leading-relaxed">
           You can explore environmental projects, interact with the map, and

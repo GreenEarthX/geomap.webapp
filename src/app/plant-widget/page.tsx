@@ -53,7 +53,7 @@ export default function PlantTypeWidgetsPage() {
           />
         </div>
         <h1 className="text-2xl sm:text-3xl font-bold text-blue-800 mt-5">
-          Explore Hydrogen & CCUS Infrastructure
+          Explore GEX Ecosystem Database
         </h1>
         <p className="text-gray-600 text-sm sm:text-base mt-2">
           Select a category to view details
