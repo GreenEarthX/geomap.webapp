@@ -56,7 +56,7 @@ const UserGuideModal = ({ isOpen, onClose }: UserGuideModalProps) => {
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-2xl font-bold text-blue-700">GreenEarthX Map User Guide</h2>
+          <h2 className="text-2xl font-bold text-blue-700">GEX Ecosystem Map User Guide</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -112,12 +112,12 @@ const UserGuideModal = ({ isOpen, onClose }: UserGuideModalProps) => {
           </button>
 
           <div className="text-sm text-gray-600 text-center md:text-right">
-            Need more help? Contact our team at{" "}
-            <a href="mailto:support@greenearthx.com" className="text-blue-600 hover:underline">
+            Need more help? Contact our team via{" "}
+            <a href="mailto:no-reply@greenearthx.com" className="text-blue-600 hover:underline">
               support@greenearthx.com
             </a>{" "}
             or{" "}
-            <a href="https://greenearthx.com/contact" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+            <a href="https://greenearthx.com" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
               greenearthx.com
             </a>
           </div>

@@ -66,7 +66,7 @@ export default function GexHeader() {
             <Image src="/gex-logo.png" alt="GEX Logo" width={40} height={40} className="h-10 w-10 object-contain" />
           </Link>
           <Link href="/">
-            <span className="text-lg font-bold text-[#006cb5] tracking-tight sm:text-xl">GreenEarthX Map</span>
+            <span className="text-lg font-bold text-[#006cb5] tracking-tight sm:text-xl">GEX Ecosystem Map</span>
           </Link>
         </div>
         <div className="flex items-center space-x-2">

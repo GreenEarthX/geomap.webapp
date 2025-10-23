@@ -142,7 +142,7 @@ export default function PlantListPage() {
           />
         </div>
         <h1 className="text-2xl md:text-3xl font-bold text-blue-600 mt-2">
-          GEX Database
+          GEX Ecosystem Database
         </h1>
       </div>
 
