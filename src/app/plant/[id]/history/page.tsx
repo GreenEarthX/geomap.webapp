@@ -294,8 +294,7 @@ export default function PlantHistory() {
             </a>
           </div>
           <p className="text-sm text-gray-500">
-            This page shows all blockchain transactions and events recorded for this plant on the Hedera Consensus Service.
-          </p>
+            Displays all plausibility verification events permanently recorded on the Hedera Consensus Service for this plant.          </p>
         </div>
 
         {fetchError ? (
