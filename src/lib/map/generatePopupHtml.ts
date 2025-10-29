@@ -13,7 +13,6 @@ const displayNameMap: Partial<Record<'Production' | 'Storage' | 'CCUS' | 'Port' 
   },
 };
 
-
 const formatFieldName = (key: string, type: 'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline'): string => {
   const customName = displayNameMap[type]?.[key];
   if (customName) {
@@ -159,6 +158,7 @@ export const generatePopupHtml = (
   type: 'Production' | 'Storage' | 'CCUS' | 'Port' | 'Pipeline'
 ): string => {
   console.log(`[generatePopupHtml] Type: ${type}, Props:`, props);
+  
 
   const excludedFields = ['id', 'internal_id', 'latitude', 'longitude', 'stakeholders', 'data_source', 'Ref Id', 'end_use', 'investment', 'references', 'investment_capex'];
   let capacityFields: CapacityField[] = [];
@@ -304,8 +304,10 @@ export const generatePopupHtml = (
   console.log(`[generatePopupHtml] Type: ${type}, popupContent:`, popupContent);
 
   let verifyUrl = '';
+  let profileUrl = '';
   const internalId = 'internal_id' in props ? props.internal_id : null;
   let formPath = '';
+  
   if (internalId) {
     switch (type) {
       case 'Production':
@@ -324,30 +326,38 @@ export const generatePopupHtml = (
     const onboardingUrl = process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000';
     const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL || 'http://localhost:3001';
     verifyUrl = `${onboardingUrl}/api/auth/geomap-redirect?redirect=${encodeURIComponent(geomapUrl + formPath)}`;
+    profileUrl = `${onboardingUrl}/profile`;
   }
 
   const onboardingUrl = process.env.NEXT_PUBLIC_ONBOARDING_URL || 'http://localhost:3000';
   const geomapUrl = process.env.NEXT_PUBLIC_GEOMAP_URL || 'http://localhost:3001';
   const loginUrl = `${onboardingUrl}/auth/authenticate?redirect=${encodeURIComponent(geomapUrl + formPath)}`;
+  const profileLoginUrl = `${onboardingUrl}/auth/authenticate?redirect=${encodeURIComponent(profileUrl)}`;
 
-  const verifyButton = verifyUrl
-    ? (() => {
-        let isAuthenticated = false;
-        try {
-          const token = typeof window !== 'undefined' ? window.localStorage.getItem('geomap-auth-token') : null;
-          if (token) {
-            try {
-              JSON.parse(atob(token.split('.')[1]));
-              isAuthenticated = true;
-            } catch (e) {
-              isAuthenticated = false;
-            }
+  // Update the button section in generatePopupHtml function:
+
+const buttonsHtml = verifyUrl
+  ? (() => {
+      let isAuthenticated = false;
+      try {
+        const token = typeof window !== 'undefined' ? window.localStorage.getItem('geomap-auth-token') : null;
+        if (token) {
+          try {
+            JSON.parse(atob(token.split('.')[1]));
+            isAuthenticated = true;
+          } catch (e) {
+            isAuthenticated = false;
           }
-        } catch (e) {
-          isAuthenticated = false;
         }
-        const label = isAuthenticated ? 'Verify' : 'Login to verify';
-        return `
+      } catch (e) {
+        isAuthenticated = false;
+      }
+      
+      const verifyLabel = isAuthenticated ? 'Verify' : 'Login to verify';
+      const historyLabel = 'Profile History';
+      
+      return `
+        <div class="mt-2 flex gap-2">
           <button
             id="verify-btn-uniq"
             onclick="event.stopPropagation(); (function() {
@@ -365,23 +375,42 @@ export const generatePopupHtml = (
                 window.open('${loginUrl}', '_blank');
               }
             })();"
-            class="mt-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 w-full"
+            class="flex-1 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
             aria-label="Verify or Login"
           >
-            <span id='verify-btn-label-uniq'>${label}</span>
+            <span id='verify-btn-label-uniq'>${verifyLabel}</span>
           </button>
-        `;
-      })()
-    : `
-        <span class="mt-2 block text-center text-red-500 text-xs" aria-label="No ID available">
-          No ID available for verification
-        </span>
+          <button
+            id="history-btn-uniq"
+            onclick="event.stopPropagation(); window.open('/plant/${internalId}/history', '_blank');"
+            class="flex-1 px-3 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
+            aria-label="View Blockchain History"
+          >
+            <span id='history-btn-label-uniq'>${historyLabel}</span>
+          </button>
+        </div>
       `;
+    })()
+  : `
+      <div class="mt-2 flex gap-2">
+        <span class="flex-1 block text-center text-red-500 text-xs" aria-label="No ID available">
+          No ID available
+        </span>
+        <button
+          id="history-btn-uniq"
+          onclick="event.stopPropagation(); window.open('/plant/${internalId}/history', '_blank');"
+          class="flex-1 px-3 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
+          aria-label="View Blockchain History"
+        >
+          <span id='history-btn-label-uniq'>Blockchain History</span>
+        </button>
+      </div>
+`;
 
   return `
     <div class="max-w-[90vw] w-64 p-2 bg-white rounded shadow border border-gray-100 font-sans text-sm">
       ${popupContent}
-      ${type !== 'Pipeline' ? verifyButton : ''}
+      ${type !== 'Pipeline' ? buttonsHtml : ''}
     </div>
   `;
 };
